@@ -464,7 +464,8 @@ class MainActivity : ComponentActivity() {
             val dest = muxer.addTrack(format)
             muxer.start()
             started = true
-            val bufferSize = if (format.containsKey(MediaFormat.KEY_MAX_INPUT_SIZE)) maxOf(1_048_576, format.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE)) else 4_194_304
+            val declaredBufferSize = try { format.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE) } catch (_: Exception) { 0 }
+            val bufferSize = maxOf(1_048_576, declaredBufferSize)
             val buffer = java.nio.ByteBuffer.allocateDirect(bufferSize)
             val info = MediaCodec.BufferInfo()
             while (true) {
@@ -744,7 +745,11 @@ $data
                 throw e
             }
         }
-        return FileProvider.getUriForFile(this, packageName + ".fileprovider", file)
+        val legacyDir = getExternalFilesDir(Environment.DIRECTORY_MOVIES) ?: filesDir
+        legacyDir.mkdirs()
+        val shareFile = File(legacyDir, file.name)
+        file.copyTo(shareFile, overwrite = true)
+        return FileProvider.getUriForFile(this, packageName + ".fileprovider", shareFile)
     }
 
     private fun finishExport() {

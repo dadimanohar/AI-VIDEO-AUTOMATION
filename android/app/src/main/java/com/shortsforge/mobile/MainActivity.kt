@@ -10,7 +10,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
-import androidx.media3.common.Effects
+import androidx.media3.transformer.Effects
 import androidx.media3.effect.Presentation
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.ExportException
@@ -114,8 +114,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun edit(hintText: String, value: String = "") = EditText(this).apply {
-        hint = hintText; setText(value); textSize = 14f; singleLine = false
+        hint = hintText; setText(value); textSize = 14f
         setPadding(12, 10, 12, 10)
+        setSingleLine(false)
     }
 
     private fun button(label: String, action: () -> Unit) = Button(this).apply {

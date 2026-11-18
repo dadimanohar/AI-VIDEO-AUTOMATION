@@ -3,12 +3,12 @@
 **AI-powered long-video to Shorts editor for Android.**  
 Turn a long interview, podcast, lecture, or other video file into short clips by finding useful moments in its timestamped transcript, reviewing the suggested time ranges, and exporting an MP4.
 
-[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44247778525)
+[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44271305685)
 
 | App detail | Value |
 |---|---|
 | App name | ShortsForge Mobile |
-| Current release | 1.5.1 |
+| Current release | 1.6.0 |
 | Version code | 9 |
 | Android package | `com.shortsforge.mobile` |
 | Minimum Android version | Android 8.0 (API 26) |
@@ -45,7 +45,7 @@ The intended workflow is:
 7. Choose an output aspect ratio, optionally add a text overlay, and export an MP4.
 8. Find the exported file in Movies/ShortsForge and share it using the Android share sheet.
 
-## 3. Features in version 1.5.1
+## 3. Features in version 1.6.0
 
 ### Source video
 - Select a video from device storage using Android's file picker.
@@ -87,7 +87,26 @@ The intended workflow is:
 - Manually edit the Start and End values in seconds.
 - Quick duration buttons: 15s, 30s, 45s, and 60s.
 - Preview the selected start-to-end range before export.
-- The manual export limit is 180 seconds (3 minutes).
+- The manual quick-export limit is 180 seconds (3 minutes).
+
+### ShortsForge Studio timeline editor (new in 1.6.0)
+Open **Studio Editor · Timeline, split, speed, text, audio** from the main editor after choosing an AI suggestion. The post-export dialog also offers **Edit in Studio** to reopen the rendered MP4.
+- Preview the source video in a dedicated dark editing workspace.
+- Work with an ordered timeline of clip segments selected from the same source video.
+- Add another source-video range by entering its start and end times.
+- Split the selected segment at the current playhead.
+- Delete a segment, move segments left/right to reorder them, and undo recent timeline changes.
+- Trim the selected segment by editing Start and End times in seconds.
+- Scrub the selected segment with the timeline playhead and preview controls.
+- Change playback/export speed: 0.5×, 0.75×, 1×, 1.25×, 1.5×, or 2×.
+- Choose vertical 9:16, square 1:1, or landscape 16:9 output.
+- Add a text overlay (up to 140 characters), choose top/centre/bottom position, clean/bold/large style, and white/yellow/cyan text.
+- Mute the source video's audio or add one looping background music track. In this version the selected music track replaces the source audio; separate track mixing and volume automation are not provided.
+- Export the ordered timeline as one MP4 (H.264/AAC). Combined timeline duration is limited to 180 seconds.
+- After export, share the MP4 or open it again in Studio Editor for another edit.
+
+This is a first native timeline-editing stage, not full CapCut/KineMaster feature parity. The timeline segments currently reference ranges from one selected source video; this is not a multi-source multi-track video compositor.
+
 
 ### Export
 - Vertical 9:16 output for Shorts-style video: 720 × 1280.
@@ -162,8 +181,9 @@ This APK is debug-signed and is distributed directly from the project's GitHub r
 11. Select a different card if preferred.
 12. Choose 60 seconds or 90 seconds, then use **Preview selected clip**.
 13. Adjust Start/End if necessary, select the aspect ratio, and optionally add a text overlay.
-14. Tap **Export Short**.
-15. After export, check Movies/ShortsForge or use the Android share sheet.
+14. Tap **Open Studio Editor · Timeline, split, speed, text, audio** to refine the clip in the timeline editor, or use the main editor's **Export Short** for a quick export.
+15. In Studio Editor, arrange/trim/split the clip segments, adjust speed, canvas, text and audio, then tap **Export edited video**.
+16. After the result is saved, share it or open **Edit in Studio** to make another edit.
 
 ### Option B — Offline AI
 1. Connect to the internet for the first model download.
@@ -272,7 +292,7 @@ Review the selected AI provider's privacy terms before sending private, confiden
 
 ## 11. Current limitations — what is not included
 
-The following are **not** current 1.5.1 features:
+The following are **not** current 1.6.0 features:
 - YouTube URL import or public YouTube video downloading.
 - Google Drive/Dropbox share-link importing.
 - Direct internet video URL importing.
@@ -280,11 +300,12 @@ The following are **not** current 1.5.1 features:
 - Automatic YouTube caption-track downloading.
 - AI-generated animated word-by-word subtitles or karaoke captions.
 - Automatic B-roll, images, scene generation, or presenter generation.
-- A multi-track timeline editor or batch export queue.
+- Batch export queue.
+- Full multi-source, multi-layer CapCut/KineMaster editing: picture-in-picture tracks, transitions, keyframes, filters, advanced colour grading, waveform editing, independent audio volume automation, and frame-by-frame professional tools.
 - Automatic video title, description, hashtags, or thumbnail generation.
 - A server-side user account, cloud project sync, or team collaboration.
 
-The current text overlay is one static overlay burned into the exported clip. It is not a full subtitle editor. The AI analyses transcript text; it does not currently perform visual scene understanding or face tracking.
+Studio Editor supports a styled static text overlay; it is not an animated subtitle editor. Studio timelines currently arrange ranges from one selected source video and support one added music track that replaces the source audio. They do not provide independent multi-track audio mixing. The AI analyses transcript text; it does not currently perform visual scene understanding or face tracking.
 
 ## 12. Future roadmap — ideas, not yet implemented
 
@@ -292,7 +313,7 @@ Potential future improvements, subject to design and testing:
 - Animated word-level captions with editable styles and positioning.
 - Better crop controls, subject-aware reframing, and safe-area guides.
 - Multiple clip selection and batch export.
-- A more advanced timeline with audio/video tracks and frame-accurate controls.
+- Advanced multi-layer timeline editing, transitions, keyframes, filters, independent audio mixing, and frame-accurate controls.
 - Saved editing projects and export history.
 - Audio cleanup and licensed background-music workflows.
 - More language controls for transcription and transcript analysis.
@@ -391,12 +412,12 @@ A push that changes files under android/ or the workflow can trigger the build. 
 
 ## 17. Latest release
 
-- Release: 1.5.1
-- Version code: 9
+- Release: 1.6.0
+- Version code: 10
 - Build result: successful.
-- Build run: [GitHub Actions run 44247778525](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44247778525)
+- Build run: [GitHub Actions run 44271305685](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44271305685)
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)
-- SHA-256: `0188a30d2a55844ca55ddee7a3d5c0339a6d386ea824d8d8432e21f86ee58dd4`
+- SHA-256: `864282ffd23129cdbf2cc25b18c8250528e10c6a65ec7e20a1964f2912f87ecd`
 
 To verify a downloaded file on a computer, calculate its SHA-256 hash and compare it with the value above.
 
@@ -437,7 +458,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 7. Aspect ratio ఎంచుకుని, కావాలంటే text overlay జోడించి MP4 export చేయాలి.
 8. Movies/ShortsForgeలో వీడియోను చూసి Android share menu ద్వారా share చేయాలి.
 
-## 3. Version 1.5.1లో ప్రస్తుతం ఉన్న ఫీచర్లు
+## 3. Version 1.6.0లో ప్రస్తుతం ఉన్న ఫీచర్లు
 
 ### Source video
 - ఫోన్ storage నుంచి Android file picker ద్వారా వీడియో ఎంచుకోవచ్చు.
@@ -480,7 +501,26 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 - Start మరియు End సమయాలను secondsలో manualగా మార్చవచ్చు.
 - Quick duration buttons: 15s, 30s, 45s, 60s.
 - Exportకు ముందు ఎంచుకున్న time range preview చేయవచ్చు.
-- Manual export గరిష్ఠ పరిమితి 180 seconds (3 నిమిషాలు).
+- Main editor quick-export గరిష్ఠ పరిమితి 180 seconds (3 నిమిషాలు).
+
+### ShortsForge Studio Timeline Editor (1.6.0లో కొత్తది)
+AI suggestion ఎంచుకున్న తర్వాత ప్రధాన editorలో **Open Studio Editor · Timeline, split, speed, text, audio** నొక్కండి. Quick export పూర్తయ్యాక వచ్చే dialogలో **Edit in Studio** ఎంచుకుని export అయిన MP4ను మళ్లీ తెరవవచ్చు.
+- ప్రత్యేక dark editing workspaceలో source video preview.
+- ఒకే source video నుంచి ఎంచుకున్న clip segments‌తో timeline.
+- అదే source videoలో మరో start/end rangeను జోడించవచ్చు.
+- Playhead ఉన్న స్థానంలో selected segmentను Split చేయవచ్చు.
+- Segment delete చేయడం, ఎడమ/కుడికి move చేసి క్రమం మార్చడం, ఇటీవలి timeline మార్పులను Undo చేయడం.
+- Selected segment Start/End సమయాలను secondsలో trim చేయడం.
+- Timeline playhead ద్వారా seek/scrub చేసి preview చేయడం.
+- Playback/export speed: 0.5×, 0.75×, 1×, 1.25×, 1.5× లేదా 2×.
+- Vertical 9:16, Square 1:1, Landscape 16:9 output formats.
+- 140 characters వరకు text overlay; Top/Centre/Bottom స్థానం; Clean/Bold/Large style; White/Yellow/Cyan text colors.
+- Original video audio mute చేయవచ్చు లేదా looping background music file జోడించవచ్చు. ప్రస్తుత versionలో music track source audio స్థానంలో వస్తుంది; రెండు tracks volume mixing లేదా automation ఇంకా లేదు.
+- Timelineలోని clip segments‌ను ఒక MP4 (H.264/AAC)గా export చేయవచ్చు. మొత్తం timeline గరిష్ఠంగా 180 seconds.
+- Export తర్వాత MP4 share చేయవచ్చు లేదా Studio Editorలో మళ్లీ తెరిచి edit చేయవచ్చు.
+
+ఇది native timeline editingకు మొదటి దశ మాత్రమే; పూర్తి CapCut/KineMaster సమాన feature set కాదు. ప్రస్తుత timelineలోని అన్ని clip segments ఒకే selected source videoలోని ranges‌ను ఉపయోగిస్తాయి; వేర్వేరు వీడియోలతో multi-track compositor ఇంకా లేదు.
+
 
 ### Export
 - Vertical 9:16: 720 × 1280.
@@ -555,8 +595,9 @@ Offline వేగం మరియు ఫలితాల నాణ్యత ఫ�
 11. కావాలంటే వేరే card ఎంచుకోండి.
 12. 60 seconds లేదా 90 seconds ఎంచుకుని **Preview selected clip** నొక్కండి.
 13. అవసరమైతే Start/End మార్చండి. Aspect ratio ఎంచుకోండి. కావాలంటే text overlay జోడించండి.
-14. **Export Short** నొక్కండి.
-15. Export అయిన వీడియోను Movies/ShortsForgeలో చూడండి లేదా Android share sheet ఉపయోగించండి.
+14. Timelineలో మరింత edit చేయడానికి **Open Studio Editor · Timeline, split, speed, text, audio** నొక్కండి; త్వరగా export చేయాలంటే ప్రధాన editorలో **Export Short** నొక్కవచ్చు.
+15. Studio Editorలో clip segments క్రమం, trim/split, speed, canvas, text, audio సర్దుకుని **Export edited video** నొక్కండి.
+16. Save అయిన తర్వాత share చేయండి లేదా **Edit in Studio**తో మళ్లీ edit చేయండి.
 
 ### Option B — Offline AI
 1. మొదటి model download కోసం Internet కలిగి ఉండండి.
@@ -664,7 +705,7 @@ Private లేదా confidential recordingsను cloud APIకి పంపే 
 
 ## 11. ప్రస్తుత యాప్‌లో లేని ఫీచర్లు
 
-క్రింది అంశాలు **Version 1.5.1లో లేవు**:
+క్రింది అంశాలు **Version 1.6.0లో లేవు**:
 - YouTube URL import లేదా public YouTube video download.
 - Google Drive/Dropbox share-link import.
 - Direct internet video URL import.
@@ -672,11 +713,12 @@ Private లేదా confidential recordingsను cloud APIకి పంపే 
 - YouTube caption-track automatic download.
 - AI animated word-by-word subtitles లేదా karaoke captions.
 - Automatic B-roll, images, scene generation లేదా presenter generation.
-- Multi-track timeline editor లేదా batch export queue.
+- Batch export queue.
+- పూర్తి CapCut/KineMaster స్థాయి multi-source, multi-layer editing: picture-in-picture tracks, transitions, keyframes, filters, advanced colour grading, waveform editing, independent audio volume automation, frame-by-frame professional tools.
 - Automatic video title, description, hashtags లేదా thumbnail generation.
 - Server-side user account, cloud project sync లేదా team collaboration.
 
-ప్రస్తుత text overlay ఒక static overlay మాత్రమే; అది exported clipపై burn అవుతుంది. ఇది పూర్తి subtitle editor కాదు. AI transcript textనే విశ్లేషిస్తుంది; ప్రస్తుతం video visual scene understanding లేదా face tracking చేయదు.
+Studio Editorలో styles ఉన్న static text overlay ఉంది; animated subtitle editor ఇంకా లేదు. ప్రస్తుత timeline ఒకే selected source videoలోని ranges‌ను క్రమపరుస్తుంది; ఒక music track source audio స్థానంలో వస్తుంది. స్వతంత్ర multi-track audio mixing లేదు. AI transcript textనే విశ్లేషిస్తుంది; ప్రస్తుతం video visual scene understanding లేదా face tracking చేయదు.
 
 ## 12. భవిష్యత్తు Roadmap — ఇంకా నిర్మించని ఆలోచనలు
 
@@ -684,7 +726,7 @@ Private లేదా confidential recordingsను cloud APIకి పంపే 
 - Edit చేయగల styles/positionsతో animated word-level captions.
 - మెరుగైన crop controls, subject-aware reframing, safe-area guides.
 - Multiple clips selection మరియు batch export.
-- Audio/video tracksతో advanced timeline మరియు frame-accurate controls.
+- Multi-layer timeline editing, transitions, keyframes, filters, independent audio mixing, frame-accurate controls.
 - Saved editing projects మరియు export history.
 - Audio cleanup మరియు license ఉన్న background music workflows.
 - Transcription మరియు transcript analysis కోసం మరిన్ని language controls.
@@ -783,12 +825,12 @@ android/లో లేదా workflow fileలో మార్పులు push �
 
 ## 17. తాజా Release
 
-- Release: 1.5.1.
-- Version code: 9.
+- Release: 1.6.0.
+- Version code: 10.
 - Build result: Successful.
-- Build run: [GitHub Actions run 44247778525](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44247778525).
+- Build run: [GitHub Actions run 44271305685](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44271305685).
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk).
-- SHA-256: `0188a30d2a55844ca55ddee7a3d5c0339a6d386ea824d8d8432e21f86ee58dd4`.
+- SHA-256: `864282ffd23129cdbf2cc25b18c8250528e10c6a65ec7e20a1964f2912f87ecd`.
 
 Computerలో download చేసిన file verify చేయాలంటే దాని SHA-256 hash calculate చేసి పై విలువతో పోల్చండి.
 
@@ -829,7 +871,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 7. Aspect ratio चुनें, चाहें तो text overlay जोड़ें और MP4 export करें।
 8. वीडियो को Movies/ShortsForge में ढूंढें और Android share sheet से साझा करें।
 
-## 3. Version 1.5.1 में उपलब्ध सुविधाएँ
+## 3. Version 1.6.0 में उपलब्ध सुविधाएँ
 
 ### Source video
 - Android file picker से फोन की storage में मौजूद वीडियो चुनें।
@@ -872,7 +914,26 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 - Start और End समय को seconds में manually बदलें।
 - Quick duration buttons: 15s, 30s, 45s और 60s।
 - Export से पहले चुनी गई time range preview करें।
-- Manual export की अधिकतम सीमा 180 seconds (3 मिनट) है।
+- Main editor quick-export की अधिकतम सीमा 180 seconds (3 मिनट) है।
+
+### ShortsForge Studio Timeline Editor (1.6.0 में नया)
+AI suggestion चुनने के बाद main editor में **Open Studio Editor · Timeline, split, speed, text, audio** दबाएं। Quick export के बाद आने वाले dialog में **Edit in Studio** चुनकर exported MP4 को फिर से खोल सकते हैं।
+- एक dedicated dark editing workspace में source video preview।
+- एक ही selected source video से चुने गए clip segments की ordered timeline।
+- उसी source video से नया start/end range जोड़ें।
+- Playhead की वर्तमान position पर selected segment को split करें।
+- Segment delete करें, left/right move करके order बदलें और हाल के timeline changes को Undo करें।
+- Start/End seconds बदलकर selected segment trim करें।
+- Timeline playhead से seek/scrub करके preview करें।
+- Playback/export speed: 0.5×, 0.75×, 1×, 1.25×, 1.5× या 2×।
+- Vertical 9:16, Square 1:1 या Landscape 16:9 output।
+- 140 characters तक text overlay; Top/Centre/Bottom position; Clean/Bold/Large style; White/Yellow/Cyan text colour।
+- Original video audio mute करें या looping background music जोड़ें। इस version में music track source audio को replace करता है; अलग tracks का audio mixing और volume automation उपलब्ध नहीं है।
+- Ordered timeline को एक MP4 (H.264/AAC) के रूप में export करें। Combined timeline अधिकतम 180 seconds है।
+- Export के बाद MP4 share करें या Studio Editor में फिर खोलकर दोबारा edit करें।
+
+यह native timeline editing का पहला चरण है, पूर्ण CapCut/KineMaster feature parity नहीं। अभी timeline के सभी segments एक ही source video के ranges इस्तेमाल करते हैं; अलग-अलग source videos वाला multi-track compositor अभी उपलब्ध नहीं है।
+
 
 ### Export
 - Shorts-style वीडियो के लिए Vertical 9:16: 720 × 1280।
@@ -947,8 +1008,9 @@ Offline transcription और highlight analysis के लिए:
 11. चाहें तो दूसरा card चुनें।
 12. 60 या 90 seconds चुनें और **Preview selected clip** दबाएं।
 13. जरूरत पड़ने पर Start/End बदलें, aspect ratio चुनें और चाहें तो text overlay जोड़ें।
-14. **Export Short** दबाएं।
-15. Export के बाद वीडियो Movies/ShortsForge में देखें या Android share sheet इस्तेमाल करें।
+14. Timeline में और editing के लिए **Open Studio Editor · Timeline, split, speed, text, audio** दबाएं; जल्दी export के लिए main editor में **Export Short** दबा सकते हैं।
+15. Studio Editor में clip segments का order, trim/split, speed, canvas, text और audio बदलकर **Export edited video** दबाएं।
+16. Save होने के बाद share करें या **Edit in Studio** से फिर edit करें।
 
 ### Option B — Offline AI
 1. पहली बार model download करने के लिए Internet से जुड़ें।
@@ -1056,7 +1118,7 @@ Private या confidential recordings cloud API को भेजने से �
 
 ## 11. मौजूदा सीमाएँ — क्या शामिल नहीं है
 
-निम्न सुविधाएँ **वर्तमान Version 1.5.1 में उपलब्ध नहीं हैं**:
+निम्न सुविधाएँ **वर्तमान Version 1.6.0 में उपलब्ध नहीं हैं**:
 - YouTube URL import या public YouTube video download।
 - Google Drive/Dropbox share-link import।
 - Direct internet video URL import।
@@ -1064,11 +1126,12 @@ Private या confidential recordings cloud API को भेजने से �
 - YouTube caption-track automatic download।
 - AI-generated animated word-by-word subtitles या karaoke captions।
 - Automatic B-roll, images, scene generation या presenter generation।
-- Multi-track timeline editor या batch export queue।
+- Batch export queue।
+- पूर्ण CapCut/KineMaster स्तर का multi-source, multi-layer editing: picture-in-picture tracks, transitions, keyframes, filters, advanced colour grading, waveform editing, independent audio volume automation और frame-by-frame professional tools।
 - Automatic video title, description, hashtags या thumbnail generation।
 - Server-side user account, cloud project sync या team collaboration।
 
-मौजूदा text overlay एक static overlay है जिसे exported clip पर burn किया जाता है। यह पूरा subtitle editor नहीं है। AI transcript text का विश्लेषण करता है; अभी visual scene understanding या face tracking नहीं करता।
+Studio Editor में styles वाला static text overlay है; animated subtitle editor अभी नहीं है। मौजूदा timeline एक selected source video के ranges को क्रमबद्ध करती है और एक music track source audio को replace करता है। अलग-अलग multi-track audio mixing नहीं है। AI transcript text का विश्लेषण करता है; अभी visual scene understanding या face tracking नहीं करता।
 
 ## 12. Future Roadmap — विचार, अभी लागू नहीं हुए
 
@@ -1076,7 +1139,7 @@ Private या confidential recordings cloud API को भेजने से �
 - Editable styles और positions के साथ animated word-level captions।
 - बेहतर crop controls, subject-aware reframing और safe-area guides।
 - Multiple clips selection और batch export।
-- Audio/video tracks और frame-accurate controls वाला advanced timeline।
+- Multi-layer timeline editing, transitions, keyframes, filters, independent audio mixing और frame-accurate controls वाला advanced timeline।
 - Saved editing projects और export history।
 - Audio cleanup और licensed background-music workflows।
 - Transcription और transcript analysis के लिए अधिक language controls।
@@ -1175,12 +1238,12 @@ android/ या workflow file में बदलाव push करने पर
 
 ## 17. Latest Release
 
-- Release: 1.5.1।
-- Version code: 9।
+- Release: 1.6.0।
+- Version code: 10।
 - Build result: Successful।
-- Build run: [GitHub Actions run 44247778525](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44247778525)।
+- Build run: [GitHub Actions run 44271305685](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44271305685)।
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)।
-- SHA-256: `0188a30d2a55844ca55ddee7a3d5c0339a6d386ea824d8d8432e21f86ee58dd4`।
+- SHA-256: `864282ffd23129cdbf2cc25b18c8250528e10c6a65ec7e20a1964f2912f87ecd`।
 
 Computer पर downloaded file verify करने के लिए उसका SHA-256 hash calculate करके ऊपर दिए गए value से compare करें।
 

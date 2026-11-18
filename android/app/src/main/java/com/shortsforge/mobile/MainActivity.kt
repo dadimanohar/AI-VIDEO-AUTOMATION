@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.media.AudioFormat
 import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
@@ -66,6 +67,14 @@ import javax.crypto.spec.GCMParameterSpec
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import dev.ffmpegkit.llama.Llama
+import dev.ffmpegkit.llama.LlamaConfig
+import dev.ffmpegkit.whisper.Whisper
+import dev.ffmpegkit.whisper.WhisperConfig
+import kotlinx.coroutines.runBlocking
+import java.io.BufferedOutputStream
+import java.io.FileOutputStream
+import java.nio.ByteOrder
 
 @OptIn(UnstableApi::class)
 class MainActivity : ComponentActivity() {
@@ -79,6 +88,13 @@ class MainActivity : ComponentActivity() {
     private val http = OkHttpClient.Builder().connectTimeout(25, TimeUnit.SECONDS)
         .readTimeout(150, TimeUnit.SECONDS).writeTimeout(150, TimeUnit.SECONDS)
         .callTimeout(180, TimeUnit.SECONDS).build()
+    private val modelHttp = OkHttpClient.Builder()
+        .connectTimeout(45, TimeUnit.SECONDS)
+        .readTimeout(20, TimeUnit.MINUTES)
+        .callTimeout(35, TimeUnit.MINUTES)
+        .build()
+    private val qwenModelName = "Qwen3-0.6B-Q4_0.gguf"
+    private val whisperModelName = "ggml-base.bin"
     private val handler = Handler(Looper.getMainLooper())
     private val progressHolder = ProgressHolder()
 
@@ -145,7 +161,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        provider = prefs.getInt("provider", 0).coerceIn(0, 2)
+        provider = prefs.getInt("provider", 0).coerceIn(0, 3)
         root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(page) }
         setContentView(root)
         showEditor()
@@ -283,39 +299,57 @@ class MainActivity : ComponentActivity() {
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(18), dp(18), dp(28)) }
         scroll.addView(body)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-        val settings = card(body, "AI CONNECTION", "Select the provider used for transcript analysis.")
-        settings.addView(label("PROVIDER"))
-        val providerSpinner = spinner(listOf("Groq", "OpenAI", "Anthropic Claude")).apply { setSelection(provider) }
+        val settings = card(body, "AI CONNECTION", "Choose cloud AI or fully on-device AI.")
+        settings.addView(label("AI MODE"))
+        val providerSpinner = spinner(listOf("Groq · Cloud AI", "OpenAI · Cloud AI", "Claude · Cloud AI", "Offline local AI · Qwen3 + Whisper")).apply { setSelection(provider) }
         settings.addView(providerSpinner, full())
         settings.addView(label("API KEY"))
-        val apiKey = input("Paste your provider API key", readKey(provider), false).apply {
+        val apiKey = input("Paste your provider API key", if (provider == 3) "" else readKey(provider), false).apply {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            visibility = if (provider == 3) View.GONE else View.VISIBLE
         }
         settings.addView(apiKey, full())
+        val apiKeyHelp = text("Cloud keys are encrypted with Android Keystore and stored on this device.", 12f, muted).apply {
+            setPadding(0, dp(10), 0, 0)
+            visibility = if (provider == 3) View.GONE else View.VISIBLE
+        }
+        settings.addView(apiKeyHelp)
         providerSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) { }
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                 provider = position
-                apiKey.setText(readKey(position))
+                apiKey.visibility = if (position == 3) View.GONE else View.VISIBLE
+                apiKeyHelp.visibility = if (position == 3) View.GONE else View.VISIBLE
+                apiKey.setText(if (position == 3) "" else readKey(position))
             }
         }
-        settings.addView(text("Your key is encrypted with Android Keystore and stored on this device. Do not share it.", 12f, muted).apply { setPadding(0, dp(10), 0, 0) })
         settings.addView(button("Save AI settings", true) {
             try {
-                saveKey(provider, apiKey.text.toString().trim())
+                if (provider != 3) saveKey(provider, apiKey.text.toString().trim())
                 prefs.edit().putInt("provider", provider).apply()
-                setStatus("AI settings saved securely.")
+                setStatus(if (provider == 3) "Offline local AI mode selected." else "AI settings saved securely.")
                 Toast.makeText(this, "Settings saved", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(this, "Could not save key: " + (e.message ?: "error"), Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Could not save settings: " + (e.message ?: "error"), Toast.LENGTH_LONG).show()
             }
         }, full(dp(14)))
         val modelInfo = when (provider) {
-            0 -> "Groq: openai/gpt-oss-120b for analysis and whisper-large-v3-turbo for transcription."
-            1 -> "OpenAI: gpt-4o-mini for analysis and whisper-1 for timestamped transcription."
-            else -> "Claude: claude-haiku-4-5-20251001 for analysis. Paste a timestamped transcript."
+            0 -> "Groq cloud model for highlight analysis and Groq Whisper for transcription. Internet and your API key are required."
+            1 -> "OpenAI cloud model for highlight analysis and Whisper API for transcription. Internet and your API key are required."
+            2 -> "Claude cloud model for highlight analysis. Paste a timestamped transcript or use another transcription provider."
+            else -> "Qwen3 0.6B (Q4) selects key moments locally. Whisper Base creates timestamped transcripts locally. After downloading both models once, these features work offline."
         }
-        card(body, "MODEL CONFIGURATION", modelInfo).addView(text("AI features require internet access and may incur charges from your provider. Video preview, trimming, text overlay, and export run on your phone.", 13f, muted))
+        card(body, "MODEL CONFIGURATION", modelInfo).addView(text(
+            if (provider == 3) "Offline model downloads are about 571 MB in total: Qwen3 (~429 MB) + Whisper Base (~142 MB). Models stay in app storage and are not included in the APK."
+            else "Cloud AI requires internet access and may incur charges from your provider. Video preview, trimming, text overlay, and export run on your phone.",
+            13f, muted
+        ))
+        val modelCard = card(body, "OFFLINE MODEL MANAGER", "Download once while connected to Wi-Fi. Then choose Offline local AI to transcribe and find highlights without cloud APIs.")
+        val modelStatus = text(localModelStatus(), 12f, muted).apply { setPadding(0, 0, 0, dp(10)) }
+        modelCard.addView(modelStatus)
+        modelCard.addView(button("Download offline AI models · ~571 MB", true) {
+            downloadOfflineModels(modelStatus)
+        }, full())
         body.addView(button("Return to editor", false) { showEditor() }, full(dp(8)))
     }
 
@@ -649,6 +683,10 @@ class MainActivity : ComponentActivity() {
     private fun transcribeAndAnalyze() {
         val uri = selectedVideo
         if (uri == null) { setStatus("Choose a video first."); return }
+        if (provider == 3) {
+            transcribeLocally(uri)
+            return
+        }
         if (provider == 2) { setStatus("Select Groq or OpenAI for automatic transcription, or paste a timestamped transcript."); return }
         val key = readKey(provider)
         if (key.isBlank()) { setStatus("Add an API key in Settings."); showSettings(); return }
@@ -756,6 +794,10 @@ class MainActivity : ComponentActivity() {
     private fun analyzeTranscript(auto: Boolean = false) {
         val data = if (::transcriptEdit.isInitialized) transcriptEdit.text.toString().trim() else transcript.trim()
         if (data.isBlank()) { setStatus("Paste a timestamped transcript or auto-transcribe the video first."); return }
+        if (provider == 3) {
+            analyzeWithLocalModel(data, auto)
+            return
+        }
         val key = readKey(provider)
         if (key.isBlank()) { setStatus("Add an API key in Settings."); showSettings(); return }
         if (busy && !auto) return

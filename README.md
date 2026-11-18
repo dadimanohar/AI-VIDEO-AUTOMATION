@@ -339,7 +339,6 @@ The following are **not** current 1.8.0 features:
 - Automatic YouTube caption-track downloading.
 - AI-generated animated word-by-word subtitles or karaoke captions.
 - Automatic B-roll, images, scene generation, or presenter generation.
-- Batch export queue.
 - Full multi-source, multi-layer CapCut/KineMaster editing: picture-in-picture tracks, transitions, keyframes, filters, advanced colour grading, waveform editing, independent audio volume automation, and frame-by-frame professional tools.
 - Automatic video title, description, hashtags, or thumbnail generation.
 - A server-side user account, cloud project sync, or team collaboration.
@@ -351,7 +350,6 @@ Studio Editor supports a styled static text overlay; it is not an animated subti
 Potential future improvements, subject to design and testing:
 - Animated word-level captions with editable styles and positioning.
 - Better crop controls, subject-aware reframing, and safe-area guides.
-- Multiple clip selection and batch export.
 - Advanced multi-layer timeline editing, transitions, keyframes, filters, independent audio mixing, and frame-accurate controls.
 - Saved editing projects and export history.
 - Audio cleanup and licensed background-music workflows.
@@ -799,7 +797,6 @@ Studio Editorలో styles ఉన్న static text overlay ఉంది; animat
 తరువాత పరిశీలించదగిన improvements:
 - Edit చేయగల styles/positionsతో animated word-level captions.
 - మెరుగైన crop controls, subject-aware reframing, safe-area guides.
-- Multiple clips selection మరియు batch export.
 - Multi-layer timeline editing, transitions, keyframes, filters, independent audio mixing, frame-accurate controls.
 - Saved editing projects మరియు export history.
 - Audio cleanup మరియు license ఉన్న background music workflows.
@@ -904,7 +901,7 @@ android/లో లేదా workflow fileలో మార్పులు push �
 ## 17. తాజా Release
 
 - Release: 1.8.0.
-- Version code: 10.
+- Version code: 12.
 - Build result: Successful.
 - Build run: [GitHub Actions run 44279926419](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279926419).
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk).
@@ -1228,14 +1225,13 @@ Private या confidential recordings cloud API को भेजने से �
 ## 11. मौजूदा सीमाएँ — क्या शामिल नहीं है
 
 निम्न सुविधाएँ **वर्तमान Version 1.8.0 में उपलब्ध नहीं हैं**:
-- YouTube URL import या public YouTube video download।
-- Google Drive/Dropbox share-link import।
-- Direct internet video URL import।
+- YouTube watch URL को editable MP4/audio source के रूप में download या extract करना। YouTube URL केवल embedded preview और timestamp markers देता है।
+- Public YouTube caption tracks या transcripts का automatic download।
+- Google Drive/Dropbox share-page URLs का import। Importer को direct HTTPS video-file response चाहिए।
 - Automatic YouTube channel upload, scheduling या publishing।
 - YouTube caption-track automatic download।
 - AI-generated animated word-by-word subtitles या karaoke captions।
 - Automatic B-roll, images, scene generation या presenter generation।
-- Batch export queue।
 - पूर्ण CapCut/KineMaster स्तर का multi-source, multi-layer editing: picture-in-picture tracks, transitions, keyframes, filters, advanced colour grading, waveform editing, independent audio volume automation और frame-by-frame professional tools।
 - Automatic video title, description, hashtags या thumbnail generation।
 - Server-side user account, cloud project sync या team collaboration।
@@ -1247,7 +1243,6 @@ Studio Editor में styles वाला static text overlay है; animated
 आगे विचार किए जा सकने वाले सुधार:
 - Editable styles और positions के साथ animated word-level captions।
 - बेहतर crop controls, subject-aware reframing और safe-area guides।
-- Multiple clips selection और batch export।
 - Multi-layer timeline editing, transitions, keyframes, filters, independent audio mixing और frame-accurate controls वाला advanced timeline।
 - Saved editing projects और export history।
 - Audio cleanup और licensed background-music workflows।

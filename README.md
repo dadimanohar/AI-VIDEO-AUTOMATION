@@ -9,10 +9,10 @@ Turn a long interview, podcast, lecture, or other video file into short clips by
 |---|---|
 | App name | ShortsForge Mobile |
 | Current release | 1.6.0 |
-| Version code | 9 |
+| Version code | 10 |
 | Android package | `com.shortsforge.mobile` |
 | Minimum Android version | Android 8.0 (API 26) |
-| APK size | About 13.86 MB |
+| APK size | About 13.88 MB |
 | Export | MP4 (H.264 video + AAC audio) |
 | Build type | Debug-signed APK from GitHub Actions |
 

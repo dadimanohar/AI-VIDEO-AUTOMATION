@@ -269,6 +269,9 @@ class MainActivity : ComponentActivity() {
         edit.addView(overlayEdit, full())
         edit.addView(text("This text is burned into the entire exported clip. Leave blank for no overlay.", 12f, muted).apply { setPadding(0, dp(6), 0, 0) })
 
+        // Re-render previous AI suggestions when returning from Settings.
+        if (highlightItems.isNotEmpty()) showHighlights(highlightItems)
+
         val footer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(18), dp(10), dp(18), dp(12))
@@ -873,7 +876,7 @@ $chunkText
                     setStatus(if (best.isEmpty()) {
                         "Qwen3 did not return reliable timestamped highlights. Try a longer transcript or Cloud AI for a stronger analysis."
                     } else {
-                        "Offline Qwen3 found " + best.size + " important moments. Tap one to create a " + clipDurationSeconds + "s clip."
+                        suggestionSelectedStatus(selectedHighlightIndex.coerceAtLeast(0))
                     })
                 }
             } catch (e: Exception) {
@@ -1192,7 +1195,7 @@ $data
                 val items = parseHighlights(raw)
                 runOnUiThread {
                     showHighlights(items)
-                    setStatus(if (items.isEmpty()) "No reliable timestamped clips were returned. Check the transcript timestamps." else "Found " + items.size + " clip suggestions. Tap one to set its range.")
+                    setStatus(if (items.isEmpty()) "No reliable timestamped clips were returned. Check the transcript timestamps." else suggestionSelectedStatus(selectedHighlightIndex.coerceAtLeast(0)))
                 }
             } catch (e: Exception) {
                 val useLocal = isConnectivityFailure(e) && try { qwenModelFile().let { it.exists() && it.length() >= 420_000_000L } } catch (_: Exception) { false }
@@ -1273,12 +1276,17 @@ $data
         return out.take(8)
     }
 
+    private fun suggestionSelectedStatus(index: Int): String =
+        "Suggestion " + (index + 1) + " selected. Review the preview and export."
+
     private fun showHighlights(items: List<Highlight>) {
         if (!::highlightsView.isInitialized) return
         highlightItems = items
         if (selectedHighlightIndex !in items.indices) selectedHighlightIndex = if (items.isNotEmpty()) 0 else -1
-        items.getOrNull(selectedHighlightIndex)?.let { first ->
-            if (first.start != null && first.end != null) applyHighlightWindow(first.start, first.end)
+        items.getOrNull(selectedHighlightIndex)?.let { selected ->
+            if (selected.start != null && selected.end != null && ::startEdit.isInitialized && ::endEdit.isInitialized) {
+                applyHighlightWindow(selected.start, selected.end)
+            }
         }
         highlightsView.removeAllViews()
         if (items.isEmpty()) {
@@ -1288,22 +1296,32 @@ $data
         items.forEachIndexed { index, item ->
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
-                setPadding(dp(12), dp(11), dp(12), dp(11))
-                background = shape(if (index == selectedHighlightIndex) Color.rgb(238, 236, 255) else Color.rgb(248, 249, 255), 12, if (index == selectedHighlightIndex) accent else border)
+                setPadding(dp(15), dp(14), dp(15), dp(14))
+                background = shape(Color.rgb(248, 249, 255), 14, border)
+                isClickable = true
+                isFocusable = true
                 setOnClickListener {
                     if (item.start != null && item.end != null) {
                         selectedHighlightIndex = index
                         applyHighlightWindow(item.start, item.end)
-                        showHighlights(highlightItems)
-                        setStatus("Suggestion " + (index + 1) + " selected. Preview the clip or export.")
-                    } else setStatus("This suggestion has no exact timestamps. Use a timestamped transcript.")
+                        setStatus(suggestionSelectedStatus(index))
+                    } else {
+                        setStatus("This suggestion has no exact timestamps. Use a timestamped transcript.")
+                    }
                 }
             }
-            row.addView(text((index + 1).toString() + (if (index == selectedHighlightIndex) "  ✓ SELECTED" else "") + ". " + item.hook, 14f, ink, true))
-            val meta = item.category + if (item.importance > 0) "  ·  Importance " + item.importance + "/10" else ""
-            row.addView(text(meta, 11f, muted, true).apply { setPadding(0, dp(3), 0, 0) })
-            row.addView(text(if (item.start != null && item.end != null) "Key moment: " + clock(item.start) + "  →  " + clock(item.end) + "  ·  Tap for " + clipDurationSeconds + "s clip" else "Timestamp unavailable", 12f, accent, true).apply { setPadding(0, dp(4), 0, 0) })
-            if (item.reason.isNotBlank()) row.addView(text(item.reason, 12f, muted).apply { setPadding(0, dp(4), 0, 0) })
+            row.addView(text((index + 1).toString() + ". " + item.hook, 14f, ink, true))
+            if (item.start != null && item.end != null) {
+                row.addView(text(clock(item.start) + "  →  " + clock(item.end), 12f, accent, true)
+                    .apply { setPadding(0, dp(5), 0, 0) })
+            } else {
+                row.addView(text("Timestamp unavailable", 12f, accent, true)
+                    .apply { setPadding(0, dp(5), 0, 0) })
+            }
+            if (item.reason.isNotBlank()) {
+                row.addView(text(item.reason, 12f, muted)
+                    .apply { setPadding(0, dp(6), 0, 0) })
+            }
             highlightsView.addView(row, full(dp(8)))
         }
     }

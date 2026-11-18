@@ -1496,6 +1496,7 @@ $data
                         contentType == "video/x-m4v" -> "m4v"
                         else -> ""
                     }
+                    if (extension.isBlank() || !(contentType.startsWith("video/") || videoExtensions.contains(pathExtension))) {
                         throw IOException("The server did not return a supported video file. Use a direct MP4/MOV/WebM/MKV link.")
                     }
                     val maxBytes = 1024L * 1024L * 1024L

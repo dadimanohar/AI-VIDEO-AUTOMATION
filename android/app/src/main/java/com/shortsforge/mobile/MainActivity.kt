@@ -26,6 +26,10 @@ import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import android.view.Gravity
 import android.view.View
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.*
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -103,6 +107,7 @@ class MainActivity : ComponentActivity() {
     private var durationMs = 0L
     private var transcript = ""
     private var sourceUrlText = ""
+    private var youtubeVideoId = ""
     private var clipDurationSeconds = 60
     private var startText = "0"
     private var endText = "30"
@@ -118,6 +123,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var transcriptEdit: EditText
     private lateinit var sourceUrlEdit: EditText
     private lateinit var sourceLinkStatus: TextView
+    private lateinit var youtubePreview: WebView
     private lateinit var clipDurationSpinner: Spinner
     private lateinit var startEdit: EditText
     private lateinit var endEdit: EditText
@@ -147,7 +153,13 @@ class MainActivity : ComponentActivity() {
             if (::videoNameView.isInitialized) {
                 videoNameView.text = videoName
                 videoDurationView.text = if (durationMs > 0) "Duration  " + clock(durationMs / 1000.0) else "Android-supported video"
+                youtubeVideoId = ""
+                if (::youtubePreview.isInitialized) {
+                    youtubePreview.stopLoading()
+                    youtubePreview.visibility = View.GONE
+                }
                 playerView.visibility = View.VISIBLE
+                sourceLinkStatus.text = "Local video selected. This file is the active editable source."
                 player?.setMediaItem(MediaItem.fromUri(uri))
                 player?.prepare()
                 player?.playWhenReady = false
@@ -169,12 +181,18 @@ class MainActivity : ComponentActivity() {
 
     override fun onPause() {
         player?.pause()
+        if (::youtubePreview.isInitialized) youtubePreview.onPause()
         super.onPause()
     }
 
     override fun onDestroy() {
         try { transformer?.cancel() } catch (_: Exception) { }
         player?.release()
+        if (::youtubePreview.isInitialized) {
+            youtubePreview.stopLoading()
+            youtubePreview.loadUrl("about:blank")
+            youtubePreview.destroy()
+        }
         executor.shutdownNow()
         super.onDestroy()
     }
@@ -189,16 +207,27 @@ class MainActivity : ComponentActivity() {
         body.addView(text("Turn footage into a Short.", 25f, ink, true).apply { setPadding(0, dp(12), 0, dp(4)) })
         body.addView(text("Choose a source, find a moment, then edit and export.", 14f, muted))
 
-        val source = card(body, "01  •  SOURCE VIDEO", "Select a clip from your phone. The original remains unchanged.")
+        val source = card(body, "01  •  SOURCE VIDEO", "Choose a video file, an authorised direct media URL, or preview a YouTube link.")
         source.addView(button("Choose video", true) { pickVideo.launch(arrayOf("video/*")) }, full())
         source.addView(label("VIDEO LINK"))
         sourceUrlEdit = input("Paste a YouTube URL or a direct video file URL", sourceUrlText, false)
         sourceUrlEdit.addTextChangedListener(watcher { sourceUrlText = it })
         source.addView(sourceUrlEdit, full())
-        source.addView(button("Check / import video link", false) { handleSourceLink() }, full(dp(8)))
-        sourceLinkStatus = text("Direct MP4/MOV/WebM file links can be imported. YouTube links are checked and opened through YouTube; import the permitted source video separately.", 11f, muted)
+        source.addView(button("Load URL / YouTube preview", false) { handleSourceLink() }, full(dp(8)))
+        sourceLinkStatus = text("YouTube links load an official in-app preview only. The YouTube player/API does not provide an editable MP4 source. For automatic clipping, select an original video file or an authorised direct media-file URL.", 11f, muted)
         sourceLinkStatus.setPadding(0, dp(7), 0, dp(4))
         source.addView(sourceLinkStatus)
+        youtubePreview = WebView(this).apply {
+            visibility = View.GONE
+            setBackgroundColor(Color.BLACK)
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            settings.mediaPlaybackRequiresUserGesture = true
+            settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            webViewClient = WebViewClient()
+            webChromeClient = WebChromeClient()
+        }
+        source.addView(youtubePreview, LinearLayout.LayoutParams(-1, dp(220)).apply { topMargin = dp(10) })
         videoNameView = text(if (videoName.isBlank()) "No video selected" else videoName, 14f, ink, true).apply { setPadding(0, dp(12), 0, dp(3)) }
         source.addView(videoNameView)
         videoDurationView = text(if (durationMs > 0) "Duration  " + clock(durationMs / 1000.0) else "MP4, MOV and Android-supported formats", 12f, muted)
@@ -540,6 +569,53 @@ class MainActivity : ComponentActivity() {
         return if (output.isNotEmpty()) output.toString().trim() else normalized.trim()
     }
 
+    private fun extractYouTubeVideoId(uri: android.net.Uri): String? {
+        val host = (uri.host ?: "").lowercase(Locale.US)
+        val isYouTubeHost = host == "youtu.be" ||
+            host == "youtube.com" || host.endsWith(".youtube.com") ||
+            host == "youtube-nocookie.com" || host.endsWith(".youtube-nocookie.com")
+        if (!isYouTubeHost) return null
+
+        val segments = uri.pathSegments
+        val candidate = when {
+            host == "youtu.be" -> segments.firstOrNull()
+            segments.firstOrNull() in setOf("shorts", "embed", "live", "v") -> segments.getOrNull(1)
+            else -> uri.getQueryParameter("v")
+        }
+        return candidate?.takeIf { Regex("^[A-Za-z0-9_-]{11}$").matches(it) }
+    }
+
+    private fun showYouTubePreview(videoId: String) {
+        youtubeVideoId = videoId
+        val html = """
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<style>
+html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}
+.player{position:relative;width:100%;height:100%;background:#000}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+</style>
+</head>
+<body>
+<div class="player">
+<iframe
+ src="https://www.youtube.com/embed/$videoId?playsinline=1&rel=0&enablejsapi=1"
+ title="YouTube video player"
+ allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+ referrerpolicy="strict-origin-when-cross-origin"
+ allowfullscreen>
+</iframe>
+</div>
+</body>
+</html>
+""".trimIndent()
+        youtubePreview.visibility = View.VISIBLE
+        playerView.visibility = View.GONE
+        youtubePreview.loadDataWithBaseURL("https://www.youtube.com/", html, "text/html", "UTF-8", null)
+    }
+
     private fun handleSourceLink() {
         val raw = sourceUrlEdit.text.toString().trim()
         if (raw.isBlank()) {
@@ -554,6 +630,11 @@ class MainActivity : ComponentActivity() {
         val host = uri.host!!.lowercase(Locale.US)
         val youtube = host == "youtu.be" || host == "youtube.com" || host.endsWith(".youtube.com") || host == "youtube-nocookie.com" || host.endsWith(".youtube-nocookie.com")
         if (youtube) {
+            val videoId = extractYouTubeVideoId(uri)
+            if (videoId.isNullOrBlank()) {
+                setStatus("This YouTube link does not contain a valid video ID. Paste a standard watch, youtu.be, Shorts, live or embed URL.")
+                return
+            }
             if (busy) return
             busy = true
             refreshFooter()
@@ -571,11 +652,22 @@ class MainActivity : ComponentActivity() {
                         val title = json.optString("title", "YouTube video")
                         val author = json.optString("author_name", "Unknown channel")
                         runOnUiThread {
-                            sourceLinkStatus.text = title + "\nChannel: " + author + "\nYouTube's official public embed/metadata service does not provide a downloadable source video here. Choose the original video file or import a direct media URL you are authorised to use. You can import an SRT/VTT captions file below."
-                            setStatus("YouTube video identified. Open it on YouTube, then select the permitted source video and its captions.")
+                            // A YouTube preview is not an editable source file. Clear any old file
+                            // so the user can never export a different, previously selected video by mistake.
+                            selectedVideo = null
+                            durationMs = 0L
+                            videoName = ""
+                            startText = "0"
+                            endText = "60"
+                            if (::playerView.isInitialized) playerView.visibility = View.GONE
+                            player?.clearMediaItems()
+                            if (::videoNameView.isInitialized) videoNameView.text = "YouTube preview loaded · source file not imported"
+                            if (::videoDurationView.isInitialized) videoDurationView.text = "Official YouTube player preview · not available for MP4 export"
+                            showYouTubePreview(videoId)
+                            sourceLinkStatus.text = title + "\nChannel: " + author + "\nPreview loaded inside ShortsForge. YouTube does not expose the original MP4/audio to this editor through its official Player/Data API. To analyse speech and export Shorts, select the original file or an authorised direct media-file URL."
+                            setStatus("YouTube preview loaded in the app. This link alone is not an editable source, so export is disabled until an authorised video file is selected.")
                             busy = false
                             refreshFooter()
-                            try { startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (_: Exception) { }
                         }
                     }
                 } catch (e: Exception) {
@@ -587,6 +679,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
             return
+        }
+        youtubeVideoId = ""
+        if (::youtubePreview.isInitialized) {
+            youtubePreview.stopLoading()
+            youtubePreview.visibility = View.GONE
         }
         val ext = uri.lastPathSegment?.substringAfterLast('.', "")?.lowercase(Locale.US) ?: ""
         val videoExtension = ext in setOf("mp4", "mov", "m4v", "webm", "mkv", "3gp")

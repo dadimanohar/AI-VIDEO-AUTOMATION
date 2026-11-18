@@ -1284,6 +1284,7 @@ $chunkText
         refreshFooter()
         setStatus("AI is searching for clear hooks and complete clip moments…")
         executor.execute {
+            var handedOffToLocal = false
             try {
                 val prompt = """
 You are a professional interview, podcast and long-form video editor. Find the most valuable moments in this transcript.
@@ -1316,6 +1317,7 @@ $data
                 }
             } catch (e: Exception) {
                 val useLocal = isConnectivityFailure(e) && try { qwenModelFile().let { it.exists() && it.length() >= 420_000_000L } } catch (_: Exception) { false }
+                if (useLocal) handedOffToLocal = true
                 runOnUiThread {
                     if (useLocal) {
                         provider = 3
@@ -1327,7 +1329,7 @@ $data
                     }
                 }
             } finally {
-                runOnUiThread { busy = false; refreshFooter() }
+                if (!handedOffToLocal) runOnUiThread { busy = false; refreshFooter() }
             }
         }
     }

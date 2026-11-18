@@ -26,10 +26,6 @@ import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import android.view.Gravity
 import android.view.View
-import android.webkit.WebChromeClient
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.*
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -106,8 +102,6 @@ class MainActivity : ComponentActivity() {
     private var videoName = ""
     private var durationMs = 0L
     private var transcript = ""
-    private var sourceUrlText = ""
-    private var youtubeVideoId = ""
     private var clipDurationSeconds = 60
     private var startText = "0"
     private var endText = "30"
@@ -121,9 +115,6 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var root: LinearLayout
     private lateinit var transcriptEdit: EditText
-    private lateinit var sourceUrlEdit: EditText
-    private lateinit var sourceLinkStatus: TextView
-    private lateinit var youtubePreview: WebView
     private lateinit var clipDurationSpinner: Spinner
     private lateinit var startEdit: EditText
     private lateinit var endEdit: EditText
@@ -153,13 +144,7 @@ class MainActivity : ComponentActivity() {
             if (::videoNameView.isInitialized) {
                 videoNameView.text = videoName
                 videoDurationView.text = if (durationMs > 0) "Duration  " + clock(durationMs / 1000.0) else "Android-supported video"
-                youtubeVideoId = ""
-                if (::youtubePreview.isInitialized) {
-                    youtubePreview.stopLoading()
-                    youtubePreview.visibility = View.GONE
-                }
                 playerView.visibility = View.VISIBLE
-                sourceLinkStatus.text = "Local video selected. This file is the active editable source."
                 player?.setMediaItem(MediaItem.fromUri(uri))
                 player?.prepare()
                 player?.playWhenReady = false
@@ -181,27 +166,17 @@ class MainActivity : ComponentActivity() {
 
     override fun onPause() {
         player?.pause()
-        if (::youtubePreview.isInitialized) youtubePreview.onPause()
         super.onPause()
     }
 
     override fun onDestroy() {
         try { transformer?.cancel() } catch (_: Exception) { }
         player?.release()
-        if (::youtubePreview.isInitialized) {
-            youtubePreview.stopLoading()
-            youtubePreview.loadUrl("about:blank")
-            youtubePreview.destroy()
-        }
         executor.shutdownNow()
         super.onDestroy()
     }
 
     private fun showEditor() {
-        if (::youtubePreview.isInitialized) {
-            youtubePreview.stopLoading()
-            youtubePreview.destroy()
-        }
         root.removeAllViews()
         root.addView(toolbar("ShortsForge", "MOBILE SHORTS STUDIO", "Settings") { showSettings() })
         val scroll = ScrollView(this).apply { clipToPadding = false }
@@ -211,27 +186,8 @@ class MainActivity : ComponentActivity() {
         body.addView(text("Turn footage into a Short.", 25f, ink, true).apply { setPadding(0, dp(12), 0, dp(4)) })
         body.addView(text("Choose a source, find a moment, then edit and export.", 14f, muted))
 
-        val source = card(body, "01  •  SOURCE VIDEO", "Choose a video file, an authorised direct media URL, or preview a YouTube link.")
+        val source = card(body, "01  •  SOURCE VIDEO", "Choose a video file from your device to start editing.")
         source.addView(button("Choose video", true) { pickVideo.launch(arrayOf("video/*")) }, full())
-        source.addView(label("VIDEO LINK"))
-        sourceUrlEdit = input("Paste a YouTube URL or a direct video file URL", sourceUrlText, false)
-        sourceUrlEdit.addTextChangedListener(watcher { sourceUrlText = it })
-        source.addView(sourceUrlEdit, full())
-        source.addView(button("Load URL / YouTube preview", false) { handleSourceLink() }, full(dp(8)))
-        sourceLinkStatus = text("YouTube links load an official in-app preview only. The YouTube player/API does not provide an editable MP4 source. For automatic clipping, select an original video file or an authorised direct media-file URL.", 11f, muted)
-        sourceLinkStatus.setPadding(0, dp(7), 0, dp(4))
-        source.addView(sourceLinkStatus)
-        youtubePreview = WebView(this).apply {
-            visibility = View.GONE
-            setBackgroundColor(Color.BLACK)
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.mediaPlaybackRequiresUserGesture = true
-            settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
-            webViewClient = WebViewClient()
-            webChromeClient = WebChromeClient()
-        }
-        source.addView(youtubePreview, LinearLayout.LayoutParams(-1, dp(220)).apply { topMargin = dp(10) })
         videoNameView = text(if (videoName.isBlank()) "No video selected" else videoName, 14f, ink, true).apply { setPadding(0, dp(12), 0, dp(3)) }
         source.addView(videoNameView)
         videoDurationView = text(if (durationMs > 0) "Duration  " + clock(durationMs / 1000.0) else "MP4, MOV and Android-supported formats", 12f, muted)
@@ -249,8 +205,6 @@ class MainActivity : ComponentActivity() {
         if (selectedVideo != null) {
             player?.setMediaItem(MediaItem.fromUri(selectedVideo!!))
             player?.prepare()
-        } else if (youtubeVideoId.isNotBlank()) {
-            showYouTubePreview(youtubeVideoId)
         }
 
         val ai = card(body, "02  •  FIND THE BEST MOMENT", "Get timestamped highlights from the video's speech.")
@@ -263,7 +217,7 @@ class MainActivity : ComponentActivity() {
         transcriptEdit = input("Paste a timestamped transcript here", transcript, true).apply { minLines = 4 }
         transcriptEdit.addTextChangedListener(watcher { transcript = it })
         ai.addView(transcriptEdit, full())
-        ai.addView(text("Auto-transcription needs a Groq or OpenAI key. You can also import YouTube captions as SRT/VTT. Claude can analyse a timestamped transcript.", 12f, muted).apply { setPadding(0, dp(8), 0, 0) })
+        ai.addView(text("Auto-transcription needs a Groq or OpenAI key. You can also import subtitle or caption files as SRT/VTT. Claude can analyse a timestamped transcript.", 12f, muted).apply { setPadding(0, dp(8), 0, 0) })
         statusView = text(statusMessage, 13f, accent, true).apply { setPadding(0, dp(12), 0, dp(2)) }
         ai.addView(statusView)
         highlightsView = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -328,7 +282,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showSettings() {
-        if (::youtubePreview.isInitialized) youtubePreview.onPause()
         player?.pause()
         root.removeAllViews()
         root.addView(toolbar("Settings", "AI PROVIDER & API ACCESS", "Back") { showEditor() })
@@ -575,214 +528,6 @@ class MainActivity : ComponentActivity() {
             }
         }
         return if (output.isNotEmpty()) output.toString().trim() else normalized.trim()
-    }
-
-    private fun extractYouTubeVideoId(uri: android.net.Uri): String? {
-        val host = (uri.host ?: "").lowercase(Locale.US)
-        val isYouTubeHost = host == "youtu.be" ||
-            host == "youtube.com" || host.endsWith(".youtube.com") ||
-            host == "youtube-nocookie.com" || host.endsWith(".youtube-nocookie.com")
-        if (!isYouTubeHost) return null
-
-        val segments = uri.pathSegments
-        val candidate = when {
-            host == "youtu.be" -> segments.firstOrNull()
-            segments.firstOrNull() in setOf("shorts", "embed", "live", "v") -> segments.getOrNull(1)
-            else -> uri.getQueryParameter("v")
-        }
-        return candidate?.takeIf { Regex("^[A-Za-z0-9_-]{11}$").matches(it) }
-    }
-
-    private fun showYouTubePreview(videoId: String) {
-        youtubeVideoId = videoId
-        val html = """
-<!doctype html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<style>
-html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}
-.player{position:relative;width:100%;height:100%;background:#000}
-iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-</style>
-</head>
-<body>
-<div class="player">
-<iframe
- src="https://www.youtube.com/embed/$videoId?playsinline=1&rel=0&enablejsapi=1"
- title="YouTube video player"
- allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
- referrerpolicy="strict-origin-when-cross-origin"
- allowfullscreen>
-</iframe>
-</div>
-</body>
-</html>
-""".trimIndent()
-        youtubePreview.visibility = View.VISIBLE
-        playerView.visibility = View.GONE
-        youtubePreview.loadDataWithBaseURL("https://www.youtube.com/", html, "text/html", "UTF-8", null)
-    }
-
-    private fun handleSourceLink() {
-        val raw = sourceUrlEdit.text.toString().trim()
-        if (raw.isBlank()) {
-            setStatus("Paste a video URL first.")
-            return
-        }
-        val uri = try { android.net.Uri.parse(raw) } catch (_: Exception) { null }
-        if (uri == null || uri.scheme !in listOf("http", "https") || uri.host.isNullOrBlank()) {
-            setStatus("Enter a valid https:// video link.")
-            return
-        }
-        val host = uri.host!!.lowercase(Locale.US)
-        val youtube = host == "youtu.be" || host == "youtube.com" || host.endsWith(".youtube.com") || host == "youtube-nocookie.com" || host.endsWith(".youtube-nocookie.com")
-        if (youtube) {
-            val videoId = extractYouTubeVideoId(uri)
-            if (videoId.isNullOrBlank()) {
-                setStatus("This YouTube link does not contain a valid video ID. Paste a standard watch, youtu.be, Shorts, live or embed URL.")
-                return
-            }
-            if (busy) return
-            busy = true
-            refreshFooter()
-            setStatus("Checking the YouTube link using its public video metadata…")
-            executor.execute {
-                try {
-                    val encoded = java.net.URLEncoder.encode(raw, "UTF-8")
-                    val request = Request.Builder()
-                        .url("https://www.youtube.com/oembed?url=" + encoded + "&format=json")
-                        .get().build()
-                    http.newCall(request).execute().use { response ->
-                        val body = response.body?.string() ?: ""
-                        if (!response.isSuccessful) throw IOException("YouTube could not return public metadata (HTTP " + response.code + "). The video may be private, unavailable or non-embeddable.")
-                        val json = JSONObject(body)
-                        val title = json.optString("title", "YouTube video")
-                        val author = json.optString("author_name", "Unknown channel")
-                        runOnUiThread {
-                            // A YouTube preview is not an editable source file. Clear any old file
-                            // so the user can never export a different, previously selected video by mistake.
-                            selectedVideo = null
-                            durationMs = 0L
-                            videoName = ""
-                            startText = "0"
-                            endText = "60"
-                            if (::playerView.isInitialized) playerView.visibility = View.GONE
-                            player?.clearMediaItems()
-                            if (::videoNameView.isInitialized) videoNameView.text = "YouTube preview loaded · source file not imported"
-                            if (::videoDurationView.isInitialized) videoDurationView.text = "Official YouTube player preview · not available for MP4 export"
-                            showYouTubePreview(videoId)
-                            sourceLinkStatus.text = title + "\nChannel: " + author + "\nPreview loaded inside ShortsForge. YouTube does not expose the original MP4/audio to this editor through its official Player/Data API. To analyse speech and export Shorts, select the original file or an authorised direct media-file URL."
-                            setStatus("YouTube preview loaded in the app. This link alone is not an editable source, so export is disabled until an authorised video file is selected.")
-                            busy = false
-                            refreshFooter()
-                        }
-                    }
-                } catch (e: Exception) {
-                    runOnUiThread {
-                        busy = false
-                        refreshFooter()
-                        setStatus("YouTube link check failed: " + (e.message ?: "unknown error"))
-                    }
-                }
-            }
-            return
-        }
-        youtubeVideoId = ""
-        if (::youtubePreview.isInitialized) {
-            youtubePreview.stopLoading()
-            youtubePreview.visibility = View.GONE
-        }
-        val ext = uri.lastPathSegment?.substringAfterLast('.', "")?.lowercase(Locale.US) ?: ""
-        val videoExtension = ext in setOf("mp4", "mov", "m4v", "webm", "mkv", "3gp")
-        if (!videoExtension) {
-            setStatus("For a direct link, use a URL that returns a video file (MP4, MOV, M4V, WebM or MKV).")
-            return
-        }
-        android.app.AlertDialog.Builder(this)
-            .setTitle("Confirm media permission")
-            .setMessage("Only import this direct video file if you own it or have permission to download and edit it. Continue?")
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton("Continue") { _, _ -> downloadDirectVideo(raw) }
-            .show()
-    }
-
-    private fun downloadDirectVideo(url: String) {
-        if (busy) return
-        busy = true
-        refreshFooter()
-        setStatus("Downloading the authorised direct video file…")
-        executor.execute {
-            var saved: File? = null
-            try {
-                val request = Request.Builder().url(url).header("User-Agent", "ShortsForge-Mobile/1.2").get().build()
-                http.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) throw IOException("Video server returned HTTP " + response.code)
-                    val mime = response.header("Content-Type")?.substringBefore(';')?.trim()?.lowercase(Locale.US) ?: ""
-                    val linkedExtension = android.net.Uri.parse(url).lastPathSegment?.substringAfterLast('.', "")?.lowercase(Locale.US) ?: ""
-                    val knownVideoExtension = linkedExtension in setOf("mp4", "mov", "m4v", "webm", "mkv", "3gp")
-                    if (!mime.startsWith("video/") && !(mime == "application/octet-stream" && knownVideoExtension)) {
-                        throw IOException("This URL did not return a video file (content type: " + mime + "). Use a direct MP4/MOV/WebM link.")
-                    }
-                    val length = response.body?.contentLength() ?: -1L
-                    val maxBytes = 1024L * 1024L * 1024L
-                    if (length > maxBytes) throw IOException("This mobile importer currently limits direct video files to 1 GB.")
-                    val dir = File(getExternalFilesDir(Environment.DIRECTORY_MOVIES) ?: filesDir, "ShortsForgeImports")
-                    if (!dir.exists() && !dir.mkdirs()) throw IOException("Could not create the import folder.")
-                    saved = File(dir, "ShortsForge_Source_" + System.currentTimeMillis() + ".mp4")
-                    val body = response.body ?: throw IOException("The video server returned an empty body.")
-                    body.byteStream().use { input ->
-                        saved!!.outputStream().buffered().use { output ->
-                            val buffer = ByteArray(64 * 1024)
-                            var total = 0L
-                            var lastUpdate = 0L
-                            while (true) {
-                                val count = input.read(buffer)
-                                if (count < 0) break
-                                total += count
-                                if (total > maxBytes) throw IOException("Video exceeded the 1 GB import limit.")
-                                output.write(buffer, 0, count)
-                                val now = System.currentTimeMillis()
-                                if (now - lastUpdate > 700) {
-                                    lastUpdate = now
-                                    val pct = if (length > 0) (total * 100 / length).toInt().coerceIn(0, 99) else -1
-                                    runOnUiThread { setStatus(if (pct >= 0) "Downloading video… " + pct + "%" else "Downloading video… " + (total / (1024 * 1024)) + " MB") }
-                                }
-                            }
-                        }
-                    }
-                    if (saved!!.length() == 0L) throw IOException("The downloaded video file is empty.")
-                }
-                val file = saved!!
-                val newUri = FileProvider.getUriForFile(this, packageName + ".fileprovider", file)
-                val newDuration = readDuration(newUri)
-                runOnUiThread {
-                    selectedVideo = newUri
-                    videoName = file.name
-                    durationMs = newDuration
-                    startText = "0"
-                    endText = if (durationMs > 0) fmtNumber(minOf(60_000L, durationMs) / 1000.0) else "60"
-                    videoNameView.text = videoName
-                    videoDurationView.text = if (durationMs > 0) "Duration  " + clock(durationMs / 1000.0) else "Direct video link imported"
-                    playerView.visibility = View.VISIBLE
-                    player?.setMediaItem(MediaItem.fromUri(newUri))
-                    player?.prepare()
-                    startEdit.setText(startText)
-                    endEdit.setText(endText)
-                    sourceLinkStatus.text = "Video imported successfully: " + file.name
-                    busy = false
-                    refreshFooter()
-                    setStatus("Direct video imported. Analyse its transcript and select a 60s or 90s highlight.")
-                }
-            } catch (e: Exception) {
-                try { saved?.delete() } catch (_: Exception) { }
-                runOnUiThread {
-                    busy = false
-                    refreshFooter()
-                    setStatus("Video link import failed: " + (e.message ?: "unknown download error"))
-                }
-            }
-        }
     }
 
     private fun offlineModelsAvailable(): Boolean {

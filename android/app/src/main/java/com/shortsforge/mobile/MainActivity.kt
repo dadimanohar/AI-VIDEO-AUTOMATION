@@ -102,6 +102,9 @@ class MainActivity : ComponentActivity() {
     private var videoName = ""
     private var durationMs = 0L
     private var transcript = ""
+    private var highlightItems: List<Highlight> = emptyList()
+    private var selectedHighlightIndex = -1
+    private var previewStopTask: Runnable? = null
     private var clipDurationSeconds = 60
     private var startText = "0"
     private var endText = "30"
@@ -223,7 +226,8 @@ class MainActivity : ComponentActivity() {
         highlightsView = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         ai.addView(highlightsView)
 
-        val edit = card(body, "03  •  EDIT YOUR SHORT", "Select the highlight length, review its time range, then export.")
+        val edit = card(body, "03  •  EDIT YOUR SHORT", "Select the highlight length, preview the exact clip, then export.")
+        edit.addView(button("Preview selected clip", false) { previewSelectedClip() }, full())
         edit.addView(label("AI HIGHLIGHT CLIP LENGTH"))
         clipDurationSpinner = spinner(listOf("60 seconds", "90 seconds"))
         clipDurationSpinner.setSelection(if (clipDurationSeconds == 90) 1 else 0)
@@ -466,6 +470,31 @@ class MainActivity : ComponentActivity() {
             retriever.setDataSource(this, uri)
             retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
         } catch (_: Exception) { 0L } finally { try { retriever.release() } catch (_: Exception) { } }
+    }
+
+    private fun previewSelectedClip() {
+        val uri = selectedVideo
+        if (uri == null) { setStatus("Choose a video first."); return }
+        val from = startEdit.text.toString().toDoubleOrNull()
+        val to = endEdit.text.toString().toDoubleOrNull()
+        if (from == null || to == null || from < 0 || to <= from || (durationMs > 0 && to * 1000 > durationMs + 250)) {
+            setStatus("Set a valid clip range before previewing."); return
+        }
+        val exo = player ?: run { setStatus("Video preview is not ready."); return }
+        try {
+            previewStopTask?.let { handler.removeCallbacks(it) }
+            exo.seekTo((from * 1000).toLong())
+            exo.playWhenReady = true
+            exo.play()
+            val stop = Runnable {
+                exo.pause()
+                exo.seekTo((to * 1000).toLong())
+                setStatus("Preview finished. Export when ready.")
+            }
+            previewStopTask = stop
+            handler.postDelayed(stop, ((to - from) * 1000).toLong())
+            setStatus("Previewing selected clip: " + clock(from) + " to " + clock(to))
+        } catch (e: Exception) { setStatus("Preview failed: " + (e.message ?: "unknown error")) }
     }
 
     private fun applyHighlightWindow(anchorStart: Double, anchorEnd: Double) {
@@ -1246,6 +1275,8 @@ $data
 
     private fun showHighlights(items: List<Highlight>) {
         if (!::highlightsView.isInitialized) return
+        highlightItems = items
+        if (selectedHighlightIndex !in items.indices) selectedHighlightIndex = if (items.isNotEmpty()) 0 else -1
         highlightsView.removeAllViews()
         if (items.isEmpty()) {
             highlightsView.addView(text("No timestamped suggestions to show.", 12f, muted).apply { setPadding(0, dp(8), 0, 0) })
@@ -1255,15 +1286,17 @@ $data
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(dp(12), dp(11), dp(12), dp(11))
-                background = shape(Color.rgb(248, 249, 255), 12, border)
+                background = shape(if (index == selectedHighlightIndex) Color.rgb(238, 236, 255) else Color.rgb(248, 249, 255), 12, if (index == selectedHighlightIndex) accent else border)
                 setOnClickListener {
                     if (item.start != null && item.end != null) {
+                        selectedHighlightIndex = index
                         applyHighlightWindow(item.start, item.end)
-                        setStatus("Suggestion " + (index + 1) + " selected. A " + clipDurationSeconds + "-second clip window is ready. Review and export.")
+                        showHighlights(highlightItems)
+                        setStatus("Suggestion " + (index + 1) + " selected. Preview the clip or export.")
                     } else setStatus("This suggestion has no exact timestamps. Use a timestamped transcript.")
                 }
             }
-            row.addView(text((index + 1).toString() + ". " + item.hook, 14f, ink, true))
+            row.addView(text((index + 1).toString() + (if (index == selectedHighlightIndex) "  ✓ SELECTED" else "") + ". " + item.hook, 14f, ink, true))
             val meta = item.category + if (item.importance > 0) "  ·  Importance " + item.importance + "/10" else ""
             row.addView(text(meta, 11f, muted, true).apply { setPadding(0, dp(3), 0, 0) })
             row.addView(text(if (item.start != null && item.end != null) "Key moment: " + clock(item.start) + "  →  " + clock(item.end) + "  ·  Tap for " + clipDurationSeconds + "s clip" else "Timestamp unavailable", 12f, accent, true).apply { setPadding(0, dp(4), 0, 0) })

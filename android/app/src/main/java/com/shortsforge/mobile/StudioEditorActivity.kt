@@ -62,7 +62,7 @@ class StudioEditorActivity : ComponentActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private val progressHolder = ProgressHolder()
 
-    private data class ClipSegment(val id: Int, var startMs: Long, var endMs: Long)
+    private data class ClipSegment(val id: Int, var startMs: Long, var endMs: Long, val title: String = "")
 
     private lateinit var sourceUri: Uri
     private var sourceDurationMs = 0L
@@ -124,10 +124,26 @@ class StudioEditorActivity : ComponentActivity() {
         if (raw.isNullOrBlank()) { finish(); return }
         sourceUri = Uri.parse(raw)
         sourceDurationMs = intent.getLongExtra(EXTRA_SOURCE_DURATION, 0L)
-        val from = intent.getLongExtra(EXTRA_START_MS, 0L).coerceAtLeast(0L)
-        val suggestedEnd = intent.getLongExtra(EXTRA_END_MS, 60_000L)
-        val to = if (sourceDurationMs > 0) suggestedEnd.coerceIn(from + 500L, sourceDurationMs) else maxOf(from + 500L, suggestedEnd)
-        segments.add(ClipSegment(1, from, to))
+        val rawRanges = intent.getLongArrayExtra(EXTRA_CLIP_RANGES_MS)
+        val clipTitles = intent.getStringArrayListExtra(EXTRA_CLIP_TITLES) ?: arrayListOf()
+        if (rawRanges != null && rawRanges.size >= 2 && rawRanges.size % 2 == 0) {
+            var id = 1
+            for (i in rawRanges.indices step 2) {
+                val from = rawRanges[i].coerceAtLeast(0L)
+                val requestedEnd = rawRanges[i + 1]
+                val to = if (sourceDurationMs > 0) requestedEnd.coerceAtMost(sourceDurationMs) else requestedEnd
+                if (to - from >= 500L) {
+                    segments.add(ClipSegment(id++, from, to, clipTitles.getOrNull(i / 2).orEmpty()))
+                }
+            }
+        }
+        if (segments.isEmpty()) {
+            val from = intent.getLongExtra(EXTRA_START_MS, 0L).coerceAtLeast(0L)
+            val suggestedEnd = intent.getLongExtra(EXTRA_END_MS, 60_000L)
+            val to = if (sourceDurationMs > 0) suggestedEnd.coerceIn(from + 500L, sourceDurationMs) else maxOf(from + 500L, suggestedEnd)
+            segments.add(ClipSegment(1, from, to, "Selected highlight"))
+        }
+        nextSegmentId = (segments.maxOfOrNull { it.id } ?: 0) + 1
         root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(backgroundColor)
@@ -381,8 +397,9 @@ class StudioEditorActivity : ComponentActivity() {
         if (!::timelineTrack.isInitialized) return
         timelineTrack.removeAllViews()
         segments.forEachIndexed { index, segment ->
+            val topicLabel = segment.title.take(22).ifBlank { "Selected range" }
             val chip = actionButton(
-                "CLIP " + (index + 1) + "\n" + clock(segment.startMs) + " — " + clock(segment.endMs),
+                "CLIP " + (index + 1) + "  ·  " + topicLabel + "\n" + clock(segment.startMs) + " — " + clock(segment.endMs),
                 index == selectedSegmentIndex
             ) {
                 selectedSegmentIndex = index
@@ -429,8 +446,8 @@ class StudioEditorActivity : ComponentActivity() {
             return
         }
         saveUndo()
-        val left = ClipSegment(seg.id, seg.startMs, point)
-        val right = ClipSegment(nextSegmentId++, point, seg.endMs)
+        val left = ClipSegment(seg.id, seg.startMs, point, seg.title)
+        val right = ClipSegment(nextSegmentId++, point, seg.endMs, if (seg.title.isBlank()) "" else seg.title + " · part 2")
         segments[selectedSegmentIndex] = left
         segments.add(selectedSegmentIndex + 1, right)
         selectedSegmentIndex += 1
@@ -464,7 +481,7 @@ class StudioEditorActivity : ComponentActivity() {
                     setStatus("Invalid clip range. Check the source duration and try again.")
                 } else {
                     saveUndo()
-                    segments.add(ClipSegment(nextSegmentId++, (a * 1000).toLong(), (b * 1000).toLong()))
+                    segments.add(ClipSegment(nextSegmentId++, (a * 1000).toLong(), (b * 1000).toLong(), "Added clip"))
                     selectedSegmentIndex = segments.lastIndex
                     player?.pause()
                     player?.seekTo(segments.last().startMs)
@@ -859,5 +876,7 @@ class StudioEditorActivity : ComponentActivity() {
         const val EXTRA_SOURCE_DURATION = "shortsforge.sourceDurationMs"
         const val EXTRA_START_MS = "shortsforge.startMs"
         const val EXTRA_END_MS = "shortsforge.endMs"
+        const val EXTRA_CLIP_RANGES_MS = "shortsforge.clipRangesMs"
+        const val EXTRA_CLIP_TITLES = "shortsforge.clipTitles"
     }
 }

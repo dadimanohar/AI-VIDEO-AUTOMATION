@@ -101,6 +101,7 @@ class MainActivity : ComponentActivity() {
         .callTimeout(40, TimeUnit.MINUTES)
         .build()
     private val qwenModelName = "Qwen3-0.6B-Q4_0.gguf"
+    private val videoExtensions = setOf("mp4", "mov", "m4v", "webm", "mkv", "3gp")
     private val whisperModelName = "ggml-base.bin"
     private val handler = Handler(Looper.getMainLooper())
     private val progressHolder = ProgressHolder()
@@ -1485,13 +1486,10 @@ $data
                     val body = response.body ?: throw IOException("The video URL returned an empty response.")
                     val contentType = body.contentType()?.let { it.toString().substringBefore(";").lowercase(Locale.US) }.orEmpty()
                     val pathExtension = response.request.url.encodedPath.substringAfterLast('.', "").lowercase(Locale.US)
-                    val disposition = response.header("Content-Disposition").orEmpty()
-                    val dispositionName = Regex("""filename\\*?=(?:UTF-8''|")?([^;"]+)""", RegexOption.IGNORE_CASE)
-                        .find(disposition)?.groupValues?.getOrNull(1)?.trim()
                     val dispositionExtension = dispositionName?.substringAfterLast('.', "")?.lowercase(Locale.US).orEmpty()
                     val extension = when {
-                        VIDEO_EXTENSIONS.contains(pathExtension) -> pathExtension
-                        VIDEO_EXTENSIONS.contains(dispositionExtension) -> dispositionExtension
+                        videoExtensions.contains(pathExtension) -> pathExtension
+                        videoExtensions.contains(dispositionExtension) -> dispositionExtension
                         contentType == "video/mp4" -> "mp4"
                         contentType == "video/quicktime" -> "mov"
                         contentType == "video/webm" -> "webm"
@@ -1500,7 +1498,7 @@ $data
                         contentType == "video/x-m4v" -> "m4v"
                         else -> ""
                     }
-                    if (extension.isBlank() || !(contentType.startsWith("video/") || VIDEO_EXTENSIONS.contains(pathExtension) || VIDEO_EXTENSIONS.contains(dispositionExtension))) {
+                    if (extension.isBlank() || !(contentType.startsWith("video/") || videoExtensions.contains(pathExtension) || videoExtensions.contains(dispositionExtension))) {
                         throw IOException("The server did not return a supported video file. Use a direct MP4/MOV/WebM/MKV link.")
                     }
                     val maxBytes = 1024L * 1024L * 1024L

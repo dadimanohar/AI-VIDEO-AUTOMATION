@@ -933,21 +933,27 @@ class MainActivity : ComponentActivity() {
                     )
                 }
                 val lines = data.lines().filter { it.isNotBlank() }
-                // Eight-line overlap keeps a question at one chunk's end connected to its answer in the next.
+                // Overlapping transcript windows preserve topic boundaries and Q&A context.
                 val chunks = lines.windowed(size = 36, step = 28, partialWindows = true)
                 val chunkTotal = chunks.size
                 val candidates = mutableListOf<Highlight>()
                 for ((index, chunk) in chunks.withIndex()) {
                     val chunkText = chunk.joinToString("\n")
                     val prompt = """
-Find the most important short-form video moments in this timestamped interview transcript.
-Target exported video length: $clipDurationSeconds seconds.
-Return ONLY a JSON array with at most 3 anchor moments:
-[{"start_seconds":120.5,"end_seconds":164.2,"hook":"Short accurate title","reason":"Why this matters","category":"Question and answer","importance_score":9}]
-Find complete question-and-answer exchanges, important announcements, key insights, explanations, surprising facts, predictions and practical advice.
-Include the question when it is needed to understand the answer. Never cut away the context that makes an answer meaningful.
-The anchor start/end must come from the transcript timestamps. Convert mm:ss.cc to seconds from the beginning of the original video. Do not invent or guess times. Do not include partial thoughts.
-Rank importance_score from 1 to 10. No markdown or explanatory text outside the JSON array.
+Build a chronological VIDEO TOPIC MAP for this transcript segment. This is NOT just a top-highlights list.
+Identify every meaningful distinct topic, subtopic, question-and-answer exchange, story, announcement, explanation, example, debate, prediction, practical lesson and conclusion actually discussed in this segment.
+Return ONLY a JSON array with up to 5 distinct topic segments:
+[{"start_seconds":120.5,"end_seconds":164.2,"hook":"Clear specific topic title","reason":"What is discussed and why the viewer may care","category":"Question and answer","importance_score":9}]
+Rules:
+- Put topics in chronological order. Do not rank/reorder them by importance.
+- Use exact start and end boundaries supported by the transcript timestamps. Convert mm:ss.cc to seconds from the beginning of the original video.
+- Each topic must describe a coherent continuous section, not one isolated sentence.
+- Keep each topic suitable for a Short: normally 20–150 seconds and never over 180 seconds. Split a longer discussion into meaningful subtopics where the transcript supports it.
+- Include the question with its answer when needed for context. Preserve complete thoughts.
+- Do not invent timestamps, events, names, facts or topics. Do not duplicate a topic from another segment.
+- Give each title a clear subject, not generic text such as "Important point".
+- importance_score is 1–10. It indicates usefulness, not list order.
+- No markdown and no explanation outside the JSON array.
 Transcript segment $index of $chunkTotal:
 $chunkText
 """.trimIndent()
@@ -955,24 +961,21 @@ $chunkText
                         Llama.complete(
                             model,
                             prompt = prompt,
-                            systemPrompt = "You are a careful factual interview editor. Preserve context. Return strict JSON only.",
-                            maxTokens = 420
+                            systemPrompt = "You are a factual long-form video topic mapper. Cover the segment comprehensively, preserve chronology and timestamps, and return strict JSON only.",
+                            maxTokens = 720
                         )
                     }
                     candidates.addAll(parseHighlights(answer.text))
                     val progress = ((index + 1) * 100 / chunkTotal).coerceIn(1, 100)
-                    setStatus("Offline Qwen3 is analysing transcript chunks… " + progress + "%")
+                    setStatus("Offline Qwen3 is mapping video topics… chunk " + (index + 1) + "/" + chunkTotal + " · " + progress + "%")
                 }
-                val best = candidates
-                    .distinctBy { (it.start?.toInt() ?: -1).toString() + "-" + (it.end?.toInt() ?: -1).toString() }
-                    .sortedByDescending { it.importance }
-                    .take(8)
+                val best = normalizeTopicMap(candidates)
                 runOnUiThread {
                     showHighlights(best)
                     setStatus(if (best.isEmpty()) {
-                        "Qwen3 did not return reliable timestamped highlights. Try a longer transcript or Cloud AI for a stronger analysis."
+                        "Qwen3 did not return reliable timestamped topics. Check transcript timestamps and try a longer transcript."
                     } else {
-                        suggestionSelectedStatus(selectedHighlightIndex.coerceAtLeast(0))
+                        "Video Topic Map ready: " + best.size + " topics found in chronological order. Tap Play or select any topic."
                     })
                 }
             } catch (e: Exception) {

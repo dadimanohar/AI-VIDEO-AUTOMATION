@@ -102,6 +102,7 @@ class MainActivity : ComponentActivity() {
         .build()
     private val qwenModelName = "Qwen3-0.6B-Q4_0.gguf"
     private val videoExtensions = setOf("mp4", "mov", "m4v", "webm", "mkv", "3gp")
+    private val maxTopicMapItems = 60
     private val whisperModelName = "ggml-base.bin"
     private val handler = Handler(Looper.getMainLooper())
     private val progressHolder = ProgressHolder()
@@ -588,6 +589,43 @@ class MainActivity : ComponentActivity() {
             handler.postDelayed(stop, ((to - from) * 1000).toLong())
             setStatus("Previewing selected clip: " + clock(from) + " to " + clock(to))
         } catch (e: Exception) { setStatus("Preview failed: " + (e.message ?: "unknown error")) }
+    }
+
+    private fun playTopicRange(item: Highlight) {
+        val uri = selectedVideo
+        if (uri == null) {
+            setStatus("Choose the source video before playing a topic.")
+            return
+        }
+        val from = item.start
+        val to = item.end
+        if (from == null || to == null || to <= from) {
+            setStatus("This topic does not have valid timestamps.")
+            return
+        }
+        val exo = player ?: run {
+            setStatus("Video preview is not ready.")
+            return
+        }
+        try {
+            previewStopTask?.let { handler.removeCallbacks(it) }
+            selectedHighlightIndex = highlightItems.indexOf(item).coerceAtLeast(0)
+            applyExactHighlightRange(from, to)
+            showHighlights(highlightItems)
+            exo.seekTo((from * 1000.0).toLong())
+            exo.playWhenReady = true
+            exo.play()
+            val stop = Runnable {
+                exo.pause()
+                exo.seekTo((to * 1000.0).toLong())
+                setStatus("Topic preview finished: " + item.hook)
+            }
+            previewStopTask = stop
+            handler.postDelayed(stop, ((to - from) * 1000.0).toLong())
+            setStatus("Playing topic: " + item.hook + " · " + clock(from) + " → " + clock(to))
+        } catch (e: Exception) {
+            setStatus("Could not play topic: " + (e.message ?: "unknown player error"))
+        }
     }
 
     private fun applyExactHighlightRange(start: Double, end: Double) {
@@ -1362,7 +1400,7 @@ $chunkText
             req = Request.Builder().url(url).header("Authorization", "Bearer " + key)
                 .post(body.toString().toRequestBody("application/json".toMediaType())).build()
         } else {
-            val body = JSONObject().put("model", "claude-haiku-4-5-20251001").put("max_tokens", 2200)
+            val body = JSONObject().put("model", "claude-haiku-4-5-20251001").put("max_tokens", 5000)
                 .put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", prompt)))
             req = Request.Builder().url("https://api.anthropic.com/v1/messages")
                 .header("x-api-key", key).header("anthropic-version", "2023-06-01")
@@ -1400,7 +1438,34 @@ $chunkText
                 )
             )
         }
-        return out.take(8)
+        return out.take(maxTopicMapItems)
+    }
+
+    private fun normalizeTopicMap(candidates: List<Highlight>): List<Highlight> {
+        val chronological = candidates.filter { item ->
+            val a = item.start
+            val b = item.end
+            a != null && b != null && a >= 0.0 && b > a && b - a <= 180.0 &&
+                (durationMs <= 0L || b * 1000.0 <= durationMs + 1000.0)
+        }.sortedBy { it.start }
+        val merged = mutableListOf<Highlight>()
+        for (candidate in chronological) {
+            val candidateStart = candidate.start ?: continue
+            val candidateEnd = candidate.end ?: continue
+            val duplicateIndex = merged.indexOfFirst { existing ->
+                val existingStart = existing.start ?: return@indexOfFirst false
+                val existingEnd = existing.end ?: return@indexOfFirst false
+                val overlap = (minOf(candidateEnd, existingEnd) - maxOf(candidateStart, existingStart)).coerceAtLeast(0.0)
+                val shorter = minOf(candidateEnd - candidateStart, existingEnd - existingStart).coerceAtLeast(0.001)
+                kotlin.math.abs(candidateStart - existingStart) <= 18.0 && overlap / shorter >= 0.65
+            }
+            if (duplicateIndex >= 0) {
+                if (candidate.importance > merged[duplicateIndex].importance) merged[duplicateIndex] = candidate
+            } else {
+                merged.add(candidate)
+            }
+        }
+        return merged.sortedBy { it.start }.take(maxTopicMapItems)
     }
 
     private fun suggestionSelectedStatus(index: Int): String =
@@ -1411,6 +1476,10 @@ $chunkText
         if (items !== highlightItems) queuedHighlightIndices.clear()
         highlightItems = items
         queuedHighlightIndices.removeAll { it !in items.indices }
+        if (::topicMapSummaryView.isInitialized) {
+            topicMapSummaryView.text = if (items.isEmpty()) "VIDEO TOPIC MAP  ·  No timestamped topics found" else
+                "VIDEO TOPIC MAP  ·  " + items.size + " topics detected  ·  chronological order"
+        }
         if (selectedHighlightIndex !in items.indices) selectedHighlightIndex = if (items.isNotEmpty()) 0 else -1
         items.getOrNull(selectedHighlightIndex)?.let { selected ->
             if (selected.start != null && selected.end != null && ::startEdit.isInitialized && ::endEdit.isInitialized) {
@@ -1485,6 +1554,9 @@ $chunkText
                 }
             }
             row.addView(queueCheck.apply { setPadding(0, dp(5), 0, 0) })
+            if (item.start != null && item.end != null) {
+                row.addView(button("▶  Play this topic", false) { playTopicRange(item) }, full(dp(5)))
+            }
             highlightsView.addView(row, full(dp(8)))
         }
         refreshQueueControls()
@@ -1501,8 +1573,8 @@ $chunkText
             return true
         }
         if (index in queuedHighlightIndices) return true
-        // The AI currently returns at most eight distinct topic cards. Each topic
-        // is exported as its own MP4, so the combined duration need not be capped.
+        // Topic-map cards are chronological and can be queued independently; separate exports
+        // keep their own timestamp ranges and do not share the single-timeline duration cap.
         queuedHighlightIndices.add(index)
         refreshQueueControls()
         return true
@@ -1515,7 +1587,7 @@ $chunkText
                 if (item?.start != null && item.end != null) ((item.end - item.start) * 1000.0).toLong() else 0L
             }
             queueSummaryView.text = if (queuedHighlightIndices.isEmpty()) {
-                "No topics queued. Tap a highlight card, then add topics to export them as separate Shorts."
+                "No topics queued. The Video Topic Map is chronological. Add any number of detected topics to export separate Shorts."
             } else {
                 queuedHighlightIndices.size.toString() + " separate Short(s) queued  ·  " + clock(totalMs / 1000.0) + " source footage selected"
             }

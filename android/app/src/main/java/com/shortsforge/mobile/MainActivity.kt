@@ -149,6 +149,11 @@ class MainActivity : ComponentActivity() {
     private lateinit var highlightsView: LinearLayout
     private lateinit var queueSummaryView: TextView
     private lateinit var studioQueueButton: Button
+    private lateinit var batchExportButton: Button
+    private var batchExportActive = false
+    private var batchExportItems: List<Highlight> = emptyList()
+    private var batchExportIndex = 0
+    private val batchExportUris = mutableListOf<android.net.Uri>()
 
     private val pickTranscript = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) importTranscriptFile(uri)
@@ -284,8 +289,12 @@ class MainActivity : ComponentActivity() {
         ai.addView(queueSummaryView)
 
         val edit = card(body, "03  •  EDIT YOUR SHORT", "Tap a topic to load its exact timestamps. Add multiple topics to a single Studio timeline.")
-        studioQueueButton = button("Open Studio Editor · current highlight", true) { openStudioEditor() }
+        studioQueueButton = button("Open Studio Editor · current highlight", false) { openStudioEditor() }
         edit.addView(studioQueueButton, full(dp(8)))
+        batchExportButton = button("Export each queued topic as a separate Short", true) {
+            startQueuedHighlightsBatchExport()
+        }
+        edit.addView(batchExportButton, full(dp(7)))
         edit.addView(button("Clear Shorts topic queue", false) {
             queuedHighlightIndices.clear()
             refreshQueueControls()
@@ -526,6 +535,10 @@ class MainActivity : ComponentActivity() {
             exportButton.alpha = if (exportButton.isEnabled) 1f else 0.45f
         }
         if (::cancelButton.isInitialized) cancelButton.visibility = if (busy && transformer != null) View.VISIBLE else View.GONE
+        if (::batchExportButton.isInitialized) {
+            batchExportButton.isEnabled = queuedHighlightIndices.isNotEmpty() && !busy
+            batchExportButton.alpha = if (batchExportButton.isEnabled) 1f else 0.45f
+        }
     }
 
     private fun setStatus(message: String) {
@@ -1454,16 +1467,8 @@ $data
             return true
         }
         if (index in queuedHighlightIndices) return true
-        val currentTotal = queuedHighlightIndices.sumOf { queuedIndex ->
-            val queued = highlightItems.getOrNull(queuedIndex)
-            if (queued?.start != null && queued.end != null) ((queued.end - queued.start) * 1000.0).toLong() else 0L
-        }
-        val addedDuration = ((end - start) * 1000.0).toLong()
-        if (currentTotal + addedDuration > 180_000L) {
-            Toast.makeText(this, "The Shorts queue is limited to 180 seconds total. Remove a topic or use a shorter range.", Toast.LENGTH_LONG).show()
-            setStatus("Queue limit reached: 180 seconds total.")
-            return false
-        }
+        // The AI currently returns at most eight distinct topic cards. Each topic
+        // is exported as its own MP4, so the combined duration need not be capped.
         queuedHighlightIndices.add(index)
         refreshQueueControls()
         return true
@@ -1476,16 +1481,27 @@ $data
                 if (item?.start != null && item.end != null) ((item.end - item.start) * 1000.0).toLong() else 0L
             }
             queueSummaryView.text = if (queuedHighlightIndices.isEmpty()) {
-                "No topics added to your Shorts queue yet. You can still open the current selected highlight."
+                "No topics queued. Tap a highlight card, then add topics to export them as separate Shorts."
             } else {
-                queuedHighlightIndices.size.toString() + " topic(s) queued  ·  " + clock(totalMs / 1000.0) + " total  ·  maximum 03:00"
+                queuedHighlightIndices.size.toString() + " separate Short(s) queued  ·  " + clock(totalMs / 1000.0) + " source footage selected"
             }
         }
         if (::studioQueueButton.isInitialized) {
             studioQueueButton.text = if (queuedHighlightIndices.isEmpty()) {
                 "Open Studio Editor · current highlight"
             } else {
-                "Open Studio Editor · " + queuedHighlightIndices.size + " queued topic(s)"
+                "Open Studio Editor · " + queuedHighlightIndices.size + " topic(s) as one timeline"
+            }
+        }
+        if (::batchExportButton.isInitialized) {
+            batchExportButton.isEnabled = queuedHighlightIndices.isNotEmpty() && !busy
+            batchExportButton.alpha = if (batchExportButton.isEnabled) 1f else 0.45f
+            batchExportButton.text = if (queuedHighlightIndices.isEmpty()) {
+                "Add topics above to enable separate Shorts export"
+            } else if (batchExportActive) {
+                "Exporting topic " + (batchExportIndex + 1) + " of " + batchExportItems.size + "…"
+            } else {
+                "Export " + queuedHighlightIndices.size + " queued topics as separate Shorts"
             }
         }
     }
@@ -1719,6 +1735,221 @@ $data
         startActivity(intent)
     }
 
+    private fun startQueuedHighlightsBatchExport() {
+        if (busy || batchExportActive) return
+        val uri = selectedVideo ?: run {
+            setStatus("Choose a source video before exporting topics.")
+            return
+        }
+        val topics = queuedHighlightIndices.mapNotNull { index -> highlightItems.getOrNull(index) }
+            .filter { item ->
+                val a = item.start
+                val b = item.end
+                a != null && b != null && a >= 0.0 && b > a &&
+                    (durationMs <= 0L || b * 1000.0 <= durationMs + 250.0) &&
+                    b - a <= 180.0
+            }
+        if (topics.isEmpty()) {
+            setStatus("Add at least one valid timestamped topic to the Shorts queue.")
+            return
+        }
+        if (topics.size != queuedHighlightIndices.size) {
+            setStatus("One or more queued topics have invalid timestamps or exceed the 180-second per-Short limit. Remove or correct them first.")
+            return
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Export separate Shorts")
+            .setMessage(
+                "Export " + topics.size + " selected topic(s) as " + topics.size +
+                    " separate MP4 files? Each file keeps that topic's exact start and end timestamps. " +
+                    "Your current aspect ratio and text overlay will be applied to each export."
+            )
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Export " + topics.size + " Shorts") { _, _ ->
+                batchExportItems = topics
+                batchExportIndex = 0
+                batchExportUris.clear()
+                batchExportActive = true
+                busy = true
+                refreshFooter()
+                startNextBatchHighlightExport()
+            }
+            .show()
+    }
+
+    private fun topicOutputName(item: Highlight, index: Int): String {
+        val slug = item.hook.lowercase(Locale.US)
+            .replace(Regex("[^a-z0-9]+"), "_")
+            .trim('_')
+            .take(42)
+            .ifBlank { "topic" }
+        return String.format(Locale.US, "ShortsForge_%02d_%s.mp4", index + 1, slug)
+    }
+
+    private fun startNextBatchHighlightExport() {
+        if (!batchExportActive) return
+        if (batchExportIndex >= batchExportItems.size) {
+            val completed = batchExportUris.size
+            batchExportActive = false
+            batchExportActive = false
+            transformer = null
+            outputFile?.delete()
+            outputFile = null
+            busy = false
+            refreshFooter()
+            setStatus("Batch complete. " + completed + " separate Shorts saved in Movies / ShortsForge.")
+            showBatchExportResultDialog(completed, batchExportItems.size)
+            return
+        }
+        val uri = selectedVideo ?: run {
+            stopBatchHighlightExport("Source video is no longer available.")
+            return
+        }
+        val item = batchExportItems[batchExportIndex]
+        val from = item.start ?: run {
+            stopBatchHighlightExport("Topic timestamp is missing.")
+            return
+        }
+        val to = item.end ?: run {
+            stopBatchHighlightExport("Topic timestamp is missing.")
+            return
+        }
+        if (to <= from || to - from > 180.0) {
+            stopBatchHighlightExport("Topic " + (batchExportIndex + 1) + " has an invalid time range.")
+            return
+        }
+        val file = File(cacheDir, "ShortsForge_batch_" + batchExportIndex + "_" + System.currentTimeMillis() + ".mp4")
+        outputFile = file
+        setStatus(
+            "Exporting topic " + (batchExportIndex + 1) + "/" + batchExportItems.size +
+                ": " + item.hook
+        )
+        try {
+            val mediaItem = MediaItem.Builder().setUri(uri).setClippingConfiguration(
+                MediaItem.ClippingConfiguration.Builder()
+                    .setStartPositionMs((from * 1000.0).toLong())
+                    .setEndPositionMs((to * 1000.0).toLong())
+                    .build()
+            ).build()
+            val size = when {
+                ::ratioSpinner.isInitialized && ratioSpinner.selectedItemPosition == 1 -> Pair(720, 720)
+                ::ratioSpinner.isInitialized && ratioSpinner.selectedItemPosition == 2 -> Pair(1280, 720)
+                else -> Pair(720, 1280)
+            }
+            val videoEffects = mutableListOf<androidx.media3.common.Effect>()
+            videoEffects.add(
+                Presentation.createForWidthAndHeight(
+                    size.first, size.second, Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP
+                )
+            )
+            val caption = if (::overlayEdit.isInitialized) overlayEdit.text.toString().trim().take(140) else ""
+            if (caption.isNotBlank()) {
+                val span = SpannableString(caption)
+                span.setSpan(ForegroundColorSpan(Color.WHITE), 0, span.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                span.setSpan(BackgroundColorSpan(Color.argb(190, 8, 10, 18)), 0, span.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                span.setSpan(StyleSpan(Typeface.BOLD), 0, span.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                val settings = OverlaySettings.Builder()
+                    .setOverlayFrameAnchor(0f, -0.78f)
+                    .setBackgroundFrameAnchor(0f, -0.78f)
+                    .build()
+                videoEffects.add(OverlayEffect(listOf(TextOverlay.createStaticTextOverlay(span, settings))))
+            }
+            val edited = EditedMediaItem.Builder(mediaItem)
+                .setEffects(Effects(emptyList(), videoEffects))
+                .build()
+            transformer = Transformer.Builder(this)
+                .setVideoMimeType(MimeTypes.VIDEO_H264)
+                .setAudioMimeType(MimeTypes.AUDIO_AAC)
+                .addListener(object : Transformer.Listener {
+                    override fun onCompleted(composition: Composition, exportResult: ExportResult) {
+                        runOnUiThread { onBatchHighlightExportCompleted(file, item) }
+                    }
+                    override fun onError(
+                        composition: Composition,
+                        exportResult: ExportResult,
+                        exportException: ExportException
+                    ) {
+                        runOnUiThread {
+                            stopBatchHighlightExport(
+                                "Export failed for topic " + (batchExportIndex + 1) +
+                                    ": " + (exportException.message ?: "Media encoder error")
+                            )
+                        }
+                    }
+                }).build()
+            transformer?.start(edited, file.absolutePath)
+            handler.postDelayed(progressTask, 600)
+            refreshFooter()
+        } catch (e: Exception) {
+            stopBatchHighlightExport("Could not export topic " + (batchExportIndex + 1) + ": " + (e.message ?: "unsupported video"))
+        }
+    }
+
+    private fun onBatchHighlightExportCompleted(file: File, item: Highlight) {
+        handler.removeCallbacks(progressTask)
+        try {
+            val displayName = topicOutputName(item, batchExportIndex)
+            val uri = publishVideo(file, displayName)
+            batchExportUris.add(uri)
+            file.delete()
+            transformer = null
+            outputFile = null
+            batchExportIndex += 1
+            setStatus(
+                "Saved " + batchExportUris.size + "/" + batchExportItems.size +
+                    " Shorts. Next: " + (batchExportItems.getOrNull(batchExportIndex)?.hook ?: "finishing")
+            )
+            handler.postDelayed({ startNextBatchHighlightExport() }, 250)
+        } catch (e: Exception) {
+            stopBatchHighlightExport("Gallery save failed after " + batchExportUris.size +
+                " export(s): " + (e.message ?: "storage error"))
+        }
+    }
+
+    private fun stopBatchHighlightExport(reason: String) {
+        handler.removeCallbacks(progressTask)
+        try { transformer?.cancel() } catch (_: Exception) { }
+        outputFile?.delete()
+        outputFile = null
+        transformer = null
+        batchExportActive = false
+        busy = false
+        refreshFooter()
+        val completed = batchExportUris.size
+        setStatus(reason + if (completed > 0) " Saved " + completed + " Short(s) before the failure." else "")
+        if (completed > 0) showBatchExportResultDialog(completed, batchExportItems.size)
+    }
+
+    private fun showBatchExportResultDialog(completed: Int, total: Int) {
+        val message = if (completed == total) {
+            completed.toString() + " separate MP4 files were saved to Movies / ShortsForge."
+        } else {
+            completed.toString() + " of " + total + " Shorts were saved before the batch stopped."
+        }
+        val dialog = android.app.AlertDialog.Builder(this)
+            .setTitle(if (completed == total) "All Shorts exported" else "Partial batch saved")
+            .setMessage(message)
+            .setNegativeButton("Done", null)
+        if (batchExportUris.isNotEmpty()) {
+            dialog.setPositiveButton("Share saved Shorts") { _, _ -> shareBatchExportedShorts() }
+        }
+        dialog.show()
+    }
+
+    private fun shareBatchExportedShorts() {
+        if (batchExportUris.isEmpty()) return
+        val streams = ArrayList(batchExportUris)
+        val share = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+            type = "video/mp4"
+            putParcelableArrayListExtra(Intent.EXTRA_STREAM, streams)
+            clipData = android.content.ClipData.newUri(contentResolver, "ShortsForge Shorts", streams.first()).apply {
+                streams.drop(1).forEach { addItem(android.content.ClipData.Item(it)) }
+            }
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(share, "Share exported Shorts"))
+    }
+
     private fun exportClip() {
         val uri = selectedVideo ?: run { setStatus("Choose a video first."); return }
         if (busy) return
@@ -1785,7 +2016,11 @@ $data
             val job = transformer ?: return
             try {
                 if (job.getProgress(progressHolder) == Transformer.PROGRESS_STATE_AVAILABLE) {
-                    setStatus("Exporting your Short… " + progressHolder.progress + "%")
+                    setStatus(
+                        if (batchExportActive) "Exporting topic " + (batchExportIndex + 1) + "/" + batchExportItems.size +
+                            "… " + progressHolder.progress + "%"
+                        else "Exporting your Short… " + progressHolder.progress + "%"
+                    )
                 }
             } catch (_: Exception) { }
             if (busy && transformer != null) handler.postDelayed(this, 600)
@@ -1827,10 +2062,10 @@ $data
         }
     }
 
-    private fun publishVideo(file: File): android.net.Uri {
+    private fun publishVideo(file: File, displayName: String = file.name): android.net.Uri {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
-                put(MediaStore.Video.Media.DISPLAY_NAME, file.name)
+                put(MediaStore.Video.Media.DISPLAY_NAME, displayName)
                 put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
                 put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES + "/ShortsForge")
                 put(MediaStore.Video.Media.IS_PENDING, 1)
@@ -1851,7 +2086,7 @@ $data
         }
         val legacyDir = getExternalFilesDir(Environment.DIRECTORY_MOVIES) ?: filesDir
         legacyDir.mkdirs()
-        val shareFile = File(legacyDir, file.name)
+        val shareFile = File(legacyDir, displayName)
         file.copyTo(shareFile, overwrite = true)
         return FileProvider.getUriForFile(this, packageName + ".fileprovider", shareFile)
     }

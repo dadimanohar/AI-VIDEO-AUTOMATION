@@ -1486,10 +1486,8 @@ $data
                     val body = response.body ?: throw IOException("The video URL returned an empty response.")
                     val contentType = body.contentType()?.let { it.toString().substringBefore(";").lowercase(Locale.US) }.orEmpty()
                     val pathExtension = response.request.url.encodedPath.substringAfterLast('.', "").lowercase(Locale.US)
-                    val dispositionExtension = dispositionName?.substringAfterLast('.', "")?.lowercase(Locale.US).orEmpty()
                     val extension = when {
                         videoExtensions.contains(pathExtension) -> pathExtension
-                        videoExtensions.contains(dispositionExtension) -> dispositionExtension
                         contentType == "video/mp4" -> "mp4"
                         contentType == "video/quicktime" -> "mov"
                         contentType == "video/webm" -> "webm"
@@ -1498,7 +1496,6 @@ $data
                         contentType == "video/x-m4v" -> "m4v"
                         else -> ""
                     }
-                    if (extension.isBlank() || !(contentType.startsWith("video/") || videoExtensions.contains(pathExtension) || videoExtensions.contains(dispositionExtension))) {
                         throw IOException("The server did not return a supported video file. Use a direct MP4/MOV/WebM/MKV link.")
                     }
                     val maxBytes = 1024L * 1024L * 1024L

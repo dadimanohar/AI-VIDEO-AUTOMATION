@@ -147,6 +147,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var exportButton: Button
     private lateinit var cancelButton: Button
     private lateinit var highlightsView: LinearLayout
+    private lateinit var topicMapSummaryView: TextView
     private lateinit var queueSummaryView: TextView
     private lateinit var studioQueueButton: Button
     private lateinit var batchExportButton: Button
@@ -268,7 +269,7 @@ class MainActivity : ComponentActivity() {
             player?.prepare()
         }
 
-        val ai = card(body, "02  •  FIND THE BEST MOMENT", "Get timestamped highlights from the video's speech.")
+        val ai = card(body, "02  •  DISCOVER EVERY VIDEO TOPIC", "Map the whole transcript into chronological, timestamped topics — not just the top few highlights.")
         ai.addView(button("Auto-transcribe + find clips", true) { transcribeAndAnalyze() }, full())
         ai.addView(button("Analyze pasted transcript", false) { analyzeTranscript() }, full(dp(8)))
         ai.addView(button("Import subtitles / transcript (SRT, VTT, TXT)", false) {
@@ -281,6 +282,8 @@ class MainActivity : ComponentActivity() {
         ai.addView(text("Auto-transcription needs a Groq or OpenAI key. You can also import subtitle or caption files as SRT/VTT. Claude can analyse a timestamped transcript.", 12f, muted).apply { setPadding(0, dp(8), 0, 0) })
         statusView = text(statusMessage, 13f, accent, true).apply { setPadding(0, dp(12), 0, dp(2)) }
         ai.addView(statusView)
+        topicMapSummaryView = text("VIDEO TOPIC MAP  ·  Waiting for transcript analysis", 12f, muted, true).apply { setPadding(0, dp(11), 0, dp(5)) }
+        ai.addView(topicMapSummaryView)
         highlightsView = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         ai.addView(highlightsView)
         queueSummaryView = text("No topics added to your Shorts queue yet.", 12f, muted).apply {

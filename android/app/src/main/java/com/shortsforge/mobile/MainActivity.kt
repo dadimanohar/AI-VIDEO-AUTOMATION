@@ -227,6 +227,7 @@ class MainActivity : ComponentActivity() {
         ai.addView(highlightsView)
 
         val edit = card(body, "03  •  EDIT YOUR SHORT", "Select the highlight length, preview the exact clip, then export.")
+        edit.addView(button("Open Studio Editor · Timeline, split, speed, text, audio", true) { openStudioEditor() }, full(dp(8)))
         edit.addView(button("Preview selected clip", false) { previewSelectedClip() }, full())
         edit.addView(label("AI HIGHLIGHT CLIP LENGTH"))
         clipDurationSpinner = spinner(listOf("60 seconds", "90 seconds"))
@@ -1326,6 +1327,22 @@ $data
         }
     }
 
+    private fun openStudioEditor() {
+        val uri = selectedVideo ?: run { setStatus("Choose a video first."); return }
+        val start = startEdit.text.toString().toDoubleOrNull()
+        val end = endEdit.text.toString().toDoubleOrNull()
+        if (start == null || end == null || !start.isFinite() || !end.isFinite() || start < 0 || end <= start) {
+            setStatus("Choose a valid clip range before opening Studio Editor.")
+            return
+        }
+        val intent = Intent(this, StudioEditorActivity::class.java)
+            .putExtra(StudioEditorActivity.EXTRA_SOURCE_URI, uri.toString())
+            .putExtra(StudioEditorActivity.EXTRA_SOURCE_DURATION, durationMs)
+            .putExtra(StudioEditorActivity.EXTRA_START_MS, (start * 1000).toLong())
+            .putExtra(StudioEditorActivity.EXTRA_END_MS, (end * 1000).toLong())
+        startActivity(intent)
+    }
+
     private fun exportClip() {
         val uri = selectedVideo ?: run { setStatus("Choose a video first."); return }
         if (busy) return
@@ -1412,7 +1429,22 @@ $data
                 clipData = android.content.ClipData.newUri(contentResolver, "ShortsForge video", uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            startActivity(Intent.createChooser(send, "Share or upload your Short"))
+            val exportedDuration = readDuration(uri).coerceAtLeast(1_000L)
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Your Short is ready")
+                .setMessage("The MP4 was saved to Movies / ShortsForge. You can continue editing it in ShortsForge Studio.")
+                .setPositiveButton("Edit in Studio") { _, _ ->
+                    startActivity(Intent(this, StudioEditorActivity::class.java)
+                        .putExtra(StudioEditorActivity.EXTRA_SOURCE_URI, uri.toString())
+                        .putExtra(StudioEditorActivity.EXTRA_SOURCE_DURATION, exportedDuration)
+                        .putExtra(StudioEditorActivity.EXTRA_START_MS, 0L)
+                        .putExtra(StudioEditorActivity.EXTRA_END_MS, exportedDuration))
+                }
+                .setNeutralButton("Share") { _, _ ->
+                    startActivity(Intent.createChooser(send, "Share or upload your Short"))
+                }
+                .setNegativeButton("Done", null)
+                .show()
         } catch (e: Exception) {
             finishExport()
             setStatus("Video exported, but Gallery save failed: " + (e.message ?: "storage error"))

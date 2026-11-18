@@ -518,7 +518,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         val host = uri.host!!.lowercase(Locale.US)
-        val youtube = host == "youtu.be" || host.endsWith("youtube.com") || host.endsWith("youtube-nocookie.com")
+        val youtube = host == "youtu.be" || host == "youtube.com" || host.endsWith(".youtube.com") || host == "youtube-nocookie.com" || host.endsWith(".youtube-nocookie.com")
         if (youtube) {
             if (busy) return
             busy = true
@@ -580,7 +580,11 @@ class MainActivity : ComponentActivity() {
                 http.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) throw IOException("Video server returned HTTP " + response.code)
                     val mime = response.header("Content-Type")?.substringBefore(';')?.trim()?.lowercase(Locale.US) ?: ""
-                    if (!mime.startsWith("video/")) throw IOException("This URL did not return a video file (content type: " + mime + "). Use a direct MP4/MOV/WebM link.")
+                    val linkedExtension = android.net.Uri.parse(url).lastPathSegment?.substringAfterLast('.', "")?.lowercase(Locale.US) ?: ""
+                    val knownVideoExtension = linkedExtension in setOf("mp4", "mov", "m4v", "webm", "mkv", "3gp")
+                    if (!mime.startsWith("video/") && !(mime == "application/octet-stream" && knownVideoExtension)) {
+                        throw IOException("This URL did not return a video file (content type: " + mime + "). Use a direct MP4/MOV/WebM link.")
+                    }
                     val length = response.body?.contentLength() ?: -1L
                     val maxBytes = 1024L * 1024L * 1024L
                     if (length > maxBytes) throw IOException("This mobile importer currently limits direct video files to 1 GB.")
@@ -797,7 +801,14 @@ $data
         }
     }
 
-    private data class Highlight(val start: Double?, val end: Double?, val hook: String, val reason: String)
+    private data class Highlight(
+        val start: Double?,
+        val end: Double?,
+        val hook: String,
+        val reason: String,
+        val category: String,
+        val importance: Int
+    )
 
     private fun chat(prompt: String, key: String, p: Int): String {
         val req: Request
@@ -837,7 +848,15 @@ $data
             val start = a.takeIf { it.isFinite() && it >= 0 }
             val end = b.takeIf { it.isFinite() && it > (start ?: -1.0) }
             if (start != null && end != null && durationMs > 0 && end > durationMs / 1000.0 + 1.0) continue
-            out.add(Highlight(start, end, item.optString("hook", "Suggested moment"), item.optString("reason", "")))
+            out.add(
+                Highlight(
+                    start, end,
+                    item.optString("hook", "Suggested moment"),
+                    item.optString("reason", ""),
+                    item.optString("category", "Key insight"),
+                    item.optInt("importance_score", 0).coerceIn(0, 10)
+                )
+            )
         }
         return out.take(8)
     }
@@ -862,6 +881,8 @@ $data
                 }
             }
             row.addView(text((index + 1).toString() + ". " + item.hook, 14f, ink, true))
+            val meta = item.category + if (item.importance > 0) "  ·  Importance " + item.importance + "/10" else ""
+            row.addView(text(meta, 11f, muted, true).apply { setPadding(0, dp(3), 0, 0) })
             row.addView(text(if (item.start != null && item.end != null) "Key moment: " + clock(item.start) + "  →  " + clock(item.end) + "  ·  Tap for " + clipDurationSeconds + "s clip" else "Timestamp unavailable", 12f, accent, true).apply { setPadding(0, dp(4), 0, 0) })
             if (item.reason.isNotBlank()) row.addView(text(item.reason, 12f, muted).apply { setPadding(0, dp(4), 0, 0) })
             highlightsView.addView(row, full(dp(8)))

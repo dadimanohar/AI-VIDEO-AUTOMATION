@@ -570,7 +570,10 @@ class StudioEditorActivity : ComponentActivity() {
 
     private fun exportEditedTimeline() {
         if (busy) return
-        if (segments.isEmpty()) { setStatus("Add at least one clip segment."); return }
+        if (segments.isEmpty()) {
+            setStatus("Add at least one clip segment.")
+            return
+        }
         val total = totalDurationMs()
         if (total <= 0 || total > 180_000L) {
             setStatus("Keep the combined timeline between 0 and 180 seconds for this mobile export.")
@@ -587,13 +590,6 @@ class StudioEditorActivity : ComponentActivity() {
                 2 -> Pair(1280, 720)
                 else -> Pair(720, 1280)
             }
-            val editedItems = segments.map { seg ->
-                val clipped = MediaItem.Builder().setUri(sourceUri).setClippingConfiguration(
-                    MediaItem.ClippingConfiguration.Builder()
-                        .setStartPositionMs(seg.startMs)
-                        .setEndPositionMs(seg.endMs)
-                        .build()
-                ).build()
             val speedProvider = object : SpeedProvider {
                 override fun getSpeed(timeUs: Long): Float = speed
                 override fun getNextSpeedChangeTimeUs(timeUs: Long): Long = C.TIME_UNSET
@@ -610,7 +606,7 @@ class StudioEditorActivity : ComponentActivity() {
                     size.first, size.second, Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP
                 ))
                 if (speed != 1f) effects.add(SpeedChangeEffect(speedProvider))
-                buildOverlayEffect()?.let { effects.add(it) }
+                buildOverlayEffect()?.let { overlay -> effects.add(overlay) }
                 val audioProcessors = if (speed != 1f && musicUri == null && !muteOriginalAudio) {
                     listOf(SpeedChangingAudioProcessor(speedProvider))
                 } else {
@@ -622,11 +618,7 @@ class StudioEditorActivity : ComponentActivity() {
                     .setFrameRate(30)
                     .build()
             }
-            val videoSequence = if (musicUri != null || muteOriginalAudio) {
-                EditedMediaItemSequence.Builder(editedItems).build()
-            } else {
-                EditedMediaItemSequence.Builder(editedItems).build()
-            }
+            val videoSequence = EditedMediaItemSequence.Builder(editedItems).build()
             val composition = if (musicUri != null) {
                 val music = EditedMediaItem.Builder(MediaItem.fromUri(musicUri!!))
                     .setRemoveVideo(true)

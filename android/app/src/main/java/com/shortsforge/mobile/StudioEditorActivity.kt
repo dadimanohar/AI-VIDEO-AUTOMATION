@@ -104,7 +104,7 @@ class StudioEditorActivity : ComponentActivity() {
     private lateinit var exportButton: Button
     private lateinit var undoButton: Button
     private lateinit var deleteButton: Button
-    private var playheadStopTask: Runnable? = null
+    private var playheadTicker: Runnable? = null
 
     private val pickMusic = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -140,7 +140,7 @@ class StudioEditorActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        playheadStopTask?.let { handler.removeCallbacks(it) }
+        playheadTicker?.let { handler.removeCallbacks(it) }
         handler.removeCallbacks(progressTask)
         try { transformer?.cancel() } catch (_: Exception) { }
         player?.release()
@@ -326,6 +326,7 @@ class StudioEditorActivity : ComponentActivity() {
         val panel = panel()
         panel.addView(labelText("TEXT OVERLAY"))
         overlayField = editField("Type title, caption, or callout")
+        overlayField.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
         overlayField.setSingleLine(false)
         overlayField.minLines = 2
         overlayField.addTextChangedListener(simpleWatcher { overlayText = it.take(140) })
@@ -552,6 +553,7 @@ class StudioEditorActivity : ComponentActivity() {
                 handler.postDelayed(this, 180)
             }
         }
+        playheadTicker = task
         handler.post(task)
     }
 

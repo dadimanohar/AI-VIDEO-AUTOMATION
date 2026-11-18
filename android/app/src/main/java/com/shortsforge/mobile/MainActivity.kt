@@ -340,14 +340,14 @@ class MainActivity : ComponentActivity() {
             else -> "Qwen3 0.6B (Q4) selects key moments locally. Whisper Base creates timestamped transcripts locally. After downloading both models once, these features work offline."
         }
         card(body, "MODEL CONFIGURATION", modelInfo).addView(text(
-            if (provider == 3) "Offline model downloads are about 571 MB in total: Qwen3 (~429 MB) + Whisper Base (~142 MB). Models stay in app storage and are not included in the APK."
+            if (provider == 3) "Offline model downloads are about 577 MB in total: Qwen3 (~429 MB) + Whisper Base (~148 MB). Models stay in app storage and are not included in the APK."
             else "Cloud AI requires internet access and may incur charges from your provider. Video preview, trimming, text overlay, and export run on your phone.",
             13f, muted
         ))
         val modelCard = card(body, "OFFLINE MODEL MANAGER", "Download once while connected to Wi-Fi. Then choose Offline local AI to transcribe and find highlights without cloud APIs.")
         val modelStatus = text(localModelStatus(), 12f, muted).apply { setPadding(0, 0, 0, dp(10)) }
         modelCard.addView(modelStatus)
-        modelCard.addView(button("Download offline AI models · ~571 MB", true) {
+        modelCard.addView(button("Download offline AI models · ~577 MB", true) {
             downloadOfflineModels(modelStatus)
         }, full())
         body.addView(button("Return to editor", false) { showEditor() }, full(dp(8)))
@@ -680,6 +680,34 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun offlineModelsAvailable(): Boolean {
+        return try {
+            qwenModelFile().let { it.exists() && it.length() >= 420_000_000L } &&
+                whisperModelFile().let { it.exists() && it.length() >= 100_000_000L }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun isConnectivityFailure(error: Throwable): Boolean {
+        var cause: Throwable? = error
+        while (cause != null) {
+            if (cause is java.net.UnknownHostException ||
+                cause is java.net.ConnectException ||
+                cause is java.net.NoRouteToHostException ||
+                cause is java.net.SocketTimeoutException ||
+                cause is java.net.UnknownServiceException) return true
+            val message = cause.message?.lowercase(Locale.US) ?: ""
+            if (message.contains("unable to resolve host") ||
+                message.contains("failed to connect") ||
+                message.contains("network is unreachable") ||
+                message.contains("connection timed out") ||
+                message.contains("no internet")) return true
+            cause = cause.cause
+        }
+        return false
+    }
+
     private fun transcribeAndAnalyze() {
         val uri = selectedVideo
         if (uri == null) { setStatus("Choose a video first."); return }
@@ -709,7 +737,19 @@ class MainActivity : ComponentActivity() {
                     analyzeTranscript(true)
                 }
             } catch (e: Exception) {
-                runOnUiThread { busy = false; refreshFooter(); setStatus("Transcription failed: " + (e.message ?: "unknown error")) }
+                val useLocal = provider in 0..1 && isConnectivityFailure(e) && offlineModelsAvailable()
+                runOnUiThread {
+                    busy = false
+                    refreshFooter()
+                    if (useLocal) {
+                        provider = 3
+                        prefs.edit().putInt("provider", 3).apply()
+                        setStatus("Cloud connection unavailable. Switching to on-device Whisper + Qwen3…")
+                        transcribeLocally(uri)
+                    } else {
+                        setStatus("Transcription failed: " + (e.message ?: "unknown error"))
+                    }
+                }
             } finally {
                 try { audio?.delete() } catch (_: Exception) { }
             }
@@ -915,7 +955,8 @@ class MainActivity : ComponentActivity() {
                     )
                 }
                 val lines = data.lines().filter { it.isNotBlank() }
-                val chunks = lines.chunked(24)
+                // Eight-line overlap keeps a question at one chunk's end connected to its answer in the next.
+                val chunks = lines.windowed(size = 36, step = 28, partialWindows = true)
                 val chunkTotal = chunks.size
                 val candidates = mutableListOf<Highlight>()
                 for ((index, chunk) in chunks.withIndex()) {
@@ -1274,7 +1315,17 @@ $data
                     setStatus(if (items.isEmpty()) "No reliable timestamped clips were returned. Check the transcript timestamps." else "Found " + items.size + " clip suggestions. Tap one to set its range.")
                 }
             } catch (e: Exception) {
-                runOnUiThread { setStatus("AI analysis failed: " + (e.message ?: "unknown error")) }
+                val useLocal = isConnectivityFailure(e) && try { qwenModelFile().let { it.exists() && it.length() >= 420_000_000L } } catch (_: Exception) { false }
+                runOnUiThread {
+                    if (useLocal) {
+                        provider = 3
+                        prefs.edit().putInt("provider", 3).apply()
+                        setStatus("Cloud connection unavailable. Switching highlight analysis to local Qwen3…")
+                        analyzeWithLocalModel(data, true)
+                    } else {
+                        setStatus("AI analysis failed: " + (e.message ?: "unknown error"))
+                    }
+                }
             } finally {
                 runOnUiThread { busy = false; refreshFooter() }
             }

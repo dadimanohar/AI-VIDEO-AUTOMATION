@@ -86,6 +86,8 @@ class MainActivity : ComponentActivity() {
     private var videoName = ""
     private var durationMs = 0L
     private var transcript = ""
+    private var sourceUrlText = ""
+    private var clipDurationSeconds = 60
     private var startText = "0"
     private var endText = "30"
     private var overlayText = ""
@@ -98,6 +100,9 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var root: LinearLayout
     private lateinit var transcriptEdit: EditText
+    private lateinit var sourceUrlEdit: EditText
+    private lateinit var sourceLinkStatus: TextView
+    private lateinit var clipDurationSpinner: Spinner
     private lateinit var startEdit: EditText
     private lateinit var endEdit: EditText
     private lateinit var overlayEdit: EditText
@@ -110,6 +115,10 @@ class MainActivity : ComponentActivity() {
     private lateinit var exportButton: Button
     private lateinit var cancelButton: Button
     private lateinit var highlightsView: LinearLayout
+
+    private val pickTranscript = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) importTranscriptFile(uri)
+    }
 
     private val pickVideo = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -166,6 +175,14 @@ class MainActivity : ComponentActivity() {
 
         val source = card(body, "01  •  SOURCE VIDEO", "Select a clip from your phone. The original remains unchanged.")
         source.addView(button("Choose video", true) { pickVideo.launch(arrayOf("video/*")) }, full())
+        source.addView(label("VIDEO LINK"))
+        sourceUrlEdit = input("Paste a YouTube URL or a direct video file URL", sourceUrlText, false)
+        sourceUrlEdit.addTextChangedListener(watcher { sourceUrlText = it })
+        source.addView(sourceUrlEdit, full())
+        source.addView(button("Check / import video link", false) { handleSourceLink() }, full(dp(8)))
+        sourceLinkStatus = text("Direct MP4/MOV/WebM file links can be imported. YouTube links are checked and opened through YouTube; import the permitted source video separately.", 11f, muted)
+        sourceLinkStatus.setPadding(0, dp(7), 0, dp(4))
+        source.addView(sourceLinkStatus)
         videoNameView = text(if (videoName.isBlank()) "No video selected" else videoName, 14f, ink, true).apply { setPadding(0, dp(12), 0, dp(3)) }
         source.addView(videoNameView)
         videoDurationView = text(if (durationMs > 0) "Duration  " + clock(durationMs / 1000.0) else "MP4, MOV and Android-supported formats", 12f, muted)
@@ -188,17 +205,31 @@ class MainActivity : ComponentActivity() {
         val ai = card(body, "02  •  FIND THE BEST MOMENT", "Get timestamped highlights from the video's speech.")
         ai.addView(button("Auto-transcribe + find clips", true) { transcribeAndAnalyze() }, full())
         ai.addView(button("Analyze pasted transcript", false) { analyzeTranscript() }, full(dp(8)))
+        ai.addView(button("Import subtitles / transcript (SRT, VTT, TXT)", false) {
+            pickTranscript.launch(arrayOf("text/*", "application/x-subrip", "application/octet-stream"))
+        }, full(dp(8)))
         ai.addView(label("TRANSCRIPT"))
         transcriptEdit = input("Paste a timestamped transcript here", transcript, true).apply { minLines = 4 }
         transcriptEdit.addTextChangedListener(watcher { transcript = it })
         ai.addView(transcriptEdit, full())
-        ai.addView(text("Auto-transcription needs a Groq or OpenAI key. Claude can analyse a transcript you paste with timestamps.", 12f, muted).apply { setPadding(0, dp(8), 0, 0) })
+        ai.addView(text("Auto-transcription needs a Groq or OpenAI key. You can also import YouTube captions as SRT/VTT. Claude can analyse a timestamped transcript.", 12f, muted).apply { setPadding(0, dp(8), 0, 0) })
         statusView = text(statusMessage, 13f, accent, true).apply { setPadding(0, dp(12), 0, dp(2)) }
         ai.addView(statusView)
         highlightsView = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         ai.addView(highlightsView)
 
-        val edit = card(body, "03  •  EDIT YOUR SHORT", "Select the clip range, output layout, and optional on-screen text.")
+        val edit = card(body, "03  •  EDIT YOUR SHORT", "Select the highlight length, review its time range, then export.")
+        edit.addView(label("AI HIGHLIGHT CLIP LENGTH"))
+        clipDurationSpinner = spinner(listOf("60 seconds", "90 seconds"))
+        clipDurationSpinner.setSelection(if (clipDurationSeconds == 90) 1 else 0)
+        clipDurationSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) { }
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                clipDurationSeconds = if (position == 1) 90 else 60
+            }
+        }
+        edit.addView(clipDurationSpinner, full())
+        edit.addView(text("AI looks for complete question-and-answer exchanges, key claims, explanations and surprising facts. Choosing a suggestion builds a 60s or 90s window around that moment.", 12f, muted).apply { setPadding(0, dp(7), 0, dp(2)) })
         edit.addView(label("START AND END · SECONDS"))
         val range = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         startEdit = input("Start", startText, false).apply { inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL }
@@ -413,6 +444,204 @@ class MainActivity : ComponentActivity() {
         } catch (_: Exception) { 0L } finally { try { retriever.release() } catch (_: Exception) { } }
     }
 
+    private fun applyHighlightWindow(anchorStart: Double, anchorEnd: Double) {
+        val target = clipDurationSeconds.toDouble()
+        val durationSeconds = if (durationMs > 0) durationMs / 1000.0 else 0.0
+        val actualLength = if (durationSeconds > 0) minOf(target, durationSeconds) else target
+        val centre = (anchorStart + anchorEnd) / 2.0
+        var from = (centre - actualLength / 2.0).coerceAtLeast(0.0)
+        if (durationSeconds > 0) from = minOf(from, (durationSeconds - actualLength).coerceAtLeast(0.0))
+        val to = from + actualLength
+        startEdit.setText(fmtNumber(from))
+        endEdit.setText(fmtNumber(to))
+    }
+
+    private fun importTranscriptFile(uri: android.net.Uri) {
+        try {
+            val raw = contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                ?: throw IOException("Could not read the selected transcript file.")
+            if (raw.isBlank()) throw IOException("The transcript file is empty.")
+            val parsed = parseSubtitleText(raw)
+            transcript = parsed
+            transcriptEdit.setText(parsed)
+            setStatus("Transcript imported. Choose 60s or 90s, then analyse the important moments.")
+        } catch (e: Exception) {
+            setStatus("Transcript import failed: " + (e.message ?: "unknown file error"))
+        }
+    }
+
+    private fun parseSubtitleText(raw: String): String {
+        val normalized = raw.replace("\r", "")
+        val blocks = normalized.split(Regex("\n\\s*\n"))
+        val output = StringBuilder()
+        val fullTime = Regex("(\\d{1,2}):(\\d{2}):(\\d{2})[,.](\\d{1,3})")
+        val shortTime = Regex("(\\d{1,3}):(\\d{2})[,.](\\d{1,3})")
+        fun toSeconds(value: String): Double {
+            val m = fullTime.find(value)
+            if (m != null) {
+                val fraction = m.groupValues[4].padEnd(3, '0').take(3).toInt()
+                return m.groupValues[1].toInt() * 3600.0 + m.groupValues[2].toInt() * 60.0 + m.groupValues[3].toInt() + fraction / 1000.0
+            }
+            val s = shortTime.find(value) ?: return Double.NaN
+            val fraction = s.groupValues[3].padEnd(3, '0').take(3).toInt()
+            return s.groupValues[1].toInt() * 60.0 + s.groupValues[2].toInt() + fraction / 1000.0
+        }
+        for (block in blocks) {
+            val lines = block.lines().map { it.trim() }.filter { it.isNotBlank() }
+            val timeLine = lines.firstOrNull { it.contains("-->") }
+            if (timeLine == null) continue
+            val sides = timeLine.split("-->")
+            if (sides.size != 2) continue
+            val start = toSeconds(sides[0])
+            val end = toSeconds(sides[1])
+            if (!start.isFinite() || !end.isFinite() || end <= start) continue
+            val words = lines.dropWhile { !it.contains("-->") }.drop(1)
+                .joinToString(" ").replace(Regex("<[^>]+>"), "")
+                .replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").trim()
+            if (words.isNotBlank()) {
+                output.append("[").append(clock(start)).append(" - ").append(clock(end)).append("] ")
+                    .append(words).append('\n')
+            }
+        }
+        return if (output.isNotEmpty()) output.toString().trim() else normalized.trim()
+    }
+
+    private fun handleSourceLink() {
+        val raw = sourceUrlEdit.text.toString().trim()
+        if (raw.isBlank()) {
+            setStatus("Paste a video URL first.")
+            return
+        }
+        val uri = try { android.net.Uri.parse(raw) } catch (_: Exception) { null }
+        if (uri == null || uri.scheme !in listOf("http", "https") || uri.host.isNullOrBlank()) {
+            setStatus("Enter a valid https:// video link.")
+            return
+        }
+        val host = uri.host!!.lowercase(Locale.US)
+        val youtube = host == "youtu.be" || host.endsWith("youtube.com") || host.endsWith("youtube-nocookie.com")
+        if (youtube) {
+            if (busy) return
+            busy = true
+            refreshFooter()
+            setStatus("Checking the YouTube link using its public video metadata…")
+            executor.execute {
+                try {
+                    val encoded = java.net.URLEncoder.encode(raw, "UTF-8")
+                    val request = Request.Builder()
+                        .url("https://www.youtube.com/oembed?url=" + encoded + "&format=json")
+                        .get().build()
+                    http.newCall(request).execute().use { response ->
+                        val body = response.body?.string() ?: ""
+                        if (!response.isSuccessful) throw IOException("YouTube could not return public metadata (HTTP " + response.code + "). The video may be private, unavailable or non-embeddable.")
+                        val json = JSONObject(body)
+                        val title = json.optString("title", "YouTube video")
+                        val author = json.optString("author_name", "Unknown channel")
+                        runOnUiThread {
+                            sourceLinkStatus.text = title + "\nChannel: " + author + "\nYouTube's official public embed/metadata service does not provide a downloadable source video here. Choose the original video file or import a direct media URL you are authorised to use. You can import an SRT/VTT captions file below."
+                            setStatus("YouTube video identified. Open it on YouTube, then select the permitted source video and its captions.")
+                            busy = false
+                            refreshFooter()
+                            try { startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (_: Exception) { }
+                        }
+                    }
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        busy = false
+                        refreshFooter()
+                        setStatus("YouTube link check failed: " + (e.message ?: "unknown error"))
+                    }
+                }
+            }
+            return
+        }
+        val ext = uri.lastPathSegment?.substringAfterLast('.', "")?.lowercase(Locale.US) ?: ""
+        val videoExtension = ext in setOf("mp4", "mov", "m4v", "webm", "mkv", "3gp")
+        if (!videoExtension) {
+            setStatus("For a direct link, use a URL that returns a video file (MP4, MOV, M4V, WebM or MKV).")
+            return
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Confirm media permission")
+            .setMessage("Only import this direct video file if you own it or have permission to download and edit it. Continue?")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Continue") { _, _ -> downloadDirectVideo(raw) }
+            .show()
+    }
+
+    private fun downloadDirectVideo(url: String) {
+        if (busy) return
+        busy = true
+        refreshFooter()
+        setStatus("Downloading the authorised direct video file…")
+        executor.execute {
+            var saved: File? = null
+            try {
+                val request = Request.Builder().url(url).header("User-Agent", "ShortsForge-Mobile/1.2").get().build()
+                http.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) throw IOException("Video server returned HTTP " + response.code)
+                    val mime = response.header("Content-Type")?.substringBefore(';')?.trim()?.lowercase(Locale.US) ?: ""
+                    if (!mime.startsWith("video/")) throw IOException("This URL did not return a video file (content type: " + mime + "). Use a direct MP4/MOV/WebM link.")
+                    val length = response.body?.contentLength() ?: -1L
+                    val maxBytes = 1024L * 1024L * 1024L
+                    if (length > maxBytes) throw IOException("This mobile importer currently limits direct video files to 1 GB.")
+                    val dir = File(getExternalFilesDir(Environment.DIRECTORY_MOVIES) ?: filesDir, "ShortsForgeImports")
+                    if (!dir.exists() && !dir.mkdirs()) throw IOException("Could not create the import folder.")
+                    saved = File(dir, "ShortsForge_Source_" + System.currentTimeMillis() + ".mp4")
+                    val body = response.body ?: throw IOException("The video server returned an empty body.")
+                    body.byteStream().use { input ->
+                        saved!!.outputStream().buffered().use { output ->
+                            val buffer = ByteArray(64 * 1024)
+                            var total = 0L
+                            var lastUpdate = 0L
+                            while (true) {
+                                val count = input.read(buffer)
+                                if (count < 0) break
+                                total += count
+                                if (total > maxBytes) throw IOException("Video exceeded the 1 GB import limit.")
+                                output.write(buffer, 0, count)
+                                val now = System.currentTimeMillis()
+                                if (now - lastUpdate > 700) {
+                                    lastUpdate = now
+                                    val pct = if (length > 0) (total * 100 / length).toInt().coerceIn(0, 99) else -1
+                                    runOnUiThread { setStatus(if (pct >= 0) "Downloading video… " + pct + "%" else "Downloading video… " + (total / (1024 * 1024)) + " MB") }
+                                }
+                            }
+                        }
+                    }
+                    if (saved!!.length() == 0L) throw IOException("The downloaded video file is empty.")
+                }
+                val file = saved!!
+                val newUri = FileProvider.getUriForFile(this, packageName + ".fileprovider", file)
+                val newDuration = readDuration(newUri)
+                runOnUiThread {
+                    selectedVideo = newUri
+                    videoName = file.name
+                    durationMs = newDuration
+                    startText = "0"
+                    endText = if (durationMs > 0) fmtNumber(minOf(60_000L, durationMs) / 1000.0) else "60"
+                    videoNameView.text = videoName
+                    videoDurationView.text = if (durationMs > 0) "Duration  " + clock(durationMs / 1000.0) else "Direct video link imported"
+                    playerView.visibility = View.VISIBLE
+                    player?.setMediaItem(MediaItem.fromUri(newUri))
+                    player?.prepare()
+                    startEdit.setText(startText)
+                    endEdit.setText(endText)
+                    sourceLinkStatus.text = "Video imported successfully: " + file.name
+                    busy = false
+                    refreshFooter()
+                    setStatus("Direct video imported. Analyse its transcript and select a 60s or 90s highlight.")
+                }
+            } catch (e: Exception) {
+                try { saved?.delete() } catch (_: Exception) { }
+                runOnUiThread {
+                    busy = false
+                    refreshFooter()
+                    setStatus("Video link import failed: " + (e.message ?: "unknown download error"))
+                }
+            }
+        }
+    }
+
     private fun transcribeAndAnalyze() {
         val uri = selectedVideo
         if (uri == null) { setStatus("Choose a video first."); return }
@@ -532,15 +761,25 @@ class MainActivity : ComponentActivity() {
         executor.execute {
             try {
                 val prompt = """
-You are an expert short-form video editor. Select up to 8 compelling, self-contained clips from this timestamped transcript.
-Return ONLY a valid JSON array of objects in this exact shape:
-[{"start_seconds":12.4,"end_seconds":37.8,"hook":"Short hook","reason":"Why this moment works"}]
-Rules:
-- Use only timestamp boundaries supported by the transcript. Seconds are relative to the start of this source video.
-- Do not invent timestamps. If there are no reliable timestamps, return [].
-- Prefer strong hooks, complete thoughts, useful information, surprising facts, and concise conclusions.
-- Aim for clips 15 to 60 seconds. Do not overlap suggestions.
-- Return numeric seconds, not time strings.
+You are a professional interview, podcast and long-form video editor. Find the most valuable moments in this transcript.
+The user's target output clip length is """ + clipDurationSeconds + """ seconds.
+Return ONLY a valid JSON array containing up to 8 strongest anchor moments, ranked by importance.
+Exact shape:
+[{"start_seconds":120.5,"end_seconds":164.2,"hook":"A clear short title","reason":"Why this matters and what the viewer learns","category":"Question and answer","importance_score":9}]
+Ranking priorities:
+1. Complete question + answer exchanges. Include the question when it gives the answer necessary context; never start halfway through an answer.
+2. Important new facts, concrete claims, announcements, explanations, predictions, practical advice and useful examples.
+3. Surprising, controversial or highly informative statements that make sense without misleading editing.
+4. A clear beginning and ending. Prefer a complete thought over a dramatic but incomplete sentence.
+Timestamp rules:
+- Use only timestamp boundaries supported by the transcript. They are seconds from the beginning of the source video.
+- Do not invent timestamps. Return [] if no reliable timestamps exist.
+- start_seconds and end_seconds mark the full core exchange / key point, not the final export window.
+- The app will expand around this anchor to a $clipDurationSeconds-second export window, bounded by the source duration.
+- Do not repeat the same event and do not overlap anchor moments.
+- importance_score must be an integer from 1 to 10.
+- category should be one of: "Question and answer", "Important announcement", "Key insight", "Explanation", "Prediction", "Surprising fact", "Practical advice".
+- Return numeric seconds, not time strings. No markdown fences or text outside the JSON.
 Transcript:
 $data
 """.trimIndent()
@@ -617,14 +856,13 @@ $data
                 background = shape(Color.rgb(248, 249, 255), 12, border)
                 setOnClickListener {
                     if (item.start != null && item.end != null) {
-                        startEdit.setText(fmtNumber(item.start))
-                        endEdit.setText(fmtNumber(item.end))
-                        setStatus("Suggestion " + (index + 1) + " selected. Review the preview and export.")
+                        applyHighlightWindow(item.start, item.end)
+                        setStatus("Suggestion " + (index + 1) + " selected. A " + clipDurationSeconds + "-second clip window is ready. Review and export.")
                     } else setStatus("This suggestion has no exact timestamps. Use a timestamped transcript.")
                 }
             }
             row.addView(text((index + 1).toString() + ". " + item.hook, 14f, ink, true))
-            row.addView(text(if (item.start != null && item.end != null) clock(item.start) + "  →  " + clock(item.end) else "Timestamp unavailable", 12f, accent, true).apply { setPadding(0, dp(4), 0, 0) })
+            row.addView(text(if (item.start != null && item.end != null) "Key moment: " + clock(item.start) + "  →  " + clock(item.end) + "  ·  Tap for " + clipDurationSeconds + "s clip" else "Timestamp unavailable", 12f, accent, true).apply { setPadding(0, dp(4), 0, 0) })
             if (item.reason.isNotBlank()) row.addView(text(item.reason, 12f, muted).apply { setPadding(0, dp(4), 0, 0) })
             highlightsView.addView(row, full(dp(8)))
         }

@@ -396,7 +396,10 @@ Android may reject an APK signed with a different debug certificate. If that hap
     │   │   ├── build.gradle
     │   │   └── src/main/
     │   │       ├── AndroidManifest.xml
-    │   │       └── java/com/shortsforge/mobile/MainActivity.kt
+    │   │       └── java/com/shortsforge/mobile/
+    │   │           ├── MainActivity.kt
+    │   │           ├── YouTubePreviewActivity.kt
+    │   │           └── StudioEditorActivity.kt
     │   ├── build.gradle
     │   └── settings.gradle
     ├── .github/
@@ -835,7 +838,10 @@ Start మరియు End fields చూడండి. AI 60/90-second windows sou
     │   │   ├── build.gradle
     │   │   └── src/main/
     │   │       ├── AndroidManifest.xml
-    │   │       └── java/com/shortsforge/mobile/MainActivity.kt
+    │   │       └── java/com/shortsforge/mobile/
+    │   │           ├── MainActivity.kt
+    │   │           ├── YouTubePreviewActivity.kt
+    │   │           └── StudioEditorActivity.kt
     │   ├── build.gradle
     │   └── settings.gradle
     ├── .github/
@@ -1274,7 +1280,10 @@ Start और End fields जांचें। AI की 60/90-second windows sou
     │   │   ├── build.gradle
     │   │   └── src/main/
     │   │       ├── AndroidManifest.xml
-    │   │       └── java/com/shortsforge/mobile/MainActivity.kt
+    │   │       └── java/com/shortsforge/mobile/
+    │   │           ├── MainActivity.kt
+    │   │           ├── YouTubePreviewActivity.kt
+    │   │           └── StudioEditorActivity.kt
     │   ├── build.gradle
     │   └── settings.gradle
     ├── .github/

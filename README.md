@@ -3,13 +3,13 @@
 **AI-powered long-video to Shorts editor for Android.**  
 Turn a long interview, podcast, lecture, or other video file into short clips by finding useful moments in its timestamped transcript, reviewing the suggested time ranges, and exporting an MP4.
 
-[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44246116588)
+[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44247778525)
 
 | App detail | Value |
 |---|---|
 | App name | ShortsForge Mobile |
-| Current release | 1.5.0 |
-| Version code | 8 |
+| Current release | 1.5.1 |
+| Version code | 9 |
 | Android package | `com.shortsforge.mobile` |
 | Minimum Android version | Android 8.0 (API 26) |
 | APK size | About 13.86 MB |
@@ -45,7 +45,7 @@ The intended workflow is:
 7. Choose an output aspect ratio, optionally add a text overlay, and export an MP4.
 8. Find the exported file in Movies/ShortsForge and share it using the Android share sheet.
 
-## 3. Features in version 1.5.0
+## 3. Features in version 1.5.1
 
 ### Source video
 - Select a video from device storage using Android's file picker.
@@ -78,7 +78,7 @@ The intended workflow is:
   - An importance score from 1 to 10 when returned by the model.
   - A short explanation of why the moment matters.
 - The first suggestion is selected automatically when results arrive.
-- The selected suggestion is visually highlighted.
+- The selection is announced in the status line above the cards and in the fixed bottom export bar. The cards keep the same neutral appearance as in the reference screen.
 - Tap another suggestion card to change the selected moment.
 
 ### Clip editing and preview
@@ -272,7 +272,7 @@ Review the selected AI provider's privacy terms before sending private, confiden
 
 ## 11. Current limitations — what is not included
 
-The following are **not** current 1.5.0 features:
+The following are **not** current 1.5.1 features:
 - YouTube URL import or public YouTube video downloading.
 - Google Drive/Dropbox share-link importing.
 - Direct internet video URL importing.
@@ -391,12 +391,12 @@ A push that changes files under android/ or the workflow can trigger the build. 
 
 ## 17. Latest release
 
-- Release: 1.5.0
-- Version code: 8
+- Release: 1.5.1
+- Version code: 9
 - Build result: successful.
-- Build run: [GitHub Actions run 44246116588](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44246116588)
+- Build run: [GitHub Actions run 44247778525](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44247778525)
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)
-- SHA-256: `54c32d99606c1d27bc77a720b716f0ef3668399f9e796642e80719330d873896`
+- SHA-256: `0188a30d2a55844ca55ddee7a3d5c0339a6d386ea824d8d8432e21f86ee58dd4`
 
 To verify a downloaded file on a computer, calculate its SHA-256 hash and compare it with the value above.
 
@@ -437,7 +437,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 7. Aspect ratio ఎంచుకుని, కావాలంటే text overlay జోడించి MP4 export చేయాలి.
 8. Movies/ShortsForgeలో వీడియోను చూసి Android share menu ద్వారా share చేయాలి.
 
-## 3. Version 1.5.0లో ప్రస్తుతం ఉన్న ఫీచర్లు
+## 3. Version 1.5.1లో ప్రస్తుతం ఉన్న ఫీచర్లు
 
 ### Source video
 - ఫోన్ storage నుంచి Android file picker ద్వారా వీడియో ఎంచుకోవచ్చు.
@@ -471,7 +471,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
   - Model ఇచ్చినప్పుడు 1–10 importance score.
   - ఆ భాగం ఎందుకు ఉపయోగకరమో చిన్న explanation.
 - ఫలితాలు వచ్చినప్పుడు మొదటి suggestion ఆటోమేటిక్‌గా select అవుతుంది.
-- Select అయిన card ప్రత్యేకంగా highlight అవుతుంది.
+- ఎంచుకున్న suggestion వివరాలు cards పైన ఉన్న status lineలో మరియు కింద స్థిరంగా ఉండే export barలో కనిపిస్తాయి. Screenshotలో ఉన్నట్లుగానే cards neutral designలో ఉంటాయి.
 - ఇంకో card నొక్కి వేరే moment ఎంచుకోవచ్చు.
 
 ### Clip editing మరియు preview
@@ -664,7 +664,7 @@ Private లేదా confidential recordingsను cloud APIకి పంపే 
 
 ## 11. ప్రస్తుత యాప్‌లో లేని ఫీచర్లు
 
-క్రింది అంశాలు **Version 1.5.0లో లేవు**:
+క్రింది అంశాలు **Version 1.5.1లో లేవు**:
 - YouTube URL import లేదా public YouTube video download.
 - Google Drive/Dropbox share-link import.
 - Direct internet video URL import.
@@ -783,12 +783,12 @@ android/లో లేదా workflow fileలో మార్పులు push �
 
 ## 17. తాజా Release
 
-- Release: 1.5.0.
-- Version code: 8.
+- Release: 1.5.1.
+- Version code: 9.
 - Build result: Successful.
-- Build run: [GitHub Actions run 44246116588](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44246116588).
+- Build run: [GitHub Actions run 44247778525](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44247778525).
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk).
-- SHA-256: `54c32d99606c1d27bc77a720b716f0ef3668399f9e796642e80719330d873896`.
+- SHA-256: `0188a30d2a55844ca55ddee7a3d5c0339a6d386ea824d8d8432e21f86ee58dd4`.
 
 Computerలో download చేసిన file verify చేయాలంటే దాని SHA-256 hash calculate చేసి పై విలువతో పోల్చండి.
 
@@ -829,7 +829,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 7. Aspect ratio चुनें, चाहें तो text overlay जोड़ें और MP4 export करें।
 8. वीडियो को Movies/ShortsForge में ढूंढें और Android share sheet से साझा करें।
 
-## 3. Version 1.5.0 में उपलब्ध सुविधाएँ
+## 3. Version 1.5.1 में उपलब्ध सुविधाएँ
 
 ### Source video
 - Android file picker से फोन की storage में मौजूद वीडियो चुनें।
@@ -1056,7 +1056,7 @@ Private या confidential recordings cloud API को भेजने से �
 
 ## 11. मौजूदा सीमाएँ — क्या शामिल नहीं है
 
-निम्न सुविधाएँ **वर्तमान Version 1.5.0 में उपलब्ध नहीं हैं**:
+निम्न सुविधाएँ **वर्तमान Version 1.5.1 में उपलब्ध नहीं हैं**:
 - YouTube URL import या public YouTube video download।
 - Google Drive/Dropbox share-link import।
 - Direct internet video URL import।
@@ -1175,12 +1175,12 @@ android/ या workflow file में बदलाव push करने पर
 
 ## 17. Latest Release
 
-- Release: 1.5.0।
-- Version code: 8।
+- Release: 1.5.1।
+- Version code: 9।
 - Build result: Successful।
-- Build run: [GitHub Actions run 44246116588](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44246116588)।
+- Build run: [GitHub Actions run 44247778525](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44247778525)।
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)।
-- SHA-256: `54c32d99606c1d27bc77a720b716f0ef3668399f9e796642e80719330d873896`।
+- SHA-256: `0188a30d2a55844ca55ddee7a3d5c0339a6d386ea824d8d8432e21f86ee58dd4`।
 
 Computer पर downloaded file verify करने के लिए उसका SHA-256 hash calculate करके ऊपर दिए गए value से compare करें।
 

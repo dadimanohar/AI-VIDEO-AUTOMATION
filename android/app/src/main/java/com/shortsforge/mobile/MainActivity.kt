@@ -1486,7 +1486,7 @@ $data
                     val contentType = body.contentType()?.let { it.toString().substringBefore(";").lowercase(Locale.US) }.orEmpty()
                     val pathExtension = response.request.url.encodedPath.substringAfterLast('.', "").lowercase(Locale.US)
                     val disposition = response.header("Content-Disposition").orEmpty()
-                    val dispositionName = Regex("filename\*?=(?:UTF-8''|\\\")?([^;\\\"]+)", RegexOption.IGNORE_CASE)
+                    val dispositionName = Regex("""filename\\*?=(?:UTF-8''|")?([^;"]+)""", RegexOption.IGNORE_CASE)
                         .find(disposition)?.groupValues?.getOrNull(1)?.trim()
                     val dispositionExtension = dispositionName?.substringAfterLast('.', "")?.lowercase(Locale.US).orEmpty()
                     val extension = when {

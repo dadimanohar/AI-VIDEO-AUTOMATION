@@ -97,7 +97,7 @@ class YouTubePreviewActivity : ComponentActivity() {
             bottomMargin = dp(12)
         })
         webView.loadDataWithBaseURL(
-            "https://www.youtube.com",
+            "https://shortsforge.mobile",
             playerHtml(videoId),
             "text/html",
             "UTF-8",
@@ -168,7 +168,7 @@ class YouTubePreviewActivity : ComponentActivity() {
             function onYouTubeIframeAPIReady() {
               player = new YT.Player('player', {
                 width:'100%', height:'100%', videoId:'$videoId',
-                playerVars:{ playsinline:1, controls:1, rel:0, fs:1, origin:'https://www.youtube.com' },
+                playerVars:{ playsinline:1, controls:1, rel:0, fs:1, origin:window.location.origin },
                 events:{
                   onReady:function(e) {
                     try {

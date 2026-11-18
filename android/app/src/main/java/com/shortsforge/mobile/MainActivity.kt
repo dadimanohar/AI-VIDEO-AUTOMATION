@@ -117,6 +117,7 @@ class MainActivity : ComponentActivity() {
     private var transcript = ""
     private var highlightItems: List<Highlight> = emptyList()
     private var selectedHighlightIndex = -1
+    private val queuedHighlightIndices = linkedSetOf<Int>()
     private var previewStopTask: Runnable? = null
     private var clipDurationSeconds = 60
     private var startText = "0"
@@ -146,6 +147,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var exportButton: Button
     private lateinit var cancelButton: Button
     private lateinit var highlightsView: LinearLayout
+    private lateinit var queueSummaryView: TextView
+    private lateinit var studioQueueButton: Button
 
     private val pickTranscript = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) importTranscriptFile(uri)
@@ -275,9 +278,20 @@ class MainActivity : ComponentActivity() {
         ai.addView(statusView)
         highlightsView = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         ai.addView(highlightsView)
+        queueSummaryView = text("No topics added to your Shorts queue yet.", 12f, muted).apply {
+            setPadding(0, dp(8), 0, dp(2))
+        }
+        ai.addView(queueSummaryView)
 
-        val edit = card(body, "03  •  EDIT YOUR SHORT", "Select the highlight length, preview the exact clip, then export.")
-        edit.addView(button("Open Studio Editor · Timeline, split, speed, text, audio", true) { openStudioEditor() }, full(dp(8)))
+        val edit = card(body, "03  •  EDIT YOUR SHORT", "Tap a topic to load its exact timestamps. Add multiple topics to a single Studio timeline.")
+        studioQueueButton = button("Open Studio Editor · current highlight", true) { openStudioEditor() }
+        edit.addView(studioQueueButton, full(dp(8)))
+        edit.addView(button("Clear Shorts topic queue", false) {
+            queuedHighlightIndices.clear()
+            refreshQueueControls()
+            showHighlights(highlightItems)
+            setStatus("Shorts topic queue cleared. The current highlight remains selected.")
+        }, full(dp(6)))
         edit.addView(button("Preview selected clip", false) { previewSelectedClip() }, full())
         edit.addView(label("AI HIGHLIGHT CLIP LENGTH"))
         clipDurationSpinner = spinner(listOf("60 seconds", "90 seconds"))
@@ -289,7 +303,16 @@ class MainActivity : ComponentActivity() {
             }
         }
         edit.addView(clipDurationSpinner, full())
-        edit.addView(text("AI looks for complete question-and-answer exchanges, key claims, explanations and surprising facts. Choosing a suggestion builds a 60s or 90s window around that moment.", 12f, muted).apply { setPadding(0, dp(7), 0, dp(2)) })
+        edit.addView(button("Expand selected topic to 60s / 90s", false) {
+            val item = highlightItems.getOrNull(selectedHighlightIndex)
+            if (item?.start != null && item.end != null) {
+                applyHighlightWindow(item.start, item.end)
+                setStatus("Selected topic expanded to a " + clipDurationSeconds + "-second window. This does not change the queued exact ranges.")
+            } else {
+                setStatus("Select a timestamped topic first.")
+            }
+        }, full(dp(6)))
+        edit.addView(text("Tap a suggestion to use its exact timestamps. The 60s/90s control is an optional expansion around the selected topic.", 12f, muted).apply { setPadding(0, dp(7), 0, dp(2)) })
         edit.addView(label("START AND END · SECONDS"))
         val range = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         startEdit = input("Start", startText, false).apply { inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL }
@@ -549,6 +572,12 @@ class MainActivity : ComponentActivity() {
             handler.postDelayed(stop, ((to - from) * 1000).toLong())
             setStatus("Previewing selected clip: " + clock(from) + " to " + clock(to))
         } catch (e: Exception) { setStatus("Preview failed: " + (e.message ?: "unknown error")) }
+    }
+
+    private fun applyExactHighlightRange(start: Double, end: Double) {
+        if (!start.isFinite() || !end.isFinite() || start < 0 || end <= start) return
+        startEdit.setText(fmtNumber(start))
+        endEdit.setText(fmtNumber(end))
     }
 
     private fun applyHighlightWindow(anchorStart: Double, anchorEnd: Double) {
@@ -1328,40 +1357,55 @@ $data
     }
 
     private fun suggestionSelectedStatus(index: Int): String =
-        "Suggestion " + (index + 1) + " selected. Review the preview and export."
+        "Suggestion " + (index + 1) + " selected. Exact timestamps loaded into Start / End."
 
     private fun showHighlights(items: List<Highlight>) {
         if (!::highlightsView.isInitialized) return
+        if (items !== highlightItems) queuedHighlightIndices.clear()
         highlightItems = items
+        queuedHighlightIndices.removeAll { it !in items.indices }
         if (selectedHighlightIndex !in items.indices) selectedHighlightIndex = if (items.isNotEmpty()) 0 else -1
         items.getOrNull(selectedHighlightIndex)?.let { selected ->
             if (selected.start != null && selected.end != null && ::startEdit.isInitialized && ::endEdit.isInitialized) {
-                applyHighlightWindow(selected.start, selected.end)
+                applyExactHighlightRange(selected.start, selected.end)
             }
         }
         highlightsView.removeAllViews()
         if (items.isEmpty()) {
             highlightsView.addView(text("No timestamped suggestions to show.", 12f, muted).apply { setPadding(0, dp(8), 0, 0) })
+            refreshQueueControls()
             return
         }
         items.forEachIndexed { index, item ->
+            val selected = index == selectedHighlightIndex
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(dp(15), dp(14), dp(15), dp(14))
-                background = shape(Color.rgb(248, 249, 255), 14, border)
+                background = shape(if (selected) Color.rgb(245, 244, 255) else Color.rgb(248, 249, 255), 14,
+                    if (selected) accent else border)
                 isClickable = true
                 isFocusable = true
                 setOnClickListener {
                     if (item.start != null && item.end != null) {
                         selectedHighlightIndex = index
-                        applyHighlightWindow(item.start, item.end)
+                        applyExactHighlightRange(item.start, item.end)
+                        showHighlights(highlightItems)
                         setStatus(suggestionSelectedStatus(index))
                     } else {
                         setStatus("This suggestion has no exact timestamps. Use a timestamped transcript.")
                     }
                 }
             }
-            row.addView(text((index + 1).toString() + ". " + item.hook, 14f, ink, true))
+            val headingRow = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+            }
+            headingRow.addView(text((index + 1).toString() + ". " + item.hook, 14f, ink, true),
+                LinearLayout.LayoutParams(0, -2, 1f))
+            if (selected) {
+                headingRow.addView(text("SELECTED", 9f, accent, true))
+            }
+            row.addView(headingRow)
             if (item.start != null && item.end != null) {
                 row.addView(text(clock(item.start) + "  →  " + clock(item.end), 12f, accent, true)
                     .apply { setPadding(0, dp(5), 0, 0) })
@@ -1369,11 +1413,80 @@ $data
                 row.addView(text("Timestamp unavailable", 12f, accent, true)
                     .apply { setPadding(0, dp(5), 0, 0) })
             }
+            if (item.category.isNotBlank() || item.importance > 0) {
+                val meta = listOfNotNull(
+                    item.category.takeIf { it.isNotBlank() },
+                    if (item.importance > 0) "Importance " + item.importance + "/10" else null
+                ).joinToString("  ·  ")
+                row.addView(text(meta, 10f, muted, true).apply { setPadding(0, dp(5), 0, 0) })
+            }
             if (item.reason.isNotBlank()) {
                 row.addView(text(item.reason, 12f, muted)
                     .apply { setPadding(0, dp(6), 0, 0) })
             }
+            val queueCheck = CheckBox(this).apply {
+                text = if (index in queuedHighlightIndices) "Added to Shorts queue" else "Add this topic to Shorts queue"
+                textSize = 12f
+                setTextColor(if (index in queuedHighlightIndices) accent else muted)
+                buttonTintList = android.content.res.ColorStateList.valueOf(accent)
+                isChecked = index in queuedHighlightIndices
+                setOnCheckedChangeListener { _, checked ->
+                    val accepted = setHighlightQueued(index, checked)
+                    if (!accepted) isChecked = false
+                    text = if (index in queuedHighlightIndices) "Added to Shorts queue" else "Add this topic to Shorts queue"
+                    setTextColor(if (index in queuedHighlightIndices) accent else muted)
+                }
+            }
+            row.addView(queueCheck.apply { setPadding(0, dp(5), 0, 0) })
             highlightsView.addView(row, full(dp(8)))
+        }
+        refreshQueueControls()
+    }
+
+    private fun setHighlightQueued(index: Int, add: Boolean): Boolean {
+        val item = highlightItems.getOrNull(index) ?: return false
+        val start = item.start ?: return false
+        val end = item.end ?: return false
+        if (end <= start) return false
+        if (!add) {
+            queuedHighlightIndices.remove(index)
+            refreshQueueControls()
+            return true
+        }
+        if (index in queuedHighlightIndices) return true
+        val currentTotal = queuedHighlightIndices.sumOf { queuedIndex ->
+            val queued = highlightItems.getOrNull(queuedIndex)
+            if (queued?.start != null && queued.end != null) ((queued.end - queued.start) * 1000.0).toLong() else 0L
+        }
+        val addedDuration = ((end - start) * 1000.0).toLong()
+        if (currentTotal + addedDuration > 180_000L) {
+            Toast.makeText(this, "The Shorts queue is limited to 180 seconds total. Remove a topic or use a shorter range.", Toast.LENGTH_LONG).show()
+            setStatus("Queue limit reached: 180 seconds total.")
+            return false
+        }
+        queuedHighlightIndices.add(index)
+        refreshQueueControls()
+        return true
+    }
+
+    private fun refreshQueueControls() {
+        if (::queueSummaryView.isInitialized) {
+            val totalMs = queuedHighlightIndices.sumOf { index ->
+                val item = highlightItems.getOrNull(index)
+                if (item?.start != null && item.end != null) ((item.end - item.start) * 1000.0).toLong() else 0L
+            }
+            queueSummaryView.text = if (queuedHighlightIndices.isEmpty()) {
+                "No topics added to your Shorts queue yet. You can still open the current selected highlight."
+            } else {
+                queuedHighlightIndices.size.toString() + " topic(s) queued  ·  " + clock(totalMs / 1000.0) + " total  ·  maximum 03:00"
+            }
+        }
+        if (::studioQueueButton.isInitialized) {
+            studioQueueButton.text = if (queuedHighlightIndices.isEmpty()) {
+                "Open Studio Editor · current highlight"
+            } else {
+                "Open Studio Editor · " + queuedHighlightIndices.size + " queued topic(s)"
+            }
         }
     }
 
@@ -1574,17 +1687,35 @@ $data
 
     private fun openStudioEditor() {
         val uri = selectedVideo ?: run { setStatus("Choose a video first."); return }
-        val start = startEdit.text.toString().toDoubleOrNull()
-        val end = endEdit.text.toString().toDoubleOrNull()
-        if (start == null || end == null || !start.isFinite() || !end.isFinite() || start < 0 || end <= start) {
-            setStatus("Choose a valid clip range before opening Studio Editor.")
+        val chosen = queuedHighlightIndices.mapNotNull { index ->
+            val item = highlightItems.getOrNull(index) ?: return@mapNotNull null
+            val from = item.start ?: return@mapNotNull null
+            val to = item.end ?: return@mapNotNull null
+            if (to <= from) null else item
+        }
+        val ranges = if (chosen.isNotEmpty()) {
+            chosen.flatMap { item -> listOf((item.start!! * 1000).toLong(), (item.end!! * 1000).toLong()) }.toLongArray()
+        } else {
+            val start = startEdit.text.toString().toDoubleOrNull()
+            val end = endEdit.text.toString().toDoubleOrNull()
+            if (start == null || end == null || !start.isFinite() || !end.isFinite() || start < 0 || end <= start) {
+                setStatus("Choose a valid clip range before opening Studio Editor.")
+                return
+            }
+            longArrayOf((start * 1000).toLong(), (end * 1000).toLong())
+        }
+        val queuedTotal = ranges.toList().chunked(2).sumOf { it[1] - it[0] }
+        if (queuedTotal > 180_000L) {
+            setStatus("Your combined topics exceed the 180-second Studio export limit. Shorten or remove a topic.")
             return
         }
         val intent = Intent(this, StudioEditorActivity::class.java)
             .putExtra(StudioEditorActivity.EXTRA_SOURCE_URI, uri.toString())
             .putExtra(StudioEditorActivity.EXTRA_SOURCE_DURATION, durationMs)
-            .putExtra(StudioEditorActivity.EXTRA_START_MS, (start * 1000).toLong())
-            .putExtra(StudioEditorActivity.EXTRA_END_MS, (end * 1000).toLong())
+            .putExtra(StudioEditorActivity.EXTRA_CLIP_RANGES_MS, ranges)
+            .putStringArrayListExtra(StudioEditorActivity.EXTRA_CLIP_TITLES, ArrayList(chosen.map { it.hook }))
+            .putExtra(StudioEditorActivity.EXTRA_START_MS, ranges[0])
+            .putExtra(StudioEditorActivity.EXTRA_END_MS, ranges[1])
         startActivity(intent)
     }
 

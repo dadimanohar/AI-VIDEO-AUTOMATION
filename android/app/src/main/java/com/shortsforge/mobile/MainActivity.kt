@@ -716,6 +716,444 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun modelsDirectory(): File {
+        val directory = File(filesDir, "offline-models")
+        if (!directory.exists() && !directory.mkdirs()) throw IOException("Could not create the offline model folder.")
+        return directory
+    }
+
+    private fun qwenModelFile(): File = File(modelsDirectory(), qwenModelName)
+    private fun whisperModelFile(): File = File(modelsDirectory(), whisperModelName)
+
+    private fun localModelStatus(): String {
+        return try {
+            val qwen = qwenModelFile()
+            val whisper = whisperModelFile()
+            val qwenReady = qwen.exists() && qwen.length() >= 420_000_000L
+            val whisperReady = whisper.exists() && whisper.length() >= 100_000_000L
+            "Qwen3 0.6B: " + (if (qwenReady) "Downloaded" else "Not downloaded") +
+                "\nWhisper Base: " + (if (whisperReady) "Downloaded" else "Not downloaded")
+        } catch (e: Exception) {
+            "Model storage unavailable: " + (e.message ?: "unknown error")
+        }
+    }
+
+    private fun downloadOfflineModels(statusView: TextView) {
+        if (busy) return
+        busy = true
+        refreshFooter()
+        statusView.text = "Preparing model storage…"
+        executor.execute {
+            try {
+                val dir = modelsDirectory()
+                val available = android.os.StatFs(dir.absolutePath).availableBytes
+                if (available < 700L * 1024L * 1024L) {
+                    throw IOException("At least 700 MB free storage is recommended before downloading both offline models.")
+                }
+                downloadModelFile(
+                    "https://huggingface.co/ggml-org/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_0.gguf?download=true",
+                    qwenModelFile(),
+                    420_000_000L,
+                    "Qwen3 0.6B"
+                ) { message -> runOnUiThread { statusView.text = message; setStatus(message) } }
+                downloadModelFile(
+                    "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin?download=true",
+                    whisperModelFile(),
+                    100_000_000L,
+                    "Whisper Base"
+                ) { message -> runOnUiThread { statusView.text = message; setStatus(message) } }
+                runOnUiThread {
+                    statusView.text = localModelStatus() + "\nOffline AI is ready. Select Offline local AI in the provider list."
+                    setStatus("Both offline models are ready. Local transcription and AI highlight analysis can now run without internet.")
+                    Toast.makeText(this, "Offline AI models downloaded", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    statusView.text = localModelStatus() + "\nDownload error: " + (e.message ?: "unknown error")
+                    setStatus("Offline model download failed: " + (e.message ?: "unknown error"))
+                }
+            } finally {
+                runOnUiThread {
+                    busy = false
+                    refreshFooter()
+                }
+            }
+        }
+    }
+
+    private fun downloadModelFile(
+        url: String,
+        destination: File,
+        minimumBytes: Long,
+        displayName: String,
+        onProgress: (String) -> Unit
+    ) {
+        if (destination.exists() && destination.length() >= minimumBytes) {
+            onProgress(displayName + " already downloaded.")
+            return
+        }
+        if (destination.exists()) destination.delete()
+        val partial = File(destination.parentFile, destination.name + ".part")
+        if (partial.exists()) partial.delete()
+        onProgress("Downloading " + displayName + "…")
+        val request = Request.Builder().url(url).header("User-Agent", "ShortsForge-Mobile/1.3").get().build()
+        modelHttp.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw IOException(displayName + " download returned HTTP " + response.code)
+            val body = response.body ?: throw IOException(displayName + " download returned an empty response.")
+            val length = body.contentLength()
+            if (length in 1 until minimumBytes) throw IOException(displayName + " file is smaller than expected; the model download may be incomplete.")
+            body.byteStream().use { input ->
+                partial.outputStream().buffered(1024 * 1024).use { output ->
+                    val buffer = ByteArray(256 * 1024)
+                    var total = 0L
+                    var lastUpdate = 0L
+                    while (true) {
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        total += count
+                        if (total > 2_000_000_000L) throw IOException(displayName + " file exceeded the safety size limit.")
+                        output.write(buffer, 0, count)
+                        val now = System.currentTimeMillis()
+                        if (now - lastUpdate > 800) {
+                            lastUpdate = now
+                            val percent = if (length > 0) (total * 100L / length).toInt().coerceIn(0, 99) else -1
+                            val received = total / (1024 * 1024)
+                            val totalMb = if (length > 0) " / " + (length / (1024 * 1024)) + " MB" else ""
+                            onProgress(if (percent >= 0) "Downloading " + displayName + "… " + percent + "%" else "Downloading " + displayName + "… " + received + totalMb)
+                        }
+                    }
+                }
+            }
+        }
+        if (!partial.exists() || partial.length() < minimumBytes) {
+            partial.delete()
+            throw IOException(displayName + " download was incomplete. Please retry on a stable connection.")
+        }
+        if (!partial.renameTo(destination)) {
+            destination.delete()
+            if (!partial.renameTo(destination)) throw IOException("Could not save " + displayName + " to app storage.")
+        }
+        onProgress(displayName + " download complete.")
+    }
+
+    private fun transcribeLocally(uri: android.net.Uri) {
+        val whisperFile = try { whisperModelFile() } catch (e: Exception) {
+            setStatus("Offline models are not ready. Download them in Settings first.")
+            showSettings()
+            return
+        }
+        if (!whisperFile.exists() || whisperFile.length() < 100_000_000L) {
+            setStatus("Whisper Base is not downloaded. Open Settings and download the offline AI models first.")
+            showSettings()
+            return
+        }
+        if (busy) return
+        busy = true
+        refreshFooter()
+        setStatus("Offline mode: decoding video audio to 16 kHz WAV on this device…")
+        executor.execute {
+            var wav: File? = null
+            try {
+                wav = extractWav16kMono(uri)
+                runOnUiThread { setStatus("Offline Whisper is transcribing the video. No audio is being sent to a server…") }
+                val transcriptText = runBlocking {
+                    val model = Whisper.loadModel(this@MainActivity, whisperFile.absolutePath)
+                    try {
+                        val result = Whisper.transcribe(
+                            model,
+                            wav!!.absolutePath,
+                            WhisperConfig(language = "auto", threads = 4, printTimestamps = true)
+                        )
+                        result.segments.joinToString("\n") { segment ->
+                            "[" + clock(segment.startMs / 1000.0) + " - " + clock(segment.endMs / 1000.0) + "] " + segment.text.trim()
+                        }.ifBlank { result.text.trim() }
+                    } finally {
+                        Whisper.releaseModel(model)
+                    }
+                }
+                if (transcriptText.isBlank()) throw IOException("Whisper did not detect speech in this video.")
+                runOnUiThread {
+                    transcript = transcriptText
+                    transcriptEdit.setText(transcriptText)
+                    setStatus("Offline transcription complete. Qwen3 is now finding important moments…")
+                    analyzeTranscript(true)
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    busy = false
+                    refreshFooter()
+                    setStatus("Offline transcription failed: " + (e.message ?: "unknown error"))
+                }
+            } finally {
+                try { wav?.delete() } catch (_: Exception) { }
+            }
+        }
+    }
+
+    private fun analyzeWithLocalModel(data: String, auto: Boolean) {
+        val modelFile = try { qwenModelFile() } catch (_: Exception) { null }
+        if (modelFile == null || !modelFile.exists() || modelFile.length() < 420_000_000L) {
+            setStatus("Qwen3 local model is not downloaded. Open Settings and download the offline AI models first.")
+            showSettings()
+            return
+        }
+        if (busy && !auto) return
+        busy = true
+        refreshFooter()
+        setStatus("Loading Qwen3 on this device…")
+        executor.execute {
+            var model: dev.ffmpegkit.llama.LlamaModel? = null
+            try {
+                val timestampPattern = Regex("""\[\d{2}:\d{2}\.\d{2}\s*-\s*\d{2}:\d{2}\.\d{2}\]""")
+                if (!timestampPattern.containsMatchIn(data)) {
+                    throw IOException("The transcript needs timestamps. Use Offline auto-transcribe or import an SRT/VTT subtitle file.")
+                }
+                model = runBlocking {
+                    Llama.loadModel(
+                        modelPath = modelFile.absolutePath,
+                        config = LlamaConfig(contextSize = 4096, threads = 4, temperature = 0.15f, topP = 0.85f, topK = 30)
+                    )
+                }
+                val lines = data.lines().filter { it.isNotBlank() }
+                val chunks = lines.chunked(24)
+                val chunkTotal = chunks.size
+                val candidates = mutableListOf<Highlight>()
+                for ((index, chunk) in chunks.withIndex()) {
+                    val chunkText = chunk.joinToString("\n")
+                    val prompt = """
+Find the most important short-form video moments in this timestamped interview transcript.
+Target exported video length: $clipDurationSeconds seconds.
+Return ONLY a JSON array with at most 3 anchor moments:
+[{"start_seconds":120.5,"end_seconds":164.2,"hook":"Short accurate title","reason":"Why this matters","category":"Question and answer","importance_score":9}]
+Find complete question-and-answer exchanges, important announcements, key insights, explanations, surprising facts, predictions and practical advice.
+Include the question when it is needed to understand the answer. Never cut away the context that makes an answer meaningful.
+The anchor start/end must come from the transcript timestamps. Convert mm:ss.cc to seconds from the beginning of the original video. Do not invent or guess times. Do not include partial thoughts.
+Rank importance_score from 1 to 10. No markdown or explanatory text outside the JSON array.
+Transcript segment $index of $chunkTotal:
+$chunkText
+""".trimIndent()
+                    val answer = runBlocking {
+                        Llama.complete(
+                            model,
+                            prompt = prompt,
+                            systemPrompt = "You are a careful factual interview editor. Preserve context. Return strict JSON only.",
+                            maxTokens = 420
+                        )
+                    }
+                    candidates.addAll(parseHighlights(answer.text))
+                    val progress = ((index + 1) * 100 / chunkTotal).coerceIn(1, 100)
+                    setStatus("Offline Qwen3 is analysing transcript chunks… " + progress + "%")
+                }
+                val best = candidates
+                    .distinctBy { (it.start?.toInt() ?: -1).toString() + "-" + (it.end?.toInt() ?: -1).toString() }
+                    .sortedByDescending { it.importance }
+                    .take(8)
+                runOnUiThread {
+                    showHighlights(best)
+                    setStatus(if (best.isEmpty()) {
+                        "Qwen3 did not return reliable timestamped highlights. Try a longer transcript or Cloud AI for a stronger analysis."
+                    } else {
+                        "Offline Qwen3 found " + best.size + " important moments. Tap one to create a " + clipDurationSeconds + "s clip."
+                    })
+                }
+            } catch (e: Exception) {
+                runOnUiThread { setStatus("Offline Qwen3 analysis failed: " + (e.message ?: "unknown error")) }
+            } finally {
+                try { if (model != null) Llama.releaseModel(model) } catch (_: Exception) { }
+                runOnUiThread {
+                    busy = false
+                    refreshFooter()
+                }
+            }
+        }
+    }
+
+    /**
+     * Decode the selected video's audio track using Android MediaCodec, downmix to mono,
+     * linearly resample to 16 kHz, and write the PCM WAV required by local Whisper.
+     */
+    private fun extractWav16kMono(uri: android.net.Uri): File {
+        val extractor = MediaExtractor()
+        var decoder: MediaCodec? = null
+        var decoderStarted = false
+        val rawPcm = File(cacheDir, "sf-local-" + System.currentTimeMillis() + ".pcm")
+        val wavFile = File(cacheDir, "sf-local-" + System.currentTimeMillis() + ".wav")
+        try {
+            extractor.setDataSource(this, uri, null)
+            var audioTrack = -1
+            var inputFormat: android.media.MediaFormat? = null
+            for (i in 0 until extractor.trackCount) {
+                val format = extractor.getTrackFormat(i)
+                val mime = format.getString(android.media.MediaFormat.KEY_MIME) ?: ""
+                if (mime.startsWith("audio/")) {
+                    audioTrack = i
+                    inputFormat = format
+                    break
+                }
+            }
+            if (audioTrack < 0 || inputFormat == null) throw IOException("The selected video has no audio track.")
+            val mime = inputFormat.getString(android.media.MediaFormat.KEY_MIME)!!
+            extractor.selectTrack(audioTrack)
+            decoder = MediaCodec.createDecoderByType(mime)
+            decoder.configure(inputFormat, null, null, 0)
+            decoder.start()
+            decoderStarted = true
+
+            val pcm = BufferedOutputStream(FileOutputStream(rawPcm), 1024 * 1024)
+            var sourceRate = 0
+            var channels = 0
+            var pcmEncoding = AudioFormat.ENCODING_PCM_16BIT
+            var previous = 0f
+            var havePrevious = false
+            var sourceIndex = 0L
+            var nextOutputPosition = 0.0
+            var outputSamples = 0L
+            var inputDone = false
+            var outputDone = false
+
+            fun writeMonoSample(value: Float) {
+                val safe = value.coerceIn(-1f, 1f)
+                val shortValue = (safe * 32767f).toInt()
+                pcm.write(shortValue and 0xff)
+                pcm.write((shortValue shr 8) and 0xff)
+                outputSamples++
+            }
+
+            fun consumeMonoSample(value: Float) {
+                if (!havePrevious) {
+                    writeMonoSample(value)
+                    previous = value
+                    havePrevious = true
+                    sourceIndex = 0L
+                    nextOutputPosition = sourceRate.toDouble() / 16000.0
+                    return
+                }
+                val currentIndex = sourceIndex + 1L
+                val ratio = sourceRate.toDouble() / 16000.0
+                while (nextOutputPosition <= currentIndex.toDouble()) {
+                    val fraction = (nextOutputPosition - sourceIndex.toDouble()).coerceIn(0.0, 1.0)
+                    val interpolated = previous + (value - previous) * fraction.toFloat()
+                    writeMonoSample(interpolated)
+                    nextOutputPosition += ratio
+                }
+                previous = value
+                sourceIndex = currentIndex
+            }
+
+            try {
+                val info = MediaCodec.BufferInfo()
+                while (!outputDone) {
+                    if (!inputDone) {
+                        val inputIndex = decoder.dequeueInputBuffer(10_000)
+                        if (inputIndex >= 0) {
+                            val inputBuffer = decoder.getInputBuffer(inputIndex)
+                                ?: throw IOException("Audio decoder returned an empty input buffer.")
+                            inputBuffer.clear()
+                            val sampleSize = extractor.readSampleData(inputBuffer, 0)
+                            if (sampleSize < 0) {
+                                decoder.queueInputBuffer(inputIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                                inputDone = true
+                            } else {
+                                val sampleTime = extractor.sampleTime
+                                val sampleFlags = extractor.sampleFlags
+                                decoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, sampleFlags)
+                                extractor.advance()
+                            }
+                        }
+                    }
+
+                    val outputIndex = decoder.dequeueOutputBuffer(info, 10_000)
+                    when {
+                        outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
+                            val outputFormat = decoder.outputFormat
+                            sourceRate = outputFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)
+                            channels = outputFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+                            pcmEncoding = if (outputFormat.containsKey(MediaFormat.KEY_PCM_ENCODING)) {
+                                outputFormat.getInteger(MediaFormat.KEY_PCM_ENCODING)
+                            } else AudioFormat.ENCODING_PCM_16BIT
+                            if (sourceRate <= 0 || channels <= 0) throw IOException("Audio decoder returned invalid sample-rate or channel information.")
+                        }
+                        outputIndex >= 0 -> {
+                            if (info.size > 0) {
+                                if (sourceRate <= 0 || channels <= 0) throw IOException("Audio format was not available from the decoder.")
+                                val outputBuffer = decoder.getOutputBuffer(outputIndex)
+                                if (outputBuffer != null) {
+                                    val data = outputBuffer.duplicate().order(ByteOrder.LITTLE_ENDIAN)
+                                    data.position(info.offset)
+                                    data.limit(info.offset + info.size)
+                                    val bytesPerSample = when (pcmEncoding) {
+                                        AudioFormat.ENCODING_PCM_FLOAT -> 4
+                                        AudioFormat.ENCODING_PCM_16BIT -> 2
+                                        AudioFormat.ENCODING_PCM_8BIT -> 1
+                                        else -> throw IOException("This device returned an unsupported decoded PCM audio format.")
+                                    }
+                                    val frameBytes = bytesPerSample * channels
+                                    val frames = data.remaining() / frameBytes
+                                    repeat(frames) {
+                                        var sum = 0f
+                                        repeat(channels) {
+                                            val sample = when (pcmEncoding) {
+                                                AudioFormat.ENCODING_PCM_FLOAT -> data.float
+                                                AudioFormat.ENCODING_PCM_16BIT -> data.short.toFloat() / 32768f
+                                                else -> ((data.get().toInt() and 0xff) - 128) / 128f
+                                            }
+                                            sum += sample
+                                        }
+                                        consumeMonoSample(sum / channels.toFloat())
+                                    }
+                                }
+                            }
+                            decoder.releaseOutputBuffer(outputIndex, false)
+                            if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) outputDone = true
+                        }
+                    }
+                }
+            } finally {
+                pcm.flush()
+                pcm.close()
+            }
+
+            if (outputSamples < 1600L) throw IOException("The video did not contain enough decodable speech audio.")
+            val dataBytes = rawPcm.length()
+            FileOutputStream(wavFile).buffered(1024 * 1024).use { output ->
+                fun writeIntLe(value: Int) {
+                    output.write(value and 0xff)
+                    output.write((value shr 8) and 0xff)
+                    output.write((value shr 16) and 0xff)
+                    output.write((value shr 24) and 0xff)
+                }
+                fun writeShortLe(value: Int) {
+                    output.write(value and 0xff)
+                    output.write((value shr 8) and 0xff)
+                }
+                output.write("RIFF".toByteArray(Charsets.US_ASCII))
+                writeIntLe((36L + dataBytes).coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+                output.write("WAVE".toByteArray(Charsets.US_ASCII))
+                output.write("fmt ".toByteArray(Charsets.US_ASCII))
+                writeIntLe(16)
+                writeShortLe(1)
+                writeShortLe(1)
+                writeIntLe(16000)
+                writeIntLe(32000)
+                writeShortLe(2)
+                writeShortLe(16)
+                output.write("data".toByteArray(Charsets.US_ASCII))
+                writeIntLe(dataBytes.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+                rawPcm.inputStream().buffered(1024 * 1024).use { it.copyTo(output, 1024 * 1024) }
+            }
+            return wavFile
+        } catch (e: Exception) {
+            rawPcm.delete()
+            wavFile.delete()
+            throw IOException("Could not prepare local Whisper audio: " + (e.message ?: "audio decoder error"), e)
+        } finally {
+            try { if (decoderStarted) decoder?.stop() } catch (_: Exception) { }
+            try { decoder?.release() } catch (_: Exception) { }
+            try { extractor.release() } catch (_: Exception) { }
+            rawPcm.delete()
+        }
+    }
+
     private fun extractAudio(uri: android.net.Uri): File {
         val extractor = MediaExtractor()
         var muxer: MediaMuxer? = null

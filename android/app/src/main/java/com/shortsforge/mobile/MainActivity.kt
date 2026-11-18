@@ -198,6 +198,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showEditor() {
+        if (::youtubePreview.isInitialized) {
+            youtubePreview.stopLoading()
+            youtubePreview.destroy()
+        }
         root.removeAllViews()
         root.addView(toolbar("ShortsForge", "MOBILE SHORTS STUDIO", "Settings") { showSettings() })
         val scroll = ScrollView(this).apply { clipToPadding = false }
@@ -245,6 +249,8 @@ class MainActivity : ComponentActivity() {
         if (selectedVideo != null) {
             player?.setMediaItem(MediaItem.fromUri(selectedVideo!!))
             player?.prepare()
+        } else if (youtubeVideoId.isNotBlank()) {
+            showYouTubePreview(youtubeVideoId)
         }
 
         val ai = card(body, "02  •  FIND THE BEST MOMENT", "Get timestamped highlights from the video's speech.")
@@ -322,6 +328,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showSettings() {
+        if (::youtubePreview.isInitialized) youtubePreview.onPause()
+        player?.pause()
         root.removeAllViews()
         root.addView(toolbar("Settings", "AI PROVIDER & API ACCESS", "Back") { showEditor() })
         val scroll = ScrollView(this)

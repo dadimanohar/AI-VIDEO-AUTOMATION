@@ -8,15 +8,15 @@ Turn a long interview, podcast, lecture, or other video file into short clips by
 | App detail | Value |
 |---|---|
 | App name | ShortsForge Mobile |
-| Current release | 1.8.0 |
-| Version code | 12 |
+| Current release | 1.9.0 |
+| Version code | 13 |
 | Android package | `com.shortsforge.mobile` |
 | Minimum Android version | Android 8.0 (API 26) |
 | APK size | About 13.91 MB |
 | Export | MP4 (H.264 video + AAC audio) |
 | Build type | Debug-signed APK from GitHub Actions |
 
-> **Important source-video note (1.8.0):** You can paste a YouTube watch/Shorts link for an embedded preview and mark clip start/end timestamps. That link is **not** downloaded or used as an editable media file. To run AI transcription and export, choose a local video or import a creator-authorized direct HTTPS video-file URL. ShortsForge does not extract or download public YouTube streams.
+> **Important source-video note (1.9.0):** You can paste a YouTube watch/Shorts link for an embedded preview and mark clip start/end timestamps. That link is **not** downloaded or used as an editable media file. To run AI transcription and export, choose a local video or import a creator-authorized direct HTTPS video-file URL. ShortsForge does not extract or download public YouTube streams.
 
 ---
 
@@ -26,7 +26,7 @@ Turn a long interview, podcast, lecture, or other video file into short clips by
 
 ShortsForge Mobile is an Android-first video clipping studio for creators, students, podcasters, educators, and editors who work with long-form recordings.
 
-The app analyses a timestamped transcript and suggests up to eight useful moments. Suggestions are designed to prioritise complete question-and-answer exchanges, important announcements, key insights, explanations, predictions, surprising facts, and practical advice. You can inspect each suggestion, choose the best one, preview its time range, adjust the start and end, and export a vertical or other aspect-ratio MP4.
+The app analyses the full timestamped transcript in overlapping sections and creates a chronological Video Topic Map. It can return up to 60 distinct topic segments, including introductions, background, subtopics, question-and-answer exchanges, stories, announcements, explanations, examples, debates, predictions, lessons and conclusions. Every topic card has a title, exact suggested time range, category, importance score and explanation. Tap a card to select its timestamps or play that topic, queue individual topics, or export multiple topics as separate Shorts.
 
 The app is a **clip-selection and export tool**. It is not currently a full video-generation suite, a YouTube downloader, or an automatic YouTube publishing service.
 
@@ -38,14 +38,14 @@ The intended workflow is:
 
 1. Select a local video file, or import a creator-authorized direct HTTPS video-file URL. A YouTube URL can be previewed and used to mark timestamps, but it is not itself an editable source file.
 2. Generate a timestamped transcript using cloud Whisper or on-device Whisper, or import/paste an existing timestamped transcript.
-3. Ask an AI model to rank the most useful moments.
-4. Review the suggestion cards and their timestamps, category, importance score, and explanation.
-5. Select a suggestion and create a 60-second or 90-second clip window around that moment.
+3. Ask an AI model to map the transcript section by section and identify distinct topics across the recording.
+4. Review the chronological topic cards and their timestamps, category, importance score, and explanation.
+5. Select a topic to load its exact Start/End values, or optionally expand the selected topic to 60 or 90 seconds.
 6. Preview the selected time range and adjust it manually when needed.
 7. Choose an output aspect ratio, optionally add a text overlay, and export an MP4.
 8. Find the exported file in Movies/ShortsForge and share it using the Android share sheet.
 
-## 3. Features in version 1.8.0
+## 3. Features in version 1.9.0
 
 ### Source video
 - Select a video from device storage using Android's file picker.
@@ -54,7 +54,7 @@ The intended workflow is:
 - The source file is not intentionally overwritten by the export process.
 - Supported video formats depend on the Android device's media decoders.
 
-### YouTube URL preview and authorized direct-file import (new in 1.8.0)
+### YouTube URL preview and authorized direct-file import (new in 1.9.0)
 - Paste a standard YouTube watch URL, Shorts URL, or youtu.be URL and open it in the in-app embedded YouTube player.
 - Play, pause, and seek using the embedded player controls.
 - Set an IN marker and an OUT marker at the current player position, or manually edit the marker times in seconds.
@@ -74,26 +74,22 @@ The intended workflow is:
 - SRT/VTT cue timestamps are converted into timestamped transcript lines.
 - TXT files should contain usable timestamps if the AI is expected to identify exact moments.
 
-### AI highlight discovery
-- Analyse transcript text with Groq, OpenAI, Claude, or local Qwen3.
-- Return up to eight highlight topic suggestions in the cloud analysis flow.
-- Prioritise:
-  - Complete question-and-answer exchanges, including the question when it is needed to understand the answer.
-  - Important announcements and new facts.
-  - Key insights and explanations.
-  - Predictions and practical advice.
-  - Surprising or informative statements that retain their context.
-- Each suggestion card can show:
-  - A short hook/title for the topic.
-  - The exact suggested start and end timestamps.
-  - A category.
-  - An importance score from 1 to 10 when returned by the model.
-  - A short explanation of why the moment matters.
-- The first suggestion is selected automatically when results arrive.
-- Tap any suggestion card to select it. Its exact timestamps are copied into the main editor's Start and End fields, so the selected time range changes to match that topic.
-- Tick **Add this topic to Shorts queue** on any cards you want to export. Multiple topics can be queued independently of the current preview selection.
-- Queued topic cards remain individually named and ordered by the order in which you add them.
-- The queue summary shows the number of selected topics and their combined source footage duration.
+### Full-video topic discovery — Video Topic Map (new in 1.9.0)
+- Analyse the entire timestamped transcript in overlapping chunks instead of asking for only the eight most important highlights.
+- Cloud AI processes transcript windows of 80 non-empty lines with a 16-line overlap. It requests up to eight topic segments per window, then merges duplicate/overlapping results.
+- Offline Qwen3 processes windows of 36 non-empty lines with an 8-line overlap and requests up to five topic segments per window.
+- Results are sorted chronologically by source-video start time, not ranked into a viral-first order.
+- The map supports up to 60 topic cards per analysis.
+- Topic types include introduction, background, each distinct subject/subtopic, complete Q&A, stories, examples, announcements, explanations, opinions, debates, predictions, practical advice and conclusions.
+- Each card shows a specific title, exact start/end time, category, importance (1–10 when returned), and a short explanation of what is discussed.
+- Tap a card to load that topic's exact timestamps into the Start/End fields.
+- Tap **Play this topic** to play that section in the source-video preview and stop at the topic's end time.
+- Use **Add this topic to Shorts queue** on individual cards, or **Add all detected topics to Shorts queue** to queue every valid topic.
+- Export queued topics as separate MP4 Shorts, or send selected topics together into the Studio timeline.
+- Overlapping duplicate candidates from adjacent transcript chunks are merged before display.
+
+Topic mapping is transcript-based, not visual scene understanding. Accuracy depends on transcript quality, timestamp accuracy and the AI model. It is capped at 60 displayed topics per analysis; the map cannot promise that every tiny conversational shift will be detected. Cloud topic mapping makes multiple AI requests for long transcripts, so provider token/request charges can be higher than the previous single-request, eight-highlight approach. The smaller offline model may miss topics that a larger cloud model identifies.
+
 
 
 ### Clip editing and preview
@@ -105,7 +101,7 @@ The intended workflow is:
 - A single quick export is limited to 180 seconds (3 minutes).
 - Each queued highlight is checked against its own valid timestamp range before a batch export starts.
 
-### Export each queued topic as a separate Short (new in 1.8.0)
+### Export each queued topic as a separate Short (new in 1.9.0)
 - Add two or more topic cards to **Shorts queue** using their checkboxes.
 - Tap **Export N queued topics as separate Shorts**.
 - Confirm the batch. ShortsForge exports one MP4 for each selected topic using that card's exact start/end timestamps.
@@ -331,7 +327,7 @@ Review the selected AI provider's privacy terms before sending private, confiden
 
 ## 11. Current limitations — what is not included
 
-The following are **not** current 1.8.0 features:
+The following are **not** current 1.9.0 features:
 - Downloading/extracting a YouTube watch URL as an editable MP4/audio source. YouTube URLs support embedded preview and clip timestamp markers only.
 - Automatic downloading of public YouTube caption tracks or transcripts.
 - Importing Google Drive/Dropbox share-page URLs. The importer requires a direct HTTPS video-file response.
@@ -453,8 +449,8 @@ A push that changes files under android/ or the workflow can trigger the build. 
 
 ## 17. Latest release
 
-- Release: 1.8.0
-- Version code: 12
+- Release: 1.9.0
+- Version code: 13
 - Build result: successful.
 - Build run: [GitHub Actions run 44279926419](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279926419)
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)
@@ -482,7 +478,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 
 ఈ యాప్ వీడియోలోని మాటలను timestamp ఉన్న transcript రూపంలో విశ్లేషించి గరిష్ఠంగా 8 ముఖ్యమైన moments సూచిస్తుంది. ప్రతి suggestionలో title/hook, timestamp, category, importance score, వివరణ ఉంటాయి. మొదటి suggestion ఆటోమేటిక్‌గా select అవుతుంది. మీరు వేరే suggestion ఎంచుకోవచ్చు, దాని సమయాన్ని preview చేయవచ్చు, Start/End మార్చవచ్చు, చివరికి MP4 export చేయవచ్చు.
 
-ఇది ప్రస్తుతం **AI క్లిప్ ఎంపిక, ఎడిటింగ్ మరియు MP4 ఎగుమతి యాప్**. 1.8.0లో YouTube URLను appలో preview చేసి IN/OUT timestamps గుర్తించవచ్చు; కానీ ఆ URL నుంచి అసలు video stream download చేయదు. AI transcription మరియు export కోసం local video లేదా creator-authorized direct video file అవసరం.
+ఇది ప్రస్తుతం **AI క్లిప్ ఎంపిక, ఎడిటింగ్ మరియు MP4 ఎగుమతి యాప్**. 1.9.0లో YouTube URLను appలో preview చేసి IN/OUT timestamps గుర్తించవచ్చు; కానీ ఆ URL నుంచి అసలు video stream download చేయదు. AI transcription మరియు export కోసం local video లేదా creator-authorized direct video file అవసరం.
 
 ## 2. ప్రాజెక్ట్ లక్ష్యం
 
@@ -499,7 +495,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 7. Aspect ratio ఎంచుకుని, కావాలంటే text overlay జోడించి MP4 export చేయాలి.
 8. Movies/ShortsForgeలో వీడియోను చూసి Android share menu ద్వారా share చేయాలి.
 
-## 3. Version 1.8.0లో ప్రస్తుతం ఉన్న ఫీచర్లు
+## 3. Version 1.9.0లో ప్రస్తుతం ఉన్న ఫీచర్లు
 
 ### Source video
 - ఫోన్ storage నుంచి Android file picker ద్వారా వీడియో ఎంచుకోవచ్చు.
@@ -508,7 +504,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 - Export సమయంలో source file‌ను ఉద్దేశపూర్వకంగా overwrite చేయదు.
 - ఏ video formats పని చేస్తాయో ఫోన్‌లో ఉన్న Android media decoders‌పై ఆధారపడి ఉంటుంది.
 
-### YouTube URL preview మరియు authorized direct-file import (1.8.0లో కొత్తది)
+### YouTube URL preview మరియు authorized direct-file import (1.9.0లో కొత్తది)
 - YouTube watch URL, Shorts URL లేదా youtu.be URLను paste చేసి appలో embedded YouTube playerలో preview చేయవచ్చు.
 - Embedded player controlsతో play, pause, seek చేయవచ్చు.
 - ప్రస్తుత playhead వద్ద IN marker మరియు OUT marker set చేయవచ్చు; లేదా secondsలో manually మార్చవచ్చు.
@@ -529,20 +525,22 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 - SRT/VTT subtitle cue timestamps‌ను transcript lines‌గా మార్చుతుంది.
 - TXTలో AIకి ఖచ్చితమైన clip సమయాలు కనుగొనడానికి ఉపయోగపడే timestamps ఉండాలి.
 
-### AI highlight detection
-- Groq, OpenAI, Claude లేదా local Qwen3తో timestamp transcript విశ్లేషణ.
-- Cloud analysisలో గరిష్ఠంగా 8 highlight topic suggestions.
-- AI ప్రధానంగా పూర్తి Q&A, ముఖ్యమైన announcements, కొత్త facts, key insights, explanations, predictions, practical advice మరియు surprising facts గుర్తించడానికి ప్రయత్నిస్తుంది.
-- ప్రతి suggestion cardలో:
-  - Topic hook/title.
-  - ఆ topicకు చెందిన ఖచ్చితమైన Start/End timestamps.
-  - Category.
-  - Model ఇచ్చినప్పుడు 1–10 importance score.
-  - ఆ topic ఎందుకు ఉపయోగకరమో explanation.
-- మొదటి topic ఆటోమేటిక్‌గా select అవుతుంది.
-- ఏ card నొక్కినా దాని exact timestamps ప్రధాన editor Start/End fieldsలోకి వస్తాయి.
-- **Add this topic to Shorts queue** checkbox ద్వారా కావాల్సిన అనేక topicsను queueలో జోడించవచ్చు.
-- Queueలోని topics వేరువేరుగా MP4 Shortsగా export చేయవచ్చు లేదా ఒకే Studio timelineలో కలిపి edit చేయవచ్చు.
+### Full-video Topic Discovery — Video Topic Map (1.9.0లో కొత్తది)
+- Timestamp ఉన్న మొత్తం transcript‌ను overlapping sectionsగా విశ్లేషిస్తుంది. పాత విధంగా 8 ముఖ్యమైన highlights మాత్రమే అడగదు.
+- Cloud AI ప్రతి sectionలో 80 non-empty transcript linesను 16-line overlapతో process చేసి, ఒక్క sectionకు గరిష్ఠంగా 8 topic segments అడుగుతుంది. తర్వాత duplicate/overlap results merge అవుతాయి.
+- Offline Qwen3 ప్రతి sectionలో 36 non-empty linesను 8-line overlapతో process చేసి, ఒక్క sectionకు గరిష్ఠంగా 5 topics అడుగుతుంది.
+- Results importance ఆధారంగా కాకుండా source-video Start time ఆధారంగా chronological orderలో చూపబడతాయి.
+- ఒక్క analysisలో గరిష్ఠంగా 60 topic cards చూపిస్తుంది.
+- Topic types: introduction, background, వేర్వేరు subjects/subtopics, complete Q&A, stories, examples, announcements, explanations, opinions, debates, predictions, practical advice మరియు conclusions.
+- ప్రతి cardలో specific title, exact Start/End timestamps, category, importance score (model ఇచ్చినప్పుడు 1–10), ఆ topicలో ఏమి చర్చించారో చిన్న explanation ఉంటుంది.
+- Card నొక్కితే ఆ topic exact timestamps Start/End fieldsలోకి వస్తాయి.
+- **Play this topic** నొక్కితే source previewలో ఆ topic start నుంచి end వరకు play అవుతుంది.
+- ఒక్కో cardలో **Add this topic to Shorts queue** tick చేయవచ్చు; లేదా **Add all detected topics to Shorts queue** ద్వారా అన్ని valid topicsను queueలో పెట్టవచ్చు.
+- Queueలోని topicsను వేరువేరు MP4 Shortsగా export చేయవచ్చు లేదా selected topicsను Studio timelineలో కలిపి edit చేయవచ్చు.
+- పక్కపక్కన ఉన్న transcript sectionsలో వచ్చిన overlapping duplicate topicsను displayకు ముందు merge చేస్తుంది.
+
+Topic Map transcript ఆధారంగా పని చేస్తుంది; videoలోని visual scenesను స్వయంగా అర్థం చేసుకోదు. Transcript quality, timestamp accuracy, AI model నాణ్యతపై ఫలితాలు ఆధారపడతాయి. ఒక్క analysisలో గరిష్ఠం 60 topics మాత్రమే చూపిస్తుంది; ప్రతి చిన్న conversational shift తప్పకుండా గుర్తిస్తుందని హామీ లేదు. Long transcriptsకు Cloud AI అనేక requests పంపుతుంది కాబట్టి పాత single-request 8-highlights విధానంతో పోలిస్తే API/token charges ఎక్కువ కావచ్చు. చిన్న offline model పెద్ద cloud model గుర్తించే కొన్ని topicsను మిస్ చేయవచ్చు.
+
 
 
 ### Clip editing మరియు preview
@@ -553,7 +551,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 - Quick duration buttons: 15s, 30s, 45s, 60s.
 - ఒక్కో exported Short గరిష్ఠంగా 180 seconds.
 
-### Queue చేసిన ప్రతి topicను వేరే Shortగా Export చేయడం (1.8.0లో కొత్తది)
+### Queue చేసిన ప్రతి topicను వేరే Shortగా Export చేయడం (1.9.0లో కొత్తది)
 - కావాల్సిన ప్రతి topic cardలో **Add this topic to Shorts queue** tick చేయండి.
 - **Export N queued topics as separate Shorts** నొక్కండి.
 - Confirm చేసిన తర్వాత ప్రతి topic తన exact Start/End సమయాలతో వేరే MP4గా export అవుతుంది.
@@ -647,7 +645,7 @@ Offline వేగం మరియు ఫలితాల నాణ్యత ఫ�
 8. **Auto-transcribe + find clips** నొక్కండి.
 9. Transcription మరియు AI highlight analysis పూర్తయ్యే వరకు వేచి ఉండండి.
 10. Suggestion cards చూడండి. మొదటి suggestion ఆటోమేటిక్‌గా select అవుతుంది.
-11. కావాలంటే వేరే card ఎంచుకోండి.
+11. కావాలంటే వేరే topic card ఎంచుకోండి; **Play this topic** ద్వారా ఆ topic preview చేయండి.
 12. 60 seconds లేదా 90 seconds ఎంచుకుని **Preview selected clip** నొక్కండి.
 13. అవసరమైతే Start/End మార్చండి. Aspect ratio ఎంచుకోండి. కావాలంటే text overlay జోడించండి.
 14. Timelineలో మరింత edit చేయడానికి **Open Studio Editor · Timeline, split, speed, text, audio** నొక్కండి; త్వరగా export చేయాలంటే ప్రధాన editorలో **Export Short** నొక్కవచ్చు.
@@ -777,7 +775,7 @@ Private లేదా confidential recordingsను cloud APIకి పంపే 
 
 ## 11. ప్రస్తుత యాప్‌లో లేని ఫీచర్లు
 
-క్రింది అంశాలు **Version 1.8.0లో ఇంకా లేవు**:
+క్రింది అంశాలు **Version 1.9.0లో ఇంకా లేవు**:
 - YouTube watch URLను editable MP4/audio sourceగా download లేదా extract చేయడం. YouTube URL preview మరియు timestamp markers మాత్రమే ఇస్తుంది.
 - Public YouTube caption tracks లేదా transcriptsను ఆటోమేటిక్‌గా download చేయడం.
 - Google Drive/Dropbox share-page URLs import చేయడం. Importerకు direct HTTPS video-file response అవసరం.
@@ -898,8 +896,8 @@ android/లో లేదా workflow fileలో మార్పులు push �
 
 ## 17. తాజా Release
 
-- Release: 1.8.0.
-- Version code: 12.
+- Release: 1.9.0.
+- Version code: 13.
 - Build result: Successful.
 - Build run: [GitHub Actions run 44279926419](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279926419).
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk).
@@ -927,7 +925,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 
 ऐप timestamp वाले transcript का विश्लेषण करके अधिकतम 8 उपयोगी moments सुझाता है। हर suggestion में title/hook, timestamp, category, importance score और explanation हो सकते हैं। पहला suggestion अपने-आप select होता है। आप दूसरा suggestion चुन सकते हैं, उसका समय preview कर सकते हैं, Start/End बदल सकते हैं और अंत में MP4 export कर सकते हैं।
 
-यह अभी **AI clip selection, editing और MP4 export ऐप** है। Version 1.8.0 में YouTube URL को ऐप के अंदर preview करके IN/OUT timestamps mark कर सकते हैं, लेकिन उस URL से video stream download नहीं होती। AI transcription और export के लिए local video या creator-authorized direct video file जरूरी है।
+यह अभी **AI clip selection, editing और MP4 export ऐप** है। Version 1.9.0 में YouTube URL को ऐप के अंदर preview करके IN/OUT timestamps mark कर सकते हैं, लेकिन उस URL से video stream download नहीं होती। AI transcription और export के लिए local video या creator-authorized direct video file जरूरी है।
 
 ## 2. परियोजना का लक्ष्य
 
@@ -944,7 +942,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 7. Aspect ratio चुनें, चाहें तो text overlay जोड़ें और MP4 export करें।
 8. वीडियो को Movies/ShortsForge में ढूंढें और Android share sheet से साझा करें।
 
-## 3. Version 1.8.0 में उपलब्ध सुविधाएँ
+## 3. Version 1.9.0 में उपलब्ध सुविधाएँ
 
 ### Source video
 - Android file picker से फोन की storage में मौजूद वीडियो चुनें।
@@ -953,7 +951,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 - Export प्रक्रिया source file को जानबूझकर overwrite नहीं करती।
 - कौन-से video formats चलेंगे, यह Android डिवाइस के media decoders पर निर्भर करता है।
 
-### YouTube URL preview और authorized direct-file import (1.8.0 में नया)
+### YouTube URL preview और authorized direct-file import (1.9.0 में नया)
 - YouTube watch URL, Shorts URL या youtu.be URL paste करके ऐप के embedded YouTube player में preview करें।
 - Embedded player controls से play, pause और seek करें।
 - मौजूदा playhead पर IN और OUT markers लगाएं, या seconds में timestamps manually बदलें।
@@ -974,20 +972,22 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 - SRT/VTT cue timestamps को timestamped transcript lines में बदला जाता है।
 - TXT में AI द्वारा सटीक clip समय पहचानने के लिए उपयोगी timestamps होने चाहिए।
 
-### AI Highlight Detection
-- Groq, OpenAI, Claude या local Qwen3 से timestamped transcript का विश्लेषण।
-- Cloud analysis में अधिकतम 8 highlight topic suggestions।
-- AI पूरे Q&A, महत्वपूर्ण announcements, नए facts, key insights, explanations, predictions, practical advice और surprising facts को प्राथमिकता देता है।
-- हर suggestion card में:
-  - Topic hook/title।
-  - उस topic के exact Start/End timestamps।
-  - Category।
-  - Model द्वारा दिए जाने पर 1–10 importance score।
-  - Topic की उपयोगिता बताने वाला छोटा explanation।
-- पहला topic अपने-आप select होता है।
-- किसी card को दबाने पर उसके exact timestamps main editor के Start/End fields में आते हैं।
-- जिन topics को export करना है, उन पर **Add this topic to Shorts queue** checkbox tick करें।
-- Queue किए गए topics अलग-अलग MP4 Shorts के रूप में export हो सकते हैं या एक Studio timeline में जोड़े जा सकते हैं।
+### पूरे वीडियो की Topic Discovery — Video Topic Map (1.9.0 में नया)
+- पूरे timestamped transcript को overlapping sections में analyse करता है; अब केवल आठ सबसे महत्वपूर्ण highlights मांगने वाला तरीका नहीं है।
+- Cloud AI हर section में 80 non-empty transcript lines को 16-line overlap के साथ process करता है और हर section से अधिकतम 8 topic segments मांगता है। बाद में duplicate/overlapping results merge किए जाते हैं।
+- Offline Qwen3 हर section में 36 non-empty lines को 8-line overlap के साथ process करता है और हर section से अधिकतम 5 topics मांगता है।
+- Results importance ranking के बजाय source-video के start time के अनुसार chronological order में दिखते हैं।
+- एक analysis में अधिकतम 60 topic cards दिखाए जाते हैं।
+- Topic types: introduction, background, अलग-अलग subjects/subtopics, complete Q&A, stories, examples, announcements, explanations, opinions, debates, predictions, practical advice और conclusions।
+- हर card में specific title, exact Start/End timestamps, category, model द्वारा मिलने पर 1–10 importance score और topic में क्या चर्चा हुई उसका छोटा explanation होता है।
+- Card दबाने पर उस topic के exact timestamps Start/End fields में आते हैं।
+- **Play this topic** दबाने पर source preview उस topic के start से end तक चलता है।
+- अलग-अलग cards पर **Add this topic to Shorts queue** tick करें, या **Add all detected topics to Shorts queue** से सभी valid topics queue में जोड़ें।
+- Queue किए गए topics को अलग-अलग MP4 Shorts के रूप में export करें या selected topics को एक Studio timeline में edit करें।
+- पास-पास के transcript sections से आए overlapping duplicate topics को display से पहले merge किया जाता है।
+
+Topic Map transcript पर आधारित है, visual scene understanding पर नहीं। परिणाम transcript की quality, timestamp accuracy और AI model पर निर्भर करते हैं। एक analysis में अधिकतम 60 topics दिखाए जाते हैं; हर छोटे conversational shift के detection की गारंटी नहीं है। लंबे transcript के लिए Cloud AI कई requests भेजता है, इसलिए पुराने single-request, आठ-highlight तरीके से अधिक API/token charges हो सकते हैं। छोटा offline model कुछ ऐसे topics छोड़ सकता है जिन्हें बड़ा cloud model पहचानता।
+
 
 
 ### Clip Editing और Preview
@@ -998,7 +998,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 - Quick duration buttons: 15s, 30s, 45s और 60s।
 - हर individual exported Short अधिकतम 180 seconds हो सकता है।
 
-### Queue किए गए हर Topic को अलग Short के रूप में Export करना (1.8.0 में नया)
+### Queue किए गए हर Topic को अलग Short के रूप में Export करना (1.9.0 में नया)
 - जिन topic cards की जरूरत है, उनमें **Add this topic to Shorts queue** tick करें।
 - **Export N queued topics as separate Shorts** दबाएं।
 - Confirm करने पर हर topic अपने exact Start/End timestamps के साथ अलग MP4 में export होता है।
@@ -1091,7 +1091,7 @@ Offline transcription और highlight analysis के लिए:
 7. Filename, duration और video preview दिखने तक प्रतीक्षा करें।
 8. **Auto-transcribe + find clips** दबाएं।
 9. Transcription और highlight analysis पूरा होने दें।
-10. Suggestion cards देखें। पहला suggestion अपने-आप select हो जाता है।
+10. Chronological Video Topic Map देखें। पहला topic अपने-आप select होता है। किसी card पर tap करके उसके exact timestamps load करें या **Play this topic** दबाकर topic preview करें।
 11. चाहें तो दूसरा card चुनें।
 12. 60 या 90 seconds चुनें और **Preview selected clip** दबाएं।
 13. जरूरत पड़ने पर Start/End बदलें, aspect ratio चुनें और चाहें तो text overlay जोड़ें।
@@ -1222,7 +1222,7 @@ Private या confidential recordings cloud API को भेजने से �
 
 ## 11. मौजूदा सीमाएँ — क्या शामिल नहीं है
 
-निम्न सुविधाएँ **वर्तमान Version 1.8.0 में उपलब्ध नहीं हैं**:
+निम्न सुविधाएँ **वर्तमान Version 1.9.0 में उपलब्ध नहीं हैं**:
 - YouTube watch URL को editable MP4/audio source के रूप में download या extract करना। YouTube URL केवल embedded preview और timestamp markers देता है।
 - Public YouTube caption tracks या transcripts का automatic download।
 - Google Drive/Dropbox share-page URLs का import। Importer को direct HTTPS video-file response चाहिए।
@@ -1344,8 +1344,8 @@ android/ या workflow file में बदलाव push करने पर
 
 ## 17. Latest Release
 
-- Release: 1.8.0।
-- Version code: 12।
+- Release: 1.9.0।
+- Version code: 13।
 - APK size: लगभग 13.91 MB।
 - Build result: Successful।
 - Build run: [GitHub Actions run 44279926419](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279926419)।

@@ -6,6 +6,10 @@
         android:allowBackup="false"
         android:usesCleartextTraffic="false">
         <activity
+            android:name=".YouTubePreviewActivity"
+            android:exported="false"
+            android:screenOrientation="unspecified" />
+        <activity
             android:name=".StudioEditorActivity"
             android:exported="false"
             android:screenOrientation="unspecified" />

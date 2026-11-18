@@ -1263,38 +1263,66 @@ $chunkText
         if (busy && !auto) return
         busy = true
         refreshFooter()
-        setStatus("AI is searching for clear hooks and complete clip moments…")
+        setStatus("AI is mapping all topics across the transcript…")
         executor.execute {
             var handedOffToLocal = false
             try {
-                val prompt = """
-You are a professional interview, podcast and long-form video editor. Find the most valuable moments in this transcript.
-The user's target output clip length is """ + clipDurationSeconds + """ seconds.
-Return ONLY a valid JSON array containing up to 8 strongest anchor moments, ranked by importance.
+                // Split long recordings into overlapping sections so the model can map
+                // the full transcript instead of squeezing a podcast into eight highlights.
+                val transcriptLines = data.lines().filter { it.isNotBlank() }
+                val chunks = transcriptLines.windowed(size = 80, step = 64, partialWindows = true)
+                val chunkTotal = chunks.size
+                val candidates = mutableListOf<Highlight>()
+                for ((index, chunk) in chunks.withIndex()) {
+                    val chunkText = chunk.joinToString("\n")
+                    val prompt = """
+You are a professional long-form video topic mapper and Shorts editor.
+Create a CHRONOLOGICAL VIDEO TOPIC MAP for this transcript segment. Do not return only the most viral or important highlights. Identify every distinct meaningful subject actually discussed.
+Look for:
+- Introduction and background.
+- Each different subject or subtopic.
+- Questions and their complete answers.
+- Personal stories, anecdotes, examples and explanations.
+- Product launches, announcements, facts and claims.
+- Opinions, debates, predictions and practical lessons.
+- Topic changes, transitions and the conclusion.
+Return ONLY a valid JSON array with up to 8 topic segments for this transcript segment.
 Exact shape:
-[{"start_seconds":120.5,"end_seconds":164.2,"hook":"A clear short title","reason":"Why this matters and what the viewer learns","category":"Question and answer","importance_score":9}]
-Ranking priorities:
-1. Complete question + answer exchanges. Include the question when it gives the answer necessary context; never start halfway through an answer.
-2. Important new facts, concrete claims, announcements, explanations, predictions, practical advice and useful examples.
-3. Surprising, controversial or highly informative statements that make sense without misleading editing.
-4. A clear beginning and ending. Prefer a complete thought over a dramatic but incomplete sentence.
-Timestamp rules:
-- Use only timestamp boundaries supported by the transcript. They are seconds from the beginning of the source video.
-- Do not invent timestamps. Return [] if no reliable timestamps exist.
-- start_seconds and end_seconds mark the full core exchange / key point, not the final export window.
-- The app will expand around this anchor to a $clipDurationSeconds-second export window, bounded by the source duration.
-- Do not repeat the same event and do not overlap anchor moments.
-- importance_score must be an integer from 1 to 10.
-- category should be one of: "Question and answer", "Important announcement", "Key insight", "Explanation", "Prediction", "Surprising fact", "Practical advice".
-- Return numeric seconds, not time strings. No markdown fences or text outside the JSON.
-Transcript:
-$data
+[{"start_seconds":120.5,"end_seconds":164.2,"hook":"Specific topic title","reason":"What is discussed in this section and why it matters","category":"Question and answer","importance_score":9}]
+Topic segmentation rules:
+1. List topics in chronological order. Never sort the list by importance.
+2. Use exact numeric start_seconds and end_seconds from transcript timing boundaries. They are seconds from the beginning of the ORIGINAL video.
+3. A topic covers the continuous section where that subject is discussed, with its real beginning and ending. Do not use a generic 60/90-second window as the topic timestamp.
+4. Each topic should normally be 20–150 seconds and must not exceed 180 seconds. Split a longer discussion into coherent subtopics at supported topic boundaries.
+5. Include every meaningful distinct topic; do not limit results to only eight for the whole video. This response covers only one overlapping transcript chunk. Other chunks will be analysed and merged.
+6. Include the complete question with its answer when needed for context. Do not start halfway through an answer or end mid-sentence.
+7. Do not invent or guess timestamps, speakers, topics, statements or facts. Use only content supported by this transcript segment.
+8. Do not create duplicate or substantially overlapping topics within this segment.
+9. Make titles informative and specific. Categories should be one of: Introduction, Background, Question and answer, Important announcement, Key insight, Explanation, Story, Example, Opinion, Debate, Prediction, Practical advice, Conclusion, Other.
+10. importance_score is 1–10 and indicates usefulness only; it does not determine chronological order.
+11. Return numeric seconds. No markdown fences or text outside the JSON array.
+Transcript chunk $index of $chunkTotal:
+$chunkText
 """.trimIndent()
-                val raw = chat(prompt, key, provider)
-                val items = parseHighlights(raw)
+                    val raw = chat(prompt, key, provider)
+                    candidates.addAll(parseHighlights(raw))
+                    val progress = ((index + 1) * 100 / chunkTotal).coerceIn(1, 100)
+                    runOnUiThread {
+                        setStatus("Mapping video topics… section " + (index + 1) + "/" + chunkTotal + " · " + progress + "%")
+                    }
+                }
+                val topics = normalizeTopicMap(candidates)
+                if (topics.isEmpty()) {
+                    throw IOException("The AI did not return reliable timestamped topics. Check that the transcript includes timestamps.")
+                }
                 runOnUiThread {
-                    showHighlights(items)
-                    setStatus(if (items.isEmpty()) "No reliable timestamped clips were returned. Check the transcript timestamps." else suggestionSelectedStatus(selectedHighlightIndex.coerceAtLeast(0)))
+                    showHighlights(topics)
+                    selectedHighlightIndex = 0
+                    topics.firstOrNull()?.let { first ->
+                        if (first.start != null && first.end != null) applyExactHighlightRange(first.start, first.end)
+                    }
+                    setStatus("Video Topic Map ready: " + topics.size + " topics found across " + chunkTotal +
+                        " transcript section(s). Topics are in chronological order. Tap Play or select any topic.")
                 }
             } catch (e: Exception) {
                 val useLocal = isConnectivityFailure(e) && try { qwenModelFile().let { it.exists() && it.length() >= 420_000_000L } } catch (_: Exception) { false }
@@ -1303,10 +1331,10 @@ $data
                     if (useLocal) {
                         provider = 3
                         prefs.edit().putInt("provider", 3).apply()
-                        setStatus("Cloud connection unavailable. Switching highlight analysis to local Qwen3…")
+                        setStatus("Cloud connection unavailable. Switching topic mapping to local Qwen3…")
                         analyzeWithLocalModel(data, true)
                     } else {
-                        setStatus("AI analysis failed: " + (e.message ?: "unknown error"))
+                        setStatus("Topic mapping failed: " + (e.message ?: "unknown AI error"))
                     }
                 }
             } finally {

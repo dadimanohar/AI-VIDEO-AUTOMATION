@@ -30,10 +30,12 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.audio.SpeedProvider
+import androidx.media3.common.audio.SpeedChangingAudioProcessor
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.OverlayEffect
 import androidx.media3.effect.OverlaySettings
 import androidx.media3.effect.Presentation
+import androidx.media3.effect.SpeedChangeEffect
 import androidx.media3.effect.TextOverlay
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.transformer.Composition
@@ -592,33 +594,46 @@ class StudioEditorActivity : ComponentActivity() {
                         .setEndPositionMs(seg.endMs)
                         .build()
                 ).build()
+            val speedProvider = object : SpeedProvider {
+                override fun getSpeed(timeUs: Long): Float = speed
+                override fun getNextSpeedChangeTimeUs(timeUs: Long): Long = C.TIME_UNSET
+            }
+            val editedItems = segments.map { seg ->
+                val clipped = MediaItem.Builder().setUri(sourceUri).setClippingConfiguration(
+                    MediaItem.ClippingConfiguration.Builder()
+                        .setStartPositionMs(seg.startMs)
+                        .setEndPositionMs(seg.endMs)
+                        .build()
+                ).build()
                 val effects = mutableListOf<androidx.media3.common.Effect>()
                 effects.add(Presentation.createForWidthAndHeight(
                     size.first, size.second, Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP
                 ))
+                if (speed != 1f) effects.add(SpeedChangeEffect(speedProvider))
                 buildOverlayEffect()?.let { effects.add(it) }
-                val builder = EditedMediaItem.Builder(clipped)
-                    .setEffects(Effects(emptyList(), effects))
-                    .setFrameRate(30)
-                if (speed != 1f) {
-                    builder.setSpeed(object : SpeedProvider {
-                        override fun getSpeed(timeUs: Long): Float = speed
-                        override fun getNextSpeedChangeTimeUs(timeUs: Long): Long = C.TIME_UNSET
-                    })
+                val audioProcessors = if (speed != 1f && musicUri == null && !muteOriginalAudio) {
+                    listOf(SpeedChangingAudioProcessor(speedProvider))
+                } else {
+                    emptyList()
                 }
-                builder.build()
+                EditedMediaItem.Builder(clipped)
+                    .setEffects(Effects(audioProcessors, effects))
+                    .setRemoveAudio(muteOriginalAudio || musicUri != null)
+                    .setFrameRate(30)
+                    .build()
             }
             val videoSequence = if (musicUri != null || muteOriginalAudio) {
-                EditedMediaItemSequence.withVideoFrom(editedItems)
+                EditedMediaItemSequence.Builder(editedItems).build()
             } else {
-                EditedMediaItemSequence.withAudioAndVideoFrom(editedItems)
+                EditedMediaItemSequence.Builder(editedItems).build()
             }
             val composition = if (musicUri != null) {
                 val music = EditedMediaItem.Builder(MediaItem.fromUri(musicUri!!))
                     .setRemoveVideo(true)
                     .build()
-                val musicSequence = EditedMediaItemSequence.withAudioFrom(listOf(music))
-                    .buildUpon().setIsLooping(true).build()
+                val musicSequence = EditedMediaItemSequence.Builder(listOf(music))
+                    .setIsLooping(true)
+                    .build()
                 Composition.Builder(videoSequence, musicSequence).build()
             } else {
                 Composition.Builder(videoSequence).build()

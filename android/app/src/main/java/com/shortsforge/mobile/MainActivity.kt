@@ -1277,6 +1277,9 @@ $data
         if (!::highlightsView.isInitialized) return
         highlightItems = items
         if (selectedHighlightIndex !in items.indices) selectedHighlightIndex = if (items.isNotEmpty()) 0 else -1
+        items.getOrNull(selectedHighlightIndex)?.let { first ->
+            if (first.start != null && first.end != null) applyHighlightWindow(first.start, first.end)
+        }
         highlightsView.removeAllViews()
         if (items.isEmpty()) {
             highlightsView.addView(text("No timestamped suggestions to show.", 12f, muted).apply { setPadding(0, dp(8), 0, 0) })

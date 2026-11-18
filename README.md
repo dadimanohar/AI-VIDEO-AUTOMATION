@@ -3,20 +3,20 @@
 **AI-powered long-video to Shorts editor for Android.**  
 Turn a long interview, podcast, lecture, or other video file into short clips by finding useful moments in its timestamped transcript, reviewing the suggested time ranges, and exporting an MP4.
 
-[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44276220935)
+[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279594974)
 
 | App detail | Value |
 |---|---|
 | App name | ShortsForge Mobile |
-| Current release | 1.7.0 |
-| Version code | 11 |
+| Current release | 1.8.0 |
+| Version code | 12 |
 | Android package | `com.shortsforge.mobile` |
 | Minimum Android version | Android 8.0 (API 26) |
-| APK size | About 13.89 MB |
+| APK size | About 13.91 MB |
 | Export | MP4 (H.264 video + AAC audio) |
 | Build type | Debug-signed APK from GitHub Actions |
 
-> **Important source-video note (1.7.0):** You can paste a YouTube watch/Shorts link for an embedded preview and mark clip start/end timestamps. That link is **not** downloaded or used as an editable media file. To run AI transcription and export, choose a local video or import a creator-authorized direct HTTPS video-file URL. ShortsForge does not extract or download public YouTube streams.
+> **Important source-video note (1.8.0):** You can paste a YouTube watch/Shorts link for an embedded preview and mark clip start/end timestamps. That link is **not** downloaded or used as an editable media file. To run AI transcription and export, choose a local video or import a creator-authorized direct HTTPS video-file URL. ShortsForge does not extract or download public YouTube streams.
 
 ---
 
@@ -45,16 +45,16 @@ The intended workflow is:
 7. Choose an output aspect ratio, optionally add a text overlay, and export an MP4.
 8. Find the exported file in Movies/ShortsForge and share it using the Android share sheet.
 
-## 3. Features in version 1.7.0
+## 3. Features in version 1.8.0
 
 ### Source video
 - Select a video from device storage using Android's file picker.
-- Show the selected filename and detected duration.
-- Preview the source video using the in-app player.
+- Import a creator-authorized direct HTTPS video-file URL, after confirming that you own the video or have editing permission.
+- Preview the selected source video in the app, and show its filename and detected duration.
 - The source file is not intentionally overwritten by the export process.
 - Supported video formats depend on the Android device's media decoders.
 
-### YouTube URL preview and authorized direct-file import (new in 1.7.0)
+### YouTube URL preview and authorized direct-file import (new in 1.8.0)
 - Paste a standard YouTube watch URL, Shorts URL, or youtu.be URL and open it in the in-app embedded YouTube player.
 - Play, pause, and seek using the embedded player controls.
 - Set an IN marker and an OUT marker at the current player position, or manually edit the marker times in seconds.
@@ -76,48 +76,60 @@ The intended workflow is:
 
 ### AI highlight discovery
 - Analyse transcript text with Groq, OpenAI, Claude, or local Qwen3.
-- Return up to eight highlight suggestions in the cloud analysis flow.
+- Return up to eight highlight topic suggestions in the cloud analysis flow.
 - Prioritise:
   - Complete question-and-answer exchanges, including the question when it is needed to understand the answer.
   - Important announcements and new facts.
   - Key insights and explanations.
   - Predictions and practical advice.
   - Surprising or informative statements that retain their context.
-- Each suggestion can show:
-  - A short hook/title.
-  - Start and end timestamps for the key moment.
+- Each suggestion card can show:
+  - A short hook/title for the topic.
+  - The exact suggested start and end timestamps.
   - A category.
   - An importance score from 1 to 10 when returned by the model.
   - A short explanation of why the moment matters.
 - The first suggestion is selected automatically when results arrive.
-- The selection is announced in the status line above the cards and in the fixed bottom export bar. The cards keep the same neutral appearance as in the reference screen.
-- Tap another suggestion card to change the selected moment.
+- Tap any suggestion card to select it. Its exact timestamps are copied into the main editor's Start and End fields, so the selected time range changes to match that topic.
+- Tick **Add this topic to Shorts queue** on any cards you want to export. Multiple topics can be queued independently of the current preview selection.
+- Queued topic cards remain individually named and ordered by the order in which you add them.
+- The queue summary shows the number of selected topics and their combined source footage duration.
+
 
 ### Clip editing and preview
-- Choose a 60-second or 90-second AI clip window.
-- The app centres the selected window around the AI-suggested key moment and keeps it inside the source-video duration.
-- Manually edit the Start and End values in seconds.
-- Quick duration buttons: 15s, 30s, 45s, and 60s.
+- Tap a highlight card to load its exact Start and End timestamps. The app does not silently replace the topic's time range with a generic 60/90-second window.
 - Preview the selected start-to-end range before export.
-- The manual quick-export limit is 180 seconds (3 minutes).
+- Manually edit the Start and End values in seconds.
+- Choose an optional 60-second or 90-second expansion around the currently selected topic using **Expand selected topic to 60s / 90s**.
+- Quick duration buttons: 15s, 30s, 45s, and 60s.
+- A single quick export is limited to 180 seconds (3 minutes).
+- Each queued highlight is checked against its own valid timestamp range before a batch export starts.
 
-### ShortsForge Studio timeline editor (new in 1.7.0)
-Open **Studio Editor · Timeline, split, speed, text, audio** from the main editor after choosing an AI suggestion. The post-export dialog also offers **Edit in Studio** to reopen the rendered MP4.
+### Export each queued topic as a separate Short (new in 1.8.0)
+- Add two or more topic cards to **Shorts queue** using their checkboxes.
+- Tap **Export N queued topics as separate Shorts**.
+- Confirm the batch. ShortsForge exports one MP4 for each selected topic using that card's exact start/end timestamps.
+- Every output uses the current main-editor aspect ratio and optional text overlay.
+- Each video is saved separately in **Movies / ShortsForge**, with a filename based on its topic title.
+- The app shows progress such as “Exporting topic 2/5” and reports whether all or only some files were saved.
+- Use **Share saved Shorts** to share the completed files together where the target Android app supports multiple-video sharing.
+- Each individual Short can be up to 180 seconds; the total duration of all separate Shorts is not combined into one 180-second limit.
+
+### ShortsForge Studio timeline editor
+Open **Studio Editor · Timeline, split, speed, text, audio** after selecting a highlight. The Studio button also accepts all queued topics and places them together in one editing timeline.
 - Preview the source video in a dedicated dark editing workspace.
-- Work with an ordered timeline of clip segments selected from the same source video.
-- Add another source-video range by entering its start and end times.
-- Split the selected segment at the current playhead.
-- Delete a segment, move segments left/right to reorder them, and undo recent timeline changes.
-- Trim the selected segment by editing Start and End times in seconds.
-- Scrub the selected segment with the timeline playhead and preview controls.
+- Work with an ordered timeline of clip segments from the same source video. Queued topic titles appear on their timeline clips.
+- Split, delete, move, reorder, and undo timeline segments.
+- Trim the selected segment using Start and End fields, and scrub it with the playhead.
 - Change playback/export speed: 0.5×, 0.75×, 1×, 1.25×, 1.5×, or 2×.
 - Choose vertical 9:16, square 1:1, or landscape 16:9 output.
 - Add a text overlay (up to 140 characters), choose top/centre/bottom position, clean/bold/large style, and white/yellow/cyan text.
-- Mute the source video's audio or add one looping background music track. In this version the selected music track replaces the source audio; separate track mixing and volume automation are not provided.
-- Export the ordered timeline as one MP4 (H.264/AAC). Combined timeline duration is limited to 180 seconds.
+- Mute the source video's audio or add one looping background music track. The selected music track replaces the source audio; separate track mixing and volume automation are not provided.
+- Export the ordered timeline as one MP4 (H.264/AAC). The combined Studio timeline is limited to 180 seconds.
+- Use separate batch export when you want each topic to become its own MP4 rather than combining them into one timeline.
 - After export, share the MP4 or open it again in Studio Editor for another edit.
 
-This is a first native timeline-editing stage, not full CapCut/KineMaster feature parity. The timeline segments currently reference ranges from one selected source video; this is not a multi-source multi-track video compositor.
+This is a native timeline-editing stage, not full CapCut/KineMaster feature parity. Timeline segments currently reference ranges from one selected source video; this is not a multi-source, multi-track video compositor.
 
 
 ### Export
@@ -189,13 +201,13 @@ This APK is debug-signed and is distributed directly from the project's GitHub r
 7. Wait for the filename, duration, and video preview to appear.
 8. Tap **Auto-transcribe + find clips**.
 9. Wait for transcription and highlight analysis to complete.
-10. Review the suggestion cards. The top suggestion is selected automatically.
-11. Select a different card if preferred.
-12. Choose 60 seconds or 90 seconds, then use **Preview selected clip**.
-13. Adjust Start/End if necessary, select the aspect ratio, and optionally add a text overlay.
-14. Tap **Open Studio Editor · Timeline, split, speed, text, audio** to refine the clip in the timeline editor, or use the main editor's **Export Short** for a quick export.
-15. In Studio Editor, arrange/trim/split the clip segments, adjust speed, canvas, text and audio, then tap **Export edited video**.
-16. After the result is saved, share it or open **Edit in Studio** to make another edit.
+10. Review the suggestion cards. The first topic is selected automatically, and its exact timestamps are loaded into Start/End.
+11. Tap other cards to preview their exact topic time ranges.
+12. Tick **Add this topic to Shorts queue** on every topic you want to turn into a Short.
+13. Choose the aspect ratio and optional text overlay.
+14. Tap **Export N queued topics as separate Shorts** to create one MP4 per topic, or tap **Open Studio Editor · N topic(s) as one timeline** to edit them together.
+15. For a separate batch, confirm the export and keep the app open while each topic is rendered and saved.
+16. Share the saved Shorts from the completion dialog, or open Studio Editor to make timeline edits.
 
 ### Option B — Offline AI
 1. Connect to the internet for the first model download.
@@ -246,10 +258,12 @@ Cloud transcription sends the extracted audio to the selected provider. Offline 
 ### Step 3: Find important moments
 Tap **Auto-transcribe + find clips** or **Analyze pasted transcript**. The AI returns suggestions with timestamps and a brief explanation. A transcript without reliable timestamps may not produce usable clip suggestions.
 
-### Step 4: Select a suggestion
-The first suggestion is automatically selected. Its card has a highlighted background and a **SELECTED** marker. Tap another card to use that moment instead. The selected suggestion sets the Start and End fields to a 60-second or 90-second window centred around the suggested moment, bounded by the source duration.
+### Step 4: Select and queue highlight topics
+The first suggestion is automatically selected. Its card has a highlighted background and a **SELECTED** marker. Tap another card to load that topic's exact start/end timestamps into the main editor. The displayed timestamps are the topic range, not a generic 60/90-second replacement.
 
-**Important:** The AI timestamp is an anchor around a key moment. If the complete answer or discussion is longer than the selected 60/90-second window, the complete context may not fit. Preview the selection and adjust Start/End manually before export.
+Tick **Add this topic to Shorts queue** on each topic you want. You can queue several topics and export each one as a separate MP4, or send them together to Studio as a single timeline. The separate batch export preserves each topic's own start/end range.
+
+**Optional:** Use **Expand selected topic to 60s / 90s** to create a longer window around the currently selected topic. Preview the resulting range and adjust Start/End manually if needed.
 
 ### Step 5: Preview and edit
 Tap **Preview selected clip** to play from the chosen Start time and stop at the chosen End time. You can also:
@@ -265,7 +279,7 @@ Choose:
 - Square 1:1.
 - Landscape 16:9.
 
-Add optional overlay text (maximum 140 characters), or leave it blank. Tap **Export Short** and keep the app open while the export is in progress. When complete, the video is saved and the Android sharing options appear.
+Add optional overlay text (maximum 140 characters), or leave it blank. For one selected clip, tap **Export Short**. For multiple queued topics as independent Shorts, tap **Export N queued topics as separate Shorts** and confirm. Each output is saved separately in Movies/ShortsForge. Keep the app open until the batch finishes; you can then share all saved outputs from the completion dialog. Studio Editor can instead combine queued topics into one timeline, with a 180-second combined export limit.
 
 ## 8. AI modes and model details
 
@@ -317,7 +331,7 @@ Review the selected AI provider's privacy terms before sending private, confiden
 
 ## 11. Current limitations — what is not included
 
-The following are **not** current 1.7.0 features:
+The following are **not** current 1.8.0 features:
 - Downloading/extracting a YouTube watch URL as an editable MP4/audio source. YouTube URLs support embedded preview and clip timestamp markers only.
 - Automatic downloading of public YouTube caption tracks or transcripts.
 - Importing Google Drive/Dropbox share-page URLs. The importer requires a direct HTTPS video-file response.
@@ -441,12 +455,12 @@ A push that changes files under android/ or the workflow can trigger the build. 
 
 ## 17. Latest release
 
-- Release: 1.7.0
-- Version code: 11
+- Release: 1.8.0
+- Version code: 12
 - Build result: successful.
-- Build run: [GitHub Actions run 44276220935](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44276220935)
+- Build run: [GitHub Actions run 44279594974](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279594974)
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)
-- SHA-256: `c8b8d86b3d25a91ae7ebe8da56bc7195a69b49ba565e7a68b9537abd48d888eb`
+- SHA-256: `95a44d24fa012d0f03902633958f41e2372572ce12bde881aaf16b274c672715`
 
 To verify a downloaded file on a computer, calculate its SHA-256 hash and compare it with the value above.
 
@@ -470,7 +484,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 
 ఈ యాప్ వీడియోలోని మాటలను timestamp ఉన్న transcript రూపంలో విశ్లేషించి గరిష్ఠంగా 8 ముఖ్యమైన moments సూచిస్తుంది. ప్రతి suggestionలో title/hook, timestamp, category, importance score, వివరణ ఉంటాయి. మొదటి suggestion ఆటోమేటిక్‌గా select అవుతుంది. మీరు వేరే suggestion ఎంచుకోవచ్చు, దాని సమయాన్ని preview చేయవచ్చు, Start/End మార్చవచ్చు, చివరికి MP4 export చేయవచ్చు.
 
-ఇది ప్రస్తుతం **AI క్లిప్ ఎంపిక, ఎడిటింగ్ మరియు MP4 ఎగుమతి యాప్**. 1.7.0లో YouTube URLను appలో preview చేసి IN/OUT timestamps గుర్తించవచ్చు; కానీ ఆ URL నుంచి అసలు video stream download చేయదు. AI transcription మరియు export కోసం local video లేదా creator-authorized direct video file అవసరం.
+ఇది ప్రస్తుతం **AI క్లిప్ ఎంపిక, ఎడిటింగ్ మరియు MP4 ఎగుమతి యాప్**. 1.8.0లో YouTube URLను appలో preview చేసి IN/OUT timestamps గుర్తించవచ్చు; కానీ ఆ URL నుంచి అసలు video stream download చేయదు. AI transcription మరియు export కోసం local video లేదా creator-authorized direct video file అవసరం.
 
 ## 2. ప్రాజెక్ట్ లక్ష్యం
 
@@ -487,7 +501,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 7. Aspect ratio ఎంచుకుని, కావాలంటే text overlay జోడించి MP4 export చేయాలి.
 8. Movies/ShortsForgeలో వీడియోను చూసి Android share menu ద్వారా share చేయాలి.
 
-## 3. Version 1.7.0లో ప్రస్తుతం ఉన్న ఫీచర్లు
+## 3. Version 1.8.0లో ప్రస్తుతం ఉన్న ఫీచర్లు
 
 ### Source video
 - ఫోన్ storage నుంచి Android file picker ద్వారా వీడియో ఎంచుకోవచ్చు.
@@ -496,7 +510,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 - Export సమయంలో source file‌ను ఉద్దేశపూర్వకంగా overwrite చేయదు.
 - ఏ video formats పని చేస్తాయో ఫోన్‌లో ఉన్న Android media decoders‌పై ఆధారపడి ఉంటుంది.
 
-### YouTube URL preview మరియు authorized direct-file import (1.7.0లో కొత్తది)
+### YouTube URL preview మరియు authorized direct-file import (1.8.0లో కొత్తది)
 - YouTube watch URL, Shorts URL లేదా youtu.be URLను paste చేసి appలో embedded YouTube playerలో preview చేయవచ్చు.
 - Embedded player controlsతో play, pause, seek చేయవచ్చు.
 - ప్రస్తుత playhead వద్ద IN marker మరియు OUT marker set చేయవచ్చు; లేదా secondsలో manually మార్చవచ్చు.
@@ -518,49 +532,51 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 - TXTలో AIకి ఖచ్చితమైన clip సమయాలు కనుగొనడానికి ఉపయోగపడే timestamps ఉండాలి.
 
 ### AI highlight detection
-- Groq, OpenAI, Claude లేదా local Qwen3తో transcript విశ్లేషణ.
-- Cloud analysisలో గరిష్ఠంగా 8 highlight suggestions.
-- AI ప్రధానంగా గుర్తించడానికి ప్రయత్నించేవి:
-  - పూర్తి question-and-answer exchanges.
-  - ముఖ్యమైన announcements మరియు కొత్త facts.
-  - Key insights మరియు explanations.
-  - Predictions మరియు practical advice.
-  - Context కోల్పోకుండా అర్థవంతంగా ఉండే surprising statements.
-- ప్రతి suggestionలో ఉండేవి:
-  - చిన్న hook/title.
-  - ముఖ్యమైన భాగం start/end timestamps.
+- Groq, OpenAI, Claude లేదా local Qwen3తో timestamp transcript విశ్లేషణ.
+- Cloud analysisలో గరిష్ఠంగా 8 highlight topic suggestions.
+- AI ప్రధానంగా పూర్తి Q&A, ముఖ్యమైన announcements, కొత్త facts, key insights, explanations, predictions, practical advice మరియు surprising facts గుర్తించడానికి ప్రయత్నిస్తుంది.
+- ప్రతి suggestion cardలో:
+  - Topic hook/title.
+  - ఆ topicకు చెందిన ఖచ్చితమైన Start/End timestamps.
   - Category.
   - Model ఇచ్చినప్పుడు 1–10 importance score.
-  - ఆ భాగం ఎందుకు ఉపయోగకరమో చిన్న explanation.
-- ఫలితాలు వచ్చినప్పుడు మొదటి suggestion ఆటోమేటిక్‌గా select అవుతుంది.
-- ఎంచుకున్న suggestion వివరాలు cards పైన ఉన్న status lineలో మరియు కింద స్థిరంగా ఉండే export barలో కనిపిస్తాయి. Screenshotలో ఉన్నట్లుగానే cards neutral designలో ఉంటాయి.
-- ఇంకో card నొక్కి వేరే moment ఎంచుకోవచ్చు.
+  - ఆ topic ఎందుకు ఉపయోగకరమో explanation.
+- మొదటి topic ఆటోమేటిక్‌గా select అవుతుంది.
+- ఏ card నొక్కినా దాని exact timestamps ప్రధాన editor Start/End fieldsలోకి వస్తాయి.
+- **Add this topic to Shorts queue** checkbox ద్వారా కావాల్సిన అనేక topicsను queueలో జోడించవచ్చు.
+- Queueలోని topics వేరువేరుగా MP4 Shortsగా export చేయవచ్చు లేదా ఒకే Studio timelineలో కలిపి edit చేయవచ్చు.
+
 
 ### Clip editing మరియు preview
-- AI clip window కోసం 60 లేదా 90 seconds ఎంచుకోవచ్చు.
-- ఎంచుకున్న AI moment మధ్య భాగంగా ఉండేలా clip window తయారవుతుంది; source video పరిమితుల్లోనే ఉంటుంది.
-- Start మరియు End సమయాలను secondsలో manualగా మార్చవచ్చు.
+- ఏ highlight card నొక్కినా ఆ topic యొక్క exact Start/End timestamps load అవుతాయి.
+- Preview selected clipతో ఆ exact time range చూడవచ్చు.
+- Start/End valuesను secondsలో manualగా మార్చవచ్చు.
+- **Expand selected topic to 60s / 90s** ద్వారా మాత్రమే ఎంచుకున్న topic చుట్టూ optional 60 లేదా 90 seconds window తయారు చేయవచ్చు.
 - Quick duration buttons: 15s, 30s, 45s, 60s.
-- Exportకు ముందు ఎంచుకున్న time range preview చేయవచ్చు.
-- Main editor quick-export గరిష్ఠ పరిమితి 180 seconds (3 నిమిషాలు).
+- ఒక్కో exported Short గరిష్ఠంగా 180 seconds.
 
-### ShortsForge Studio Timeline Editor (1.7.0లో కొత్తది)
-AI suggestion ఎంచుకున్న తర్వాత ప్రధాన editorలో **Open Studio Editor · Timeline, split, speed, text, audio** నొక్కండి. Quick export పూర్తయ్యాక వచ్చే dialogలో **Edit in Studio** ఎంచుకుని export అయిన MP4ను మళ్లీ తెరవవచ్చు.
-- ప్రత్యేక dark editing workspaceలో source video preview.
-- ఒకే source video నుంచి ఎంచుకున్న clip segments‌తో timeline.
-- అదే source videoలో మరో start/end rangeను జోడించవచ్చు.
-- Playhead ఉన్న స్థానంలో selected segmentను Split చేయవచ్చు.
-- Segment delete చేయడం, ఎడమ/కుడికి move చేసి క్రమం మార్చడం, ఇటీవలి timeline మార్పులను Undo చేయడం.
-- Selected segment Start/End సమయాలను secondsలో trim చేయడం.
-- Timeline playhead ద్వారా seek/scrub చేసి preview చేయడం.
-- Playback/export speed: 0.5×, 0.75×, 1×, 1.25×, 1.5× లేదా 2×.
-- Vertical 9:16, Square 1:1, Landscape 16:9 output formats.
-- 140 characters వరకు text overlay; Top/Centre/Bottom స్థానం; Clean/Bold/Large style; White/Yellow/Cyan text colors.
-- Original video audio mute చేయవచ్చు లేదా looping background music file జోడించవచ్చు. ప్రస్తుత versionలో music track source audio స్థానంలో వస్తుంది; రెండు tracks volume mixing లేదా automation ఇంకా లేదు.
-- Timelineలోని clip segments‌ను ఒక MP4 (H.264/AAC)గా export చేయవచ్చు. మొత్తం timeline గరిష్ఠంగా 180 seconds.
-- Export తర్వాత MP4 share చేయవచ్చు లేదా Studio Editorలో మళ్లీ తెరిచి edit చేయవచ్చు.
+### Queue చేసిన ప్రతి topicను వేరే Shortగా Export చేయడం (1.8.0లో కొత్తది)
+- కావాల్సిన ప్రతి topic cardలో **Add this topic to Shorts queue** tick చేయండి.
+- **Export N queued topics as separate Shorts** నొక్కండి.
+- Confirm చేసిన తర్వాత ప్రతి topic తన exact Start/End సమయాలతో వేరే MP4గా export అవుతుంది.
+- ప్రస్తుత aspect ratio మరియు optional text overlay ప్రతి outputకు వర్తిస్తాయి.
+- ప్రతి MP4 **Movies / ShortsForge**లో topic title ఆధారంగా filenameతో save అవుతుంది.
+- “Exporting topic 2/5” వంటి progress చూపిస్తుంది. అన్నీ లేదా కొన్నే save అయితే completion dialogలో తెలియజేస్తుంది.
+- **Share saved Shorts** ద్వారా save అయిన videosను ఒకేసారి share చేయవచ్చు; share చేసే app multiple-video sharing support చేయాలి.
+- ప్రతి Short గరిష్ఠం 180 seconds. వేర్వేరు Shorts durations మొత్తాన్ని కలిపి ఒకే 180 seconds పరిమితిగా లెక్కించదు.
 
-ఇది native timeline editingకు మొదటి దశ మాత్రమే; పూర్తి CapCut/KineMaster సమాన feature set కాదు. ప్రస్తుత timelineలోని అన్ని clip segments ఒకే selected source videoలోని ranges‌ను ఉపయోగిస్తాయి; వేర్వేరు వీడియోలతో multi-track compositor ఇంకా లేదు.
+### ShortsForge Studio Timeline Editor
+**Open Studio Editor · Timeline, split, speed, text, audio** ద్వారా selected topic లేదా queueలోని అన్ని topicsను ఒకే editing timelineలో తెరవవచ్చు.
+- ప్రతి queued topic దాని titleతో timeline clipగా కనిపిస్తుంది.
+- Split, Delete, Move, Reorder, Undo, trim మరియు playhead scrubbing.
+- Playback/export speed 0.5× నుంచి 2× వరకు.
+- Vertical 9:16, Square 1:1, Landscape 16:9.
+- Text overlay (140 characters), position, style, colour.
+- Original audio mute చేయవచ్చు లేదా ఒక looping music track జోడించవచ్చు; music source audio స్థానంలో వస్తుంది.
+- మొత్తం timelineను ఒకే MP4గా export చేయవచ్చు; combined Studio timeline గరిష్ఠంగా 180 seconds.
+- ప్రతి topicకి separate MP4 కావాలంటే పైన ఉన్న batch export button ఉపయోగించండి.
+
+ఇది native timeline editing దశ మాత్రమే; పూర్తి CapCut/KineMaster clone కాదు. ప్రస్తుత timeline ఒకే source videoలోని rangesనే ఉపయోగిస్తుంది; multi-source multi-track compositor ఇంకా లేదు.
 
 
 ### Export
@@ -650,7 +666,9 @@ Offline వేగం మరియు ఫలితాల నాణ్యత ఫ�
 7. **Save AI settings** నొక్కి Editorకి తిరిగి రండి.
 8. Local video ఎంచుకుని **Auto-transcribe + find clips** నొక్కండి.
 9. Whisper localగా transcript తయారు చేస్తుంది; Qwen3 timestamp transcript‌ను విశ్లేషిస్తుంది.
-10. Suggestion ఎంచుకుని preview చేయండి. అవసరమైతే time range మార్చి export చేయండి.
+10. Suggestion cardsలో ప్రతి topicకు exact timestamps చూడండి. కావాల్సిన cardsలో **Add this topic to Shorts queue** tick చేయండి.
+11. ఒక్కో topicను వేరే MP4గా చేయడానికి **Export N queued topics as separate Shorts** నొక్కండి; ఒకే timelineగా edit చేయడానికి **Open Studio Editor · N topic(s) as one timeline** నొక్కండి.
+12. Batch export confirm చేసి app openగా ఉంచండి. ప్రతి topic వేరే MP4గా Movies/ShortsForgeలో save అవుతుంది.
 
 Models download చేసిన తర్వాత local transcription మరియు transcript analysis cloud AIకి audio/transcript పంపకుండా పనిచేయగలవు. తర్వాత models మళ్లీ download చేయడానికి లేదా cloud AI వాడడానికి Internet అవసరం.
 
@@ -690,9 +708,11 @@ Cloud transcriptionలో extracted audio ఎంచుకున్న provider�
 **Auto-transcribe + find clips** లేదా **Analyze pasted transcript** నొక్కండి. AI timestamps మరియు చిన్న వివరణతో suggestions ఇస్తుంది. సరైన timestamps లేని transcript నుంచి ఉపయోగకరమైన clip suggestions రాకపోవచ్చు.
 
 ### Step 4: Suggestion ఎంచుకోవడం
-మొదటి suggestion ఆటోమేటిక్‌గా select అవుతుంది. దాని card highlighted backgroundతో **SELECTED** గుర్తు చూపిస్తుంది. ఇంకో card నొక్కి వేరే moment ఎంచుకోవచ్చు. Selected suggestion ఆధారంగా 60 లేదా 90 seconds clip window తయారవుతుంది. అది suggested moment చుట్టూ centre అవుతుంది మరియు source video duration దాటదు.
+మొదటి suggestion ఆటోమేటిక్‌గా select అవుతుంది. దాని cardపై **SELECTED** కనిపిస్తుంది. ఇంకో card నొక్కితే ఆ topic యొక్క exact Start/End timestamps ప్రధాన editorలోకి వస్తాయి. Screenshotలో కనిపించే timestampsనే ఉపయోగిస్తుంది; defaultగా 60/90 seconds windowతో వాటిని మార్చదు.
 
-**ముఖ్యమైన విషయం:** AI timestamp అనేది ముఖ్యమైన moment‌కు anchor మాత్రమే. పూర్తి answer లేదా discussion 60/90 seconds కంటే ఎక్కువ ఉంటే మొత్తం context clipలో సరిపోకపోవచ్చు. Exportకు ముందు preview చేసి Start/End మార్చండి.
+కావాల్సిన topic cardsలో **Add this topic to Shorts queue** tick చేయండి. Queueలోని ప్రతి topicను వేరే MP4గా export చేయవచ్చు లేదా అన్నింటిని ఒకే Studio timelineలోకి పంపవచ్చు.
+
+**Optional:** ప్రస్తుతం select చేసిన topic కోసం మాత్రమే **Expand selected topic to 60s / 90s** వాడవచ్చు. Preview చేసి అవసరమైతే Start/End మార్చండి.
 
 ### Step 5: Preview మరియు Edit
 **Preview selected clip** నొక్కితే ఎంచుకున్న Start సమయం నుంచి playback ప్రారంభమై End సమయానికి ఆగుతుంది. అదనంగా:
@@ -707,7 +727,7 @@ Cloud transcriptionలో extracted audio ఎంచుకున్న provider�
 - Square కోసం 1:1.
 - Landscape కోసం 16:9.
 
-గరిష్ఠంగా 140 characters ఉన్న optional text overlay జోడించండి లేదా ఖాళీగా వదిలేయండి. **Export Short** నొక్కి export పూర్తయ్యే వరకు యాప్ openగా ఉంచండి. పూర్తయిన తర్వాత వీడియో save అవుతుంది; Android share options కనిపిస్తాయి.
+గరిష్ఠంగా 140 characters ఉన్న optional text overlay జోడించండి. ఒక్క clip కోసం **Export Short** నొక్కండి. అనేక queued topicsను వేరువేరు MP4లుగా చేయడానికి **Export N queued topics as separate Shorts** నొక్కి confirm చేయండి. ప్రతి video Movies/ShortsForgeలో save అవుతుంది. Batch పూర్తయ్యే వరకు app openగా ఉంచి completion dialogలో **Share saved Shorts** ఉపయోగించండి. ఒకే 180 seconds కంటే ఎక్కువ కలిపిన timeline కావాలంటే వేర్వేరు MP4 batch export వాడండి; Studio combined timeline మాత్రం 180 seconds పరిమితిలో ఉంటుంది.
 
 ## 8. AI Modes మరియు Models
 
@@ -759,7 +779,7 @@ Private లేదా confidential recordingsను cloud APIకి పంపే 
 
 ## 11. ప్రస్తుత యాప్‌లో లేని ఫీచర్లు
 
-క్రింది అంశాలు **Version 1.7.0లో ఇంకా లేవు**:
+క్రింది అంశాలు **Version 1.8.0లో ఇంకా లేవు**:
 - YouTube watch URLను editable MP4/audio sourceగా download లేదా extract చేయడం. YouTube URL preview మరియు timestamp markers మాత్రమే ఇస్తుంది.
 - Public YouTube caption tracks లేదా transcriptsను ఆటోమేటిక్‌గా download చేయడం.
 - Google Drive/Dropbox share-page URLs import చేయడం. Importerకు direct HTTPS video-file response అవసరం.
@@ -883,12 +903,12 @@ android/లో లేదా workflow fileలో మార్పులు push �
 
 ## 17. తాజా Release
 
-- Release: 1.7.0.
+- Release: 1.8.0.
 - Version code: 10.
 - Build result: Successful.
-- Build run: [GitHub Actions run 44276220935](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44276220935).
+- Build run: [GitHub Actions run 44279594974](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279594974).
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk).
-- SHA-256: `c8b8d86b3d25a91ae7ebe8da56bc7195a69b49ba565e7a68b9537abd48d888eb`.
+- SHA-256: `95a44d24fa012d0f03902633958f41e2372572ce12bde881aaf16b274c672715`.
 
 Computerలో download చేసిన file verify చేయాలంటే దాని SHA-256 hash calculate చేసి పై విలువతో పోల్చండి.
 
@@ -912,7 +932,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 
 ऐप timestamp वाले transcript का विश्लेषण करके अधिकतम 8 उपयोगी moments सुझाता है। हर suggestion में title/hook, timestamp, category, importance score और explanation हो सकते हैं। पहला suggestion अपने-आप select होता है। आप दूसरा suggestion चुन सकते हैं, उसका समय preview कर सकते हैं, Start/End बदल सकते हैं और अंत में MP4 export कर सकते हैं।
 
-यह अभी **AI clip selection, editing और MP4 export ऐप** है। Version 1.7.0 में YouTube URL को ऐप के अंदर preview करके IN/OUT timestamps mark कर सकते हैं, लेकिन उस URL से video stream download नहीं होती। AI transcription और export के लिए local video या creator-authorized direct video file जरूरी है।
+यह अभी **AI clip selection, editing और MP4 export ऐप** है। Version 1.8.0 में YouTube URL को ऐप के अंदर preview करके IN/OUT timestamps mark कर सकते हैं, लेकिन उस URL से video stream download नहीं होती। AI transcription और export के लिए local video या creator-authorized direct video file जरूरी है।
 
 ## 2. परियोजना का लक्ष्य
 
@@ -929,7 +949,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 7. Aspect ratio चुनें, चाहें तो text overlay जोड़ें और MP4 export करें।
 8. वीडियो को Movies/ShortsForge में ढूंढें और Android share sheet से साझा करें।
 
-## 3. Version 1.7.0 में उपलब्ध सुविधाएँ
+## 3. Version 1.8.0 में उपलब्ध सुविधाएँ
 
 ### Source video
 - Android file picker से फोन की storage में मौजूद वीडियो चुनें।
@@ -938,7 +958,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 - Export प्रक्रिया source file को जानबूझकर overwrite नहीं करती।
 - कौन-से video formats चलेंगे, यह Android डिवाइस के media decoders पर निर्भर करता है।
 
-### YouTube URL preview और authorized direct-file import (1.7.0 में नया)
+### YouTube URL preview और authorized direct-file import (1.8.0 में नया)
 - YouTube watch URL, Shorts URL या youtu.be URL paste करके ऐप के embedded YouTube player में preview करें।
 - Embedded player controls से play, pause और seek करें।
 - मौजूदा playhead पर IN और OUT markers लगाएं, या seconds में timestamps manually बदलें।
@@ -960,49 +980,51 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 - TXT में AI द्वारा सटीक clip समय पहचानने के लिए उपयोगी timestamps होने चाहिए।
 
 ### AI Highlight Detection
-- Groq, OpenAI, Claude या local Qwen3 से transcript का विश्लेषण।
-- Cloud analysis flow में अधिकतम 8 highlight suggestions।
-- AI प्राथमिकता देता है:
-  - पूरे question-and-answer exchanges को, जहाँ उत्तर समझने के लिए प्रश्न भी जरूरी हो।
-  - महत्वपूर्ण announcements और नए facts को।
-  - Key insights और explanations को।
-  - Predictions और practical advice को।
-  - ऐसे surprising statements को जिनका context बना रहे।
-- हर suggestion में हो सकते हैं:
-  - छोटा hook/title।
-  - मुख्य moment के start/end timestamps।
+- Groq, OpenAI, Claude या local Qwen3 से timestamped transcript का विश्लेषण।
+- Cloud analysis में अधिकतम 8 highlight topic suggestions।
+- AI पूरे Q&A, महत्वपूर्ण announcements, नए facts, key insights, explanations, predictions, practical advice और surprising facts को प्राथमिकता देता है।
+- हर suggestion card में:
+  - Topic hook/title।
+  - उस topic के exact Start/End timestamps।
   - Category।
-  - Model द्वारा दिए जाने पर 1 से 10 तक importance score।
-  - उस moment की उपयोगिता बताने वाला छोटा explanation।
-- Results आने पर पहला suggestion अपने-आप select होता है।
-- Selected suggestion अलग highlight होता है।
-- दूसरा card दबाकर दूसरा moment चुना जा सकता है।
+  - Model द्वारा दिए जाने पर 1–10 importance score।
+  - Topic की उपयोगिता बताने वाला छोटा explanation।
+- पहला topic अपने-आप select होता है।
+- किसी card को दबाने पर उसके exact timestamps main editor के Start/End fields में आते हैं।
+- जिन topics को export करना है, उन पर **Add this topic to Shorts queue** checkbox tick करें।
+- Queue किए गए topics अलग-अलग MP4 Shorts के रूप में export हो सकते हैं या एक Studio timeline में जोड़े जा सकते हैं।
+
 
 ### Clip Editing और Preview
-- AI clip window के लिए 60 या 90 seconds चुनें।
-- चुने गए AI moment के आसपास clip window बनाई जाती है और source-video duration के भीतर रखी जाती है।
-- Start और End समय को seconds में manually बदलें।
+- किसी highlight card को दबाने पर उस topic के exact Start/End timestamps load होते हैं।
+- **Preview selected clip** से वही exact time range देखें।
+- Start और End seconds manually बदल सकते हैं।
+- **Expand selected topic to 60s / 90s** से selected topic के आसपास optional 60 या 90-second window बनाएं।
 - Quick duration buttons: 15s, 30s, 45s और 60s।
-- Export से पहले चुनी गई time range preview करें।
-- Main editor quick-export की अधिकतम सीमा 180 seconds (3 मिनट) है।
+- हर individual exported Short अधिकतम 180 seconds हो सकता है।
 
-### ShortsForge Studio Timeline Editor (1.7.0 में नया)
-AI suggestion चुनने के बाद main editor में **Open Studio Editor · Timeline, split, speed, text, audio** दबाएं। Quick export के बाद आने वाले dialog में **Edit in Studio** चुनकर exported MP4 को फिर से खोल सकते हैं।
-- एक dedicated dark editing workspace में source video preview।
-- एक ही selected source video से चुने गए clip segments की ordered timeline।
-- उसी source video से नया start/end range जोड़ें।
-- Playhead की वर्तमान position पर selected segment को split करें।
-- Segment delete करें, left/right move करके order बदलें और हाल के timeline changes को Undo करें।
-- Start/End seconds बदलकर selected segment trim करें।
-- Timeline playhead से seek/scrub करके preview करें।
-- Playback/export speed: 0.5×, 0.75×, 1×, 1.25×, 1.5× या 2×।
-- Vertical 9:16, Square 1:1 या Landscape 16:9 output।
-- 140 characters तक text overlay; Top/Centre/Bottom position; Clean/Bold/Large style; White/Yellow/Cyan text colour।
-- Original video audio mute करें या looping background music जोड़ें। इस version में music track source audio को replace करता है; अलग tracks का audio mixing और volume automation उपलब्ध नहीं है।
-- Ordered timeline को एक MP4 (H.264/AAC) के रूप में export करें। Combined timeline अधिकतम 180 seconds है।
-- Export के बाद MP4 share करें या Studio Editor में फिर खोलकर दोबारा edit करें।
+### Queue किए गए हर Topic को अलग Short के रूप में Export करना (1.8.0 में नया)
+- जिन topic cards की जरूरत है, उनमें **Add this topic to Shorts queue** tick करें।
+- **Export N queued topics as separate Shorts** दबाएं।
+- Confirm करने पर हर topic अपने exact Start/End timestamps के साथ अलग MP4 में export होता है।
+- वर्तमान aspect ratio और optional text overlay हर output पर लागू होते हैं।
+- हर MP4 **Movies / ShortsForge** में topic title पर आधारित filename से save होता है।
+- “Exporting topic 2/5” जैसे progress messages दिखते हैं। सभी या कुछ ही files save होने पर completion dialog इसकी जानकारी देता है।
+- **Share saved Shorts** से saved videos एक साथ share कर सकते हैं; target app को multiple-video sharing support करना होगा।
+- हर Short की सीमा 180 seconds है। अलग-अलग Shorts की durations को जोड़कर एक combined 180-second limit नहीं लगती।
 
-यह native timeline editing का पहला चरण है, पूर्ण CapCut/KineMaster feature parity नहीं। अभी timeline के सभी segments एक ही source video के ranges इस्तेमाल करते हैं; अलग-अलग source videos वाला multi-track compositor अभी उपलब्ध नहीं है।
+### ShortsForge Studio Timeline Editor
+**Open Studio Editor · Timeline, split, speed, text, audio** दबाकर current topic या queue के सभी topics को एक ही editing timeline में खोलें।
+- हर queued topic अपनी title के साथ timeline clip के रूप में दिखता है।
+- Split, Delete, Move, Reorder, Undo, trim और playhead scrubbing।
+- Playback/export speed 0.5× से 2× तक।
+- Vertical 9:16, Square 1:1 और Landscape 16:9।
+- Text overlay (140 characters), position, style और colour।
+- Original audio mute करें या एक looping music track जोड़ें; music source audio को replace करता है।
+- पूरी timeline को एक MP4 में export कर सकते हैं; combined Studio timeline अधिकतम 180 seconds है।
+- हर topic का अलग MP4 चाहिए तो batch export button इस्तेमाल करें।
+
+यह native timeline editing का चरण है, पूर्ण CapCut/KineMaster clone नहीं। अभी timeline एक ही source video के ranges इस्तेमाल करती है; multi-source multi-track compositor अभी उपलब्ध नहीं है।
 
 
 ### Export
@@ -1092,7 +1114,9 @@ Offline transcription और highlight analysis के लिए:
 7. **Save AI settings** दबाकर Editor में वापस आएं।
 8. Local video चुनें और **Auto-transcribe + find clips** दबाएं।
 9. Whisper locally transcript बनाएगा और Qwen3 timestamped transcript का analysis करेगा।
-10. Suggestion चुनें, preview करें, जरूरत पर range edit करें और export करें।
+10. Suggestion cards देखें; हर topic के exact timestamps दिखाई देंगे। जिन topics को चाहिए, उन पर **Add this topic to Shorts queue** tick करें।
+11. हर topic के लिए अलग MP4 बनाने हेतु **Export N queued topics as separate Shorts** दबाएं; सभी को एक timeline में edit करने के लिए **Open Studio Editor · N topic(s) as one timeline** दबाएं।
+12. Batch export confirm करें और ऐप खुला रखें। हर topic अलग MP4 के रूप में Movies/ShortsForge में save होगा।
 
 Models download होने के बाद local transcription और transcript analysis बिना audio/transcript को cloud AI service भेजे चल सकते हैं। बाद में models दोबारा download करने या cloud AI उपयोग करने के लिए Internet चाहिए।
 
@@ -1132,9 +1156,11 @@ Cloud transcription में निकला audio चुने गए provider
 **Auto-transcribe + find clips** या **Analyze pasted transcript** दबाएं। AI timestamps और छोटे explanation के साथ suggestions लौटाता है। विश्वसनीय timestamps के बिना transcript से उपयोगी clip suggestions नहीं मिल सकते।
 
 ### Step 4: Suggestion चुनें
-पहला suggestion अपने-आप select होता है। उसके card पर highlighted background और **SELECTED** marker दिखेगा। दूसरा card दबाकर दूसरा moment चुन सकते हैं। चुना गया suggestion 60 या 90 seconds की clip window बनाता है, जो suggested moment के आसपास centre होती है और source-video duration से बाहर नहीं जाती।
+पहला suggestion अपने-आप select होता है और उसके card पर **SELECTED** दिखता है। दूसरा card दबाने पर उस topic के exact Start/End timestamps main editor में load होते हैं। Screenshot में दिखाए गए timestamps सीधे इस्तेमाल होते हैं; वे अपने-आप 60/90-second window में नहीं बदले जाते।
 
-**महत्वपूर्ण:** AI timestamp एक key moment का anchor है। यदि पूरा answer या discussion चुनी गई 60/90-second window से लंबा है, तो पूरा context clip में शामिल नहीं हो पाएगा। Export से पहले preview करें और Start/End manually बदलें।
+जिन topics को export करना है उन पर **Add this topic to Shorts queue** tick करें। Queue किए गए topics अलग-अलग MP4 Shorts बन सकते हैं या Studio में एक timeline बन सकते हैं।
+
+**Optional:** वर्तमान selected topic के लिए **Expand selected topic to 60s / 90s** इस्तेमाल करें। Preview करें और जरूरत पर Start/End बदलें।
 
 ### Step 5: Preview और Edit
 **Preview selected clip** दबाने पर playback चुने गए Start समय से शुरू होकर End समय पर रुकता है। इसके अलावा:
@@ -1149,7 +1175,7 @@ Cloud transcription में निकला audio चुने गए provider
 - Square के लिए 1:1।
 - Landscape के लिए 16:9।
 
-Optional text overlay जोड़ें (अधिकतम 140 characters) या खाली छोड़ दें। **Export Short** दबाकर export पूरा होने तक ऐप खुला रखें। पूरा होने पर वीडियो save होता है और Android share options दिखते हैं।
+Optional text overlay जोड़ें (अधिकतम 140 characters)। एक clip के लिए **Export Short** दबाएं। कई queued topics को अलग-अलग MP4 बनाने के लिए **Export N queued topics as separate Shorts** दबाकर confirm करें। हर video Movies/ShortsForge में save होता है। Batch पूरा होने तक ऐप खुला रखें और completion dialog में **Share saved Shorts** चुनें। सभी clips को एक ही Studio timeline में जोड़ने पर combined timeline की सीमा 180 seconds है।
 
 ## 8. AI Modes और Model Details
 
@@ -1201,7 +1227,7 @@ Private या confidential recordings cloud API को भेजने से �
 
 ## 11. मौजूदा सीमाएँ — क्या शामिल नहीं है
 
-निम्न सुविधाएँ **वर्तमान Version 1.7.0 में उपलब्ध नहीं हैं**:
+निम्न सुविधाएँ **वर्तमान Version 1.8.0 में उपलब्ध नहीं हैं**:
 - YouTube URL import या public YouTube video download।
 - Google Drive/Dropbox share-link import।
 - Direct internet video URL import।
@@ -1325,12 +1351,13 @@ android/ या workflow file में बदलाव push करने पर
 
 ## 17. Latest Release
 
-- Release: 1.7.0।
-- Version code: 11।
+- Release: 1.8.0।
+- Version code: 12।
+- APK size: लगभग 13.91 MB।
 - Build result: Successful।
-- Build run: [GitHub Actions run 44276220935](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44276220935)।
+- Build run: [GitHub Actions run 44279594974](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279594974)।
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)।
-- SHA-256: `c8b8d86b3d25a91ae7ebe8da56bc7195a69b49ba565e7a68b9537abd48d888eb`।
+- SHA-256: `95a44d24fa012d0f03902633958f41e2372572ce12bde881aaf16b274c672715`।
 
 Computer पर downloaded file verify करने के लिए उसका SHA-256 hash calculate करके ऊपर दिए गए value से compare करें।
 

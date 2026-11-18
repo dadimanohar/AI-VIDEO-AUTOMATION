@@ -1771,6 +1771,7 @@ $data
                 batchExportUris.clear()
                 batchExportActive = true
                 busy = true
+                refreshQueueControls()
                 refreshFooter()
                 startNextBatchHighlightExport()
             }
@@ -1791,11 +1792,11 @@ $data
         if (batchExportIndex >= batchExportItems.size) {
             val completed = batchExportUris.size
             batchExportActive = false
-            batchExportActive = false
             transformer = null
             outputFile?.delete()
             outputFile = null
             busy = false
+            refreshQueueControls()
             refreshFooter()
             setStatus("Batch complete. " + completed + " separate Shorts saved in Movies / ShortsForge.")
             showBatchExportResultDialog(completed, batchExportItems.size)
@@ -1820,6 +1821,7 @@ $data
         }
         val file = File(cacheDir, "ShortsForge_batch_" + batchExportIndex + "_" + System.currentTimeMillis() + ".mp4")
         outputFile = file
+        refreshQueueControls()
         setStatus(
             "Exporting topic " + (batchExportIndex + 1) + "/" + batchExportItems.size +
                 ": " + item.hook
@@ -1895,6 +1897,7 @@ $data
             transformer = null
             outputFile = null
             batchExportIndex += 1
+            refreshQueueControls()
             setStatus(
                 "Saved " + batchExportUris.size + "/" + batchExportItems.size +
                     " Shorts. Next: " + (batchExportItems.getOrNull(batchExportIndex)?.hook ?: "finishing")
@@ -1914,6 +1917,7 @@ $data
         transformer = null
         batchExportActive = false
         busy = false
+        refreshQueueControls()
         refreshFooter()
         val completed = batchExportUris.size
         setStatus(reason + if (completed > 0) " Saved " + completed + " Short(s) before the failure." else "")
@@ -2101,9 +2105,24 @@ $data
     }
 
     private fun cancelExport() {
+        val wasBatch = batchExportActive
+        val completed = batchExportUris.size
+        val total = batchExportItems.size
+        if (wasBatch) batchExportActive = false
         try { transformer?.cancel() } catch (_: Exception) { }
         finishExport()
-        setStatus("Export cancelled.")
+        if (wasBatch) {
+            refreshQueueControls()
+            val message = if (completed > 0) {
+                "Batch export cancelled. " + completed + " of " + total + " separate Shorts were saved."
+            } else {
+                "Batch export cancelled. No Shorts were saved."
+            }
+            setStatus(message)
+            if (completed > 0) showBatchExportResultDialog(completed, total)
+        } else {
+            setStatus("Export cancelled.")
+        }
     }
 
     private fun clock(seconds: Double): String {

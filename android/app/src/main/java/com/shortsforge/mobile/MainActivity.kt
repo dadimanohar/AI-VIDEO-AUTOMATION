@@ -291,8 +291,14 @@ class MainActivity : ComponentActivity() {
             setPadding(0, dp(8), 0, dp(2))
         }
         ai.addView(queueSummaryView)
+        ai.addView(button("Add all detected topics to Shorts queue", false) {
+            var added = 0
+            highlightItems.indices.forEach { index -> if (setHighlightQueued(index, true)) added++ }
+            showHighlights(highlightItems)
+            setStatus(added.toString() + " topic(s) are now in your Shorts queue. You can remove any topic individually.")
+        }, full(dp(6)))
 
-        val edit = card(body, "03  •  EDIT YOUR SHORT", "Tap a topic to load its exact timestamps. Add multiple topics to a single Studio timeline.")
+        val edit = card(body, "03  •  EDIT YOUR SHORT", "Tap a topic to load its exact timestamps. Add multiple topics to a single Studio timeline or export each topic separately.")
         studioQueueButton = button("Open Studio Editor · current highlight", false) { openStudioEditor() }
         edit.addView(studioQueueButton, full(dp(8)))
         batchExportButton = button("Export each queued topic as a separate Short", true) {
@@ -1469,7 +1475,7 @@ $chunkText
     }
 
     private fun suggestionSelectedStatus(index: Int): String =
-        "Suggestion " + (index + 1) + " selected. Exact timestamps loaded into Start / End."
+        "Topic " + (index + 1) + " selected. Exact timestamps loaded into Start / End."
 
     private fun showHighlights(items: List<Highlight>) {
         if (!::highlightsView.isInitialized) return
@@ -1488,7 +1494,7 @@ $chunkText
         }
         highlightsView.removeAllViews()
         if (items.isEmpty()) {
-            highlightsView.addView(text("No timestamped suggestions to show.", 12f, muted).apply { setPadding(0, dp(8), 0, 0) })
+            highlightsView.addView(text("No timestamped topics to show. Check the transcript and run topic mapping again.", 12f, muted).apply { setPadding(0, dp(8), 0, 0) })
             refreshQueueControls()
             return
         }
@@ -1904,7 +1910,7 @@ $chunkText
             busy = false
             refreshQueueControls()
             refreshFooter()
-            setStatus("Batch complete. " + completed + " separate Shorts saved in Movies / ShortsForge.")
+            setStatus("Topic batch complete. " + completed + " separate Shorts saved in Movies / ShortsForge.")
             showBatchExportResultDialog(completed, batchExportItems.size)
             return
         }

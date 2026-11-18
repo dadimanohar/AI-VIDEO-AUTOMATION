@@ -3,20 +3,20 @@
 **AI-powered long-video to Shorts editor for Android.**  
 Turn a long interview, podcast, lecture, or other video file into short clips by finding useful moments in its timestamped transcript, reviewing the suggested time ranges, and exporting an MP4.
 
-[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44271305685)
+[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44276220935)
 
 | App detail | Value |
 |---|---|
 | App name | ShortsForge Mobile |
-| Current release | 1.6.0 |
-| Version code | 10 |
+| Current release | 1.7.0 |
+| Version code | 11 |
 | Android package | `com.shortsforge.mobile` |
 | Minimum Android version | Android 8.0 (API 26) |
-| APK size | About 13.88 MB |
+| APK size | About 13.89 MB |
 | Export | MP4 (H.264 video + AAC audio) |
 | Build type | Debug-signed APK from GitHub Actions |
 
-> **Important source-video note:** This version edits a video file selected from your device. YouTube URL import has intentionally been removed. A YouTube watch link is not an editable video file in this app. ShortsForge does not download public YouTube videos or bypass YouTube restrictions.
+> **Important source-video note (1.7.0):** You can paste a YouTube watch/Shorts link for an embedded preview and mark clip start/end timestamps. That link is **not** downloaded or used as an editable media file. To run AI transcription and export, choose a local video or import a creator-authorized direct HTTPS video-file URL. ShortsForge does not extract or download public YouTube streams.
 
 ---
 
@@ -36,7 +36,7 @@ The main goal is to reduce the time spent manually searching long recordings for
 
 The intended workflow is:
 
-1. Select a video file stored on the Android device.
+1. Select a local video file, or import a creator-authorized direct HTTPS video-file URL. A YouTube URL can be previewed and used to mark timestamps, but it is not itself an editable source file.
 2. Generate a timestamped transcript using cloud Whisper or on-device Whisper, or import/paste an existing timestamped transcript.
 3. Ask an AI model to rank the most useful moments.
 4. Review the suggestion cards and their timestamps, category, importance score, and explanation.
@@ -45,7 +45,7 @@ The intended workflow is:
 7. Choose an output aspect ratio, optionally add a text overlay, and export an MP4.
 8. Find the exported file in Movies/ShortsForge and share it using the Android share sheet.
 
-## 3. Features in version 1.6.0
+## 3. Features in version 1.7.0
 
 ### Source video
 - Select a video from device storage using Android's file picker.
@@ -53,6 +53,18 @@ The intended workflow is:
 - Preview the source video using the in-app player.
 - The source file is not intentionally overwritten by the export process.
 - Supported video formats depend on the Android device's media decoders.
+
+### YouTube URL preview and authorized direct-file import (new in 1.7.0)
+- Paste a standard YouTube watch URL, Shorts URL, or youtu.be URL and open it in the in-app embedded YouTube player.
+- Play, pause, and seek using the embedded player controls.
+- Set an IN marker and an OUT marker at the current player position, or manually edit the marker times in seconds.
+- Return the markers to the main editor. When you subsequently select/import the corresponding video file, the saved times are prefilled if they fit that file's duration. Make sure the previewed and imported files are the same recording.
+- YouTube links are **preview and timestamp-marker only**. The app does not extract the YouTube video/audio stream, auto-fetch public captions, or send the watch URL to the AI transcription workflow.
+- Paste a creator-authorized direct HTTPS video-file URL to import the actual media source into app-private storage.
+- Direct-file import supports MP4, MOV, M4V, WebM, MKV, and 3GP when the server returns a supported video MIME type or recognizable file extension.
+- The user must confirm ownership or permission before import. Maximum download size: 1 GB.
+- Share pages (for example, a Google Drive/Dropbox HTML preview page) are not direct video files and are not accepted. Use a direct media-file URL that returns video bytes.
+- Links that redirect to YouTube or YouTube's video-delivery hosts are rejected.
 
 ### Transcription and transcript import
 - Automatic cloud transcription using Groq Whisper or OpenAI Whisper.
@@ -89,7 +101,7 @@ The intended workflow is:
 - Preview the selected start-to-end range before export.
 - The manual quick-export limit is 180 seconds (3 minutes).
 
-### ShortsForge Studio timeline editor (new in 1.6.0)
+### ShortsForge Studio timeline editor (new in 1.7.0)
 Open **Studio Editor · Timeline, split, speed, text, audio** from the main editor after choosing an AI suggestion. The post-export dialog also offers **Edit in Studio** to reopen the rendered MP4.
 - Preview the source video in a dedicated dark editing workspace.
 - Work with an ordered timeline of clip segments selected from the same source video.
@@ -206,10 +218,22 @@ After the models are downloaded, local transcription and transcript analysis can
 4. Return to the editor and tap **Analyze pasted transcript**.
 5. Review the ranked suggestions, choose one, preview the selected range, and export.
 
+### Option D — YouTube preview + authorized video source
+1. Paste a YouTube watch, Shorts, or youtu.be link in **YOUTUBE VIDEO URL**.
+2. Tap **Preview YouTube URL + mark clip timestamps**.
+3. Play or seek in the embedded player. Tap **Set IN at playhead** and **Set OUT at playhead**, or edit the seconds fields manually.
+4. Tap **Use these clip markers** to return the timestamps to the main editor.
+5. Obtain the same recording as a local file or a direct HTTPS video-file URL from the creator/rightsholder.
+6. For a direct URL, paste it into **AUTHORIZED DIRECT VIDEO FILE URL**, tap **Import authorized video URL**, confirm permission, and wait for download/validation.
+7. Check that the imported file is the same recording you previewed. The saved marker times are prefilled when they fit the imported file's duration.
+8. Run **Auto-transcribe + find clips** or import a transcript, then use Studio Editor and export as usual.
+
+**Important:** YouTube preview does not make the YouTube watch URL an editable source. AI transcription and MP4 export require the local or authorized direct media file. The app also does not automatically fetch public YouTube captions.
+
 ## 7. Detailed guide to the editor
 
 ### Step 1: Select the source video
-Tap **Choose video** and use the Android file picker. Choose a video for which you have editing rights. The app displays the filename and, when Android can read it, the source duration.
+Use **Choose video** for a local file, or use **AUTHORIZED DIRECT VIDEO FILE URL** to import a creator-authorized HTTPS media-file link. The app displays the filename and duration after validating the media. A YouTube URL can be opened through **Preview YouTube URL + mark clip timestamps**; it provides an embedded preview and time markers only, not an editable video file.
 
 ### Step 2: Create a transcript
 Choose one of these approaches:
@@ -281,6 +305,7 @@ The transcript should:
 ## 10. Data handling and privacy
 
 - Video selection and MP4 export are performed on the Android device.
+- YouTube playback is displayed using the embedded YouTube player. Direct video-file URLs are requested over HTTPS and the returned media is stored in the app's private storage for editing.
 - Cloud transcription sends extracted audio to the provider you selected.
 - Cloud highlight analysis sends transcript text to the selected AI provider.
 - Local Whisper and Qwen3 inference run on the device after the model files are downloaded.
@@ -292,10 +317,10 @@ Review the selected AI provider's privacy terms before sending private, confiden
 
 ## 11. Current limitations — what is not included
 
-The following are **not** current 1.6.0 features:
-- YouTube URL import or public YouTube video downloading.
-- Google Drive/Dropbox share-link importing.
-- Direct internet video URL importing.
+The following are **not** current 1.7.0 features:
+- Downloading/extracting a YouTube watch URL as an editable MP4/audio source. YouTube URLs support embedded preview and clip timestamp markers only.
+- Automatic downloading of public YouTube caption tracks or transcripts.
+- Importing Google Drive/Dropbox share-page URLs. The importer requires a direct HTTPS video-file response.
 - Automatic YouTube channel upload, scheduling, or publishing.
 - Automatic YouTube caption-track downloading.
 - AI-generated animated word-by-word subtitles or karaoke captions.
@@ -355,7 +380,8 @@ Android may reject an APK signed with a different debug certificate. If that hap
 - Android MediaMetadataRetriever for source duration.
 - AndroidX Media3 ExoPlayer for playback.
 - AndroidX Media3 Transformer and Effects for MP4 export and overlay rendering.
-- OkHttp for cloud API requests and model downloads.
+- OkHttp for cloud API requests, offline-model downloads, and authorized direct video-file imports.
+- Android WebView with the YouTube IFrame Player API for embedded preview and clip timestamp markers.
 - Groq, OpenAI, and Anthropic APIs for cloud AI.
 - llama.cpp Android integration for local Qwen3 inference.
 - whisper.cpp Android integration for local Whisper transcription.
@@ -412,12 +438,12 @@ A push that changes files under android/ or the workflow can trigger the build. 
 
 ## 17. Latest release
 
-- Release: 1.6.0
-- Version code: 10
+- Release: 1.7.0
+- Version code: 11
 - Build result: successful.
-- Build run: [GitHub Actions run 44271305685](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44271305685)
+- Build run: [GitHub Actions run 44276220935](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44276220935)
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)
-- SHA-256: `864282ffd23129cdbf2cc25b18c8250528e10c6a65ec7e20a1964f2912f87ecd`
+- SHA-256: `c8b8d86b3d25a91ae7ebe8da56bc7195a69b49ba565e7a68b9537abd48d888eb`
 
 To verify a downloaded file on a computer, calculate its SHA-256 hash and compare it with the value above.
 
@@ -425,7 +451,7 @@ To verify a downloaded file on a computer, calculate its SHA-256 hash and compar
 
 Only select, edit, and publish videos that you own, have permission to use, or are otherwise legally allowed to use. A short duration, credit line, or “no copyright intended” disclaimer does not automatically grant rights. AI highlight suggestions do not grant permission to reuse footage.
 
-ShortsForge Mobile does not provide a YouTube video downloader. It expects a local video file selected by the user.
+ShortsForge Mobile does not extract or download YouTube watch-page video streams. YouTube links are supported for embedded preview and timestamp markers only. AI processing and export require a local file or creator-authorized direct video-file source.
 
 The APK build was verified through GitHub Actions. It has not been independently tested on every Android device. Device-specific playback, local-model performance, export time, and compatibility may vary.
 
@@ -441,7 +467,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 
 ఈ యాప్ వీడియోలోని మాటలను timestamp ఉన్న transcript రూపంలో విశ్లేషించి గరిష్ఠంగా 8 ముఖ్యమైన moments సూచిస్తుంది. ప్రతి suggestionలో title/hook, timestamp, category, importance score, వివరణ ఉంటాయి. మొదటి suggestion ఆటోమేటిక్‌గా select అవుతుంది. మీరు వేరే suggestion ఎంచుకోవచ్చు, దాని సమయాన్ని preview చేయవచ్చు, Start/End మార్చవచ్చు, చివరికి MP4 export చేయవచ్చు.
 
-ఇది ప్రస్తుతం **వీడియో క్లిప్ ఎంచుకోవడం మరియు ఎగుమతి చేయడం కోసం ఉన్న యాప్**. ఇది పూర్తి video-generation suite కాదు, YouTube downloader కాదు, YouTubeలో ఆటోమేటిక్‌గా upload చేసే సేవ కూడా కాదు.
+ఇది ప్రస్తుతం **AI క్లిప్ ఎంపిక, ఎడిటింగ్ మరియు MP4 ఎగుమతి యాప్**. 1.7.0లో YouTube URLను appలో preview చేసి IN/OUT timestamps గుర్తించవచ్చు; కానీ ఆ URL నుంచి అసలు video stream download చేయదు. AI transcription మరియు export కోసం local video లేదా creator-authorized direct video file అవసరం.
 
 ## 2. ప్రాజెక్ట్ లక్ష్యం
 
@@ -449,7 +475,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 
 ఉద్దేశించిన workflow:
 
-1. Android ఫోన్‌లో ఉన్న వీడియో ఫైల్‌ను ఎంచుకోవాలి.
+1. ఫోన్‌లోని video file ఎంచుకోవాలి లేదా creator అనుమతితో ఉన్న direct HTTPS video-file URL import చేయాలి. YouTube URL ద్వారా preview మరియు timestamps మాత్రమే తీసుకోవచ్చు; అది editable source file కాదు.
 2. Groq/OpenAI cloud Whisper లేదా ఫోన్‌లోని local Whisper ద్వారా timestamp transcript తయారు చేయాలి; లేక ఇప్పటికే ఉన్న transcript import/paste చేయాలి.
 3. AIతో ముఖ్యమైన moments‌ను rank చేయించాలి.
 4. Suggestion cards, timestamps, category, importance score, explanation పరిశీలించాలి.
@@ -458,7 +484,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 7. Aspect ratio ఎంచుకుని, కావాలంటే text overlay జోడించి MP4 export చేయాలి.
 8. Movies/ShortsForgeలో వీడియోను చూసి Android share menu ద్వారా share చేయాలి.
 
-## 3. Version 1.6.0లో ప్రస్తుతం ఉన్న ఫీచర్లు
+## 3. Version 1.7.0లో ప్రస్తుతం ఉన్న ఫీచర్లు
 
 ### Source video
 - ఫోన్ storage నుంచి Android file picker ద్వారా వీడియో ఎంచుకోవచ్చు.
@@ -466,6 +492,18 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 - యాప్‌లోనే source video preview చూడవచ్చు.
 - Export సమయంలో source file‌ను ఉద్దేశపూర్వకంగా overwrite చేయదు.
 - ఏ video formats పని చేస్తాయో ఫోన్‌లో ఉన్న Android media decoders‌పై ఆధారపడి ఉంటుంది.
+
+### YouTube URL preview మరియు authorized direct-file import (1.7.0లో కొత్తది)
+- YouTube watch URL, Shorts URL లేదా youtu.be URLను paste చేసి appలో embedded YouTube playerలో preview చేయవచ్చు.
+- Embedded player controlsతో play, pause, seek చేయవచ్చు.
+- ప్రస్తుత playhead వద్ద IN marker మరియు OUT marker set చేయవచ్చు; లేదా secondsలో manually మార్చవచ్చు.
+- **Use these clip markers** నొక్కితే timestamps ప్రధాన editorకు వస్తాయి. ఆ తర్వాత అదే recordingకు సంబంధించిన video file ఎంచుకుంటే, ఆ సమయాలు file durationలో సరిపడినప్పుడు Start/Endలో prefill అవుతాయి.
+- YouTube URL **preview మరియు timestamp markers కోసం మాత్రమే**. YouTube video/audio stream extract చేయదు, public captionsను ఆటోమేటిక్‌గా తీసుకోదు, watch URLను AI transcription sourceగా ఉపయోగించదు.
+- Creator/హక్కుదారుడి అనుమతి ఉన్న direct HTTPS video-file URLను paste చేసి అసలు media fileను app-private storageలో import చేయవచ్చు.
+- Server supported video MIME type లేదా సరైన file extension ఇచ్చినప్పుడు MP4, MOV, M4V, WebM, MKV, 3GP formats import చేయవచ్చు.
+- Import చేయడానికి ముందు ownership/permission confirmation అవసరం. గరిష్ఠ download పరిమితి 1 GB.
+- Google Drive/Dropbox share preview webpage direct video file కాదు; అది import కాదు. Video bytes ఇచ్చే direct media-file link ఉపయోగించాలి.
+- YouTube లేదా YouTube video-delivery hostకు redirect అయ్యే links reject అవుతాయి.
 
 ### Transcript మరియు speech-to-text
 - Groq Whisper ద్వారా cloud transcription.
@@ -503,7 +541,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 - Exportకు ముందు ఎంచుకున్న time range preview చేయవచ్చు.
 - Main editor quick-export గరిష్ఠ పరిమితి 180 seconds (3 నిమిషాలు).
 
-### ShortsForge Studio Timeline Editor (1.6.0లో కొత్తది)
+### ShortsForge Studio Timeline Editor (1.7.0లో కొత్తది)
 AI suggestion ఎంచుకున్న తర్వాత ప్రధాన editorలో **Open Studio Editor · Timeline, split, speed, text, audio** నొక్కండి. Quick export పూర్తయ్యాక వచ్చే dialogలో **Edit in Studio** ఎంచుకుని export అయిన MP4ను మళ్లీ తెరవవచ్చు.
 - ప్రత్యేక dark editing workspaceలో source video preview.
 - ఒకే source video నుంచి ఎంచుకున్న clip segments‌తో timeline.
@@ -620,10 +658,22 @@ Models download చేసిన తర్వాత local transcription మరి
 4. Editorకి తిరిగి వచ్చి **Analyze pasted transcript** నొక్కండి.
 5. Suggestions పరిశీలించి ఒకటి select చేయండి, preview చేసి export చేయండి.
 
+### Option D — YouTube preview + అనుమతి ఉన్న video source
+1. **YOUTUBE VIDEO URL**లో YouTube watch, Shorts లేదా youtu.be link paste చేయండి.
+2. **Preview YouTube URL + mark clip timestamps** నొక్కండి.
+3. Embedded playerలో play/seek చేయండి. **Set IN at playhead**, **Set OUT at playhead** నొక్కండి లేదా seconds values manually మార్చండి.
+4. **Use these clip markers** నొక్కి timestampsను ప్రధాన editorకు పంపండి.
+5. అదే recordingకు సంబంధించిన original file లేదా creator/rightsholder ఇచ్చిన direct HTTPS video-file URL పొందండి.
+6. Direct URL అయితే **AUTHORIZED DIRECT VIDEO FILE URL**లో paste చేసి **Import authorized video URL** నొక్కండి; permission confirm చేసి download/validation పూర్తయ్యే వరకు వేచి ఉండండి.
+7. Preview చేసినదే imported video అని నిర్ధారించండి. Markers imported file durationలో సరిపడితే Start/Endలో prefill అవుతాయి.
+8. **Auto-transcribe + find clips** నొక్కండి లేదా transcript import చేసి, Studio Editorలో edit చేసి export చేయండి.
+
+**ముఖ్యమైన విషయం:** YouTube preview వల్ల watch URL editable sourceగా మారదు. AI transcription మరియు MP4 export కోసం local లేదా authorized direct media file అవసరం. Public YouTube captionsను app ఆటోమేటిక్‌గా fetch చేయదు.
+
 ## 7. Editor‌ను వివరంగా ఉపయోగించడం
 
 ### Step 1: Source video ఎంచుకోవడం
-**Choose video** నొక్కి Android file picker తెరవండి. మీకు ఎడిట్ చేసే హక్కు ఉన్న వీడియోను ఎంచుకోండి. App filename మరియు Android చదవగలిగితే video duration చూపిస్తుంది.
+Local file కోసం **Choose video** వాడండి లేదా creator అనుమతితో ఉన్న HTTPS media-file linkను **AUTHORIZED DIRECT VIDEO FILE URL** ద్వారా import చేయండి. Media validate అయిన తర్వాత filename మరియు duration కనిపిస్తాయి. YouTube URLను **Preview YouTube URL + mark clip timestamps** ద్వారా embedded preview చేయవచ్చు; అది preview మరియు time markers మాత్రమే ఇస్తుంది, editable video file కాదు.
 
 ### Step 2: Transcript తయారు చేయడం
 ఈ మార్గాల్లో ఒకటి ఎంచుకోండి:
@@ -694,6 +744,7 @@ Transcript:
 ## 10. Data మరియు Privacy
 
 - Video selection మరియు MP4 export ఫోన్‌లోనే జరుగుతాయి.
+- YouTube preview embedded YouTube player ద్వారా చూపబడుతుంది. Direct video-file URL HTTPS ద్వారా request అవుతుంది; media file editing కోసం app-private storageలో save అవుతుంది.
 - Cloud transcription కోసం extracted audio ఎంపిక చేసిన providerకు పంపబడుతుంది.
 - Cloud highlight analysis కోసం transcript text ఎంపిక చేసిన AI providerకు పంపబడుతుంది.
 - Local Whisper మరియు Qwen3 models download అయిన తర్వాత ఫోన్‌లోనే inference చేస్తాయి.
@@ -705,10 +756,10 @@ Private లేదా confidential recordingsను cloud APIకి పంపే 
 
 ## 11. ప్రస్తుత యాప్‌లో లేని ఫీచర్లు
 
-క్రింది అంశాలు **Version 1.6.0లో లేవు**:
-- YouTube URL import లేదా public YouTube video download.
-- Google Drive/Dropbox share-link import.
-- Direct internet video URL import.
+క్రింది అంశాలు **Version 1.7.0లో ఇంకా లేవు**:
+- YouTube watch URLను editable MP4/audio sourceగా download లేదా extract చేయడం. YouTube URL preview మరియు timestamp markers మాత్రమే ఇస్తుంది.
+- Public YouTube caption tracks లేదా transcriptsను ఆటోమేటిక్‌గా download చేయడం.
+- Google Drive/Dropbox share-page URLs import చేయడం. Importerకు direct HTTPS video-file response అవసరం.
 - Automatic YouTube channel upload, scheduling లేదా publishing.
 - YouTube caption-track automatic download.
 - AI animated word-by-word subtitles లేదా karaoke captions.
@@ -768,7 +819,8 @@ Start మరియు End fields చూడండి. AI 60/90-second windows sou
 - Video duration కోసం Android MediaMetadataRetriever.
 - Playback కోసం AndroidX Media3 ExoPlayer.
 - MP4 export మరియు overlays కోసం AndroidX Media3 Transformer మరియు Effects.
-- Cloud API requests మరియు model downloads కోసం OkHttp.
+- Cloud API requests, offline model downloads, authorized direct video-file imports కోసం OkHttp.
+- Embedded preview మరియు clip timestamp markers కోసం Android WebView + YouTube IFrame Player API.
 - Cloud AI కోసం Groq, OpenAI, Anthropic APIs.
 - Local Qwen3 inference కోసం llama.cpp Android integration.
 - Local Whisper transcription కోసం whisper.cpp Android integration.
@@ -825,12 +877,12 @@ android/లో లేదా workflow fileలో మార్పులు push �
 
 ## 17. తాజా Release
 
-- Release: 1.6.0.
+- Release: 1.7.0.
 - Version code: 10.
 - Build result: Successful.
-- Build run: [GitHub Actions run 44271305685](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44271305685).
+- Build run: [GitHub Actions run 44276220935](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44276220935).
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk).
-- SHA-256: `864282ffd23129cdbf2cc25b18c8250528e10c6a65ec7e20a1964f2912f87ecd`.
+- SHA-256: `c8b8d86b3d25a91ae7ebe8da56bc7195a69b49ba565e7a68b9537abd48d888eb`.
 
 Computerలో download చేసిన file verify చేయాలంటే దాని SHA-256 hash calculate చేసి పై విలువతో పోల్చండి.
 
@@ -838,7 +890,7 @@ Computerలో download చేసిన file verify చేయాలంటే ద
 
 మీకు స్వంతమైన, అనుమతి ఉన్న లేదా చట్టపరంగా ఉపయోగించడానికి హక్కు ఉన్న వీడియోలనే ఎంచుకుని edit/publish చేయండి. చిన్న duration, credit ఇవ్వడం లేదా “no copyright intended” disclaimer ఉండటం వల్ల reuse permission ఆటోమేటిక్‌గా రాదు. AI highlight suggestions వల్ల వీడియోపై copyright permission లభించదు.
 
-ShortsForge Mobile YouTube video downloader కాదు. User ఎంచుకున్న local video fileనే sourceగా ఉపయోగిస్తుంది.
+ShortsForge Mobile YouTube watch-page video streamను extract లేదా download చేయదు. YouTube link ద్వారా embedded preview మరియు timestamp markers మాత్రమే లభిస్తాయి. AI processing మరియు export కోసం local file లేదా creator-authorized direct video-file source అవసరం.
 
 APK build GitHub Actionsలో విజయవంతంగా verify అయింది. ప్రతి Android పరికరంలో స్వతంత్రంగా test చేయలేదు. Playback, local model performance, export time మరియు compatibility పరికరాన్ని బట్టి మారవచ్చు.
 
@@ -854,7 +906,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 
 ऐप timestamp वाले transcript का विश्लेषण करके अधिकतम 8 उपयोगी moments सुझाता है। हर suggestion में title/hook, timestamp, category, importance score और explanation हो सकते हैं। पहला suggestion अपने-आप select होता है। आप दूसरा suggestion चुन सकते हैं, उसका समय preview कर सकते हैं, Start/End बदल सकते हैं और अंत में MP4 export कर सकते हैं।
 
-यह अभी **क्लिप चुनने और एक्सपोर्ट करने का टूल** है। यह पूर्ण video-generation suite, YouTube downloader या अपने-आप YouTube पर वीडियो प्रकाशित करने वाली सेवा नहीं है।
+यह अभी **AI clip selection, editing और MP4 export ऐप** है। Version 1.7.0 में YouTube URL को ऐप के अंदर preview करके IN/OUT timestamps mark कर सकते हैं, लेकिन उस URL से video stream download नहीं होती। AI transcription और export के लिए local video या creator-authorized direct video file जरूरी है।
 
 ## 2. परियोजना का लक्ष्य
 
@@ -862,7 +914,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 
 इसका intended workflow:
 
-1. Android फोन में मौजूद वीडियो फ़ाइल चुनें।
+1. Android फोन में मौजूद local video चुनें या creator की अनुमति वाला direct HTTPS video-file URL import करें। YouTube URL से केवल preview और timestamps मिलते हैं; वह editable source file नहीं है।
 2. Groq/OpenAI cloud Whisper या फोन में मौजूद local Whisper से timestamp transcript बनाएं, या अपना transcript paste/import करें।
 3. AI से सबसे उपयोगी moments की ranking करवाएं।
 4. Suggestion cards, timestamps, category, importance score और explanation देखें।
@@ -871,7 +923,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 7. Aspect ratio चुनें, चाहें तो text overlay जोड़ें और MP4 export करें।
 8. वीडियो को Movies/ShortsForge में ढूंढें और Android share sheet से साझा करें।
 
-## 3. Version 1.6.0 में उपलब्ध सुविधाएँ
+## 3. Version 1.7.0 में उपलब्ध सुविधाएँ
 
 ### Source video
 - Android file picker से फोन की storage में मौजूद वीडियो चुनें।
@@ -879,6 +931,18 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 - ऐप के अंदर source video preview कर सकते हैं।
 - Export प्रक्रिया source file को जानबूझकर overwrite नहीं करती।
 - कौन-से video formats चलेंगे, यह Android डिवाइस के media decoders पर निर्भर करता है।
+
+### YouTube URL preview और authorized direct-file import (1.7.0 में नया)
+- YouTube watch URL, Shorts URL या youtu.be URL paste करके ऐप के embedded YouTube player में preview करें।
+- Embedded player controls से play, pause और seek करें।
+- मौजूदा playhead पर IN और OUT markers लगाएं, या seconds में timestamps manually बदलें।
+- **Use these clip markers** दबाने पर timestamps main editor में वापस आते हैं। बाद में उसी recording की video file चुनने पर, यदि timestamps उसकी duration के भीतर हैं, तो Start/End में prefill होते हैं। सुनिश्चित करें कि preview और imported file वही recording है।
+- YouTube URL **केवल preview और timestamp markers** देता है। ऐप YouTube video/audio stream extract नहीं करता, public captions अपने-आप नहीं लाता और watch URL को AI transcription source नहीं बनाता।
+- Creator/rightsholder की अनुमति वाला direct HTTPS video-file URL paste करके असली media file को app-private storage में import कर सकते हैं।
+- Server supported video MIME type या पहचाने जाने योग्य extension लौटाए तो MP4, MOV, M4V, WebM, MKV और 3GP import किए जा सकते हैं।
+- Import से पहले ownership/permission confirmation जरूरी है। अधिकतम download size 1 GB है।
+- Google Drive/Dropbox share-preview webpage direct video file नहीं है और import नहीं होगी। ऐसा direct media-file link इस्तेमाल करें जो video bytes लौटाता हो।
+- YouTube या YouTube video-delivery host पर redirect होने वाले links reject किए जाते हैं।
 
 ### Transcript और Speech-to-Text
 - Groq Whisper से cloud transcription।
@@ -916,7 +980,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 - Export से पहले चुनी गई time range preview करें।
 - Main editor quick-export की अधिकतम सीमा 180 seconds (3 मिनट) है।
 
-### ShortsForge Studio Timeline Editor (1.6.0 में नया)
+### ShortsForge Studio Timeline Editor (1.7.0 में नया)
 AI suggestion चुनने के बाद main editor में **Open Studio Editor · Timeline, split, speed, text, audio** दबाएं। Quick export के बाद आने वाले dialog में **Edit in Studio** चुनकर exported MP4 को फिर से खोल सकते हैं।
 - एक dedicated dark editing workspace में source video preview।
 - एक ही selected source video से चुने गए clip segments की ordered timeline।
@@ -1033,10 +1097,22 @@ Models download होने के बाद local transcription और transcr
 4. Editor में वापस आकर **Analyze pasted transcript** दबाएं।
 5. Ranked suggestions देखें, एक चुनें, selected range preview करें और export करें।
 
+### Option D — YouTube preview + authorized video source
+1. **YOUTUBE VIDEO URL** में YouTube watch, Shorts या youtu.be link paste करें।
+2. **Preview YouTube URL + mark clip timestamps** दबाएं।
+3. Embedded player में play/seek करें। **Set IN at playhead** और **Set OUT at playhead** दबाएं, या seconds fields manually बदलें।
+4. **Use these clip markers** दबाकर timestamps main editor में वापस लाएं।
+5. उसी recording की original video file या creator/rightsholder से मिला direct HTTPS video-file URL प्राप्त करें।
+6. Direct URL के लिए उसे **AUTHORIZED DIRECT VIDEO FILE URL** में paste करें, **Import authorized video URL** दबाएं, permission confirm करें और download/validation पूरा होने दें।
+7. सुनिश्चित करें कि imported file वही recording है जिसे आपने preview किया था। Duration में fit होने पर saved markers Start/End में prefill होते हैं।
+8. **Auto-transcribe + find clips** चलाएं या transcript import करें, फिर Studio Editor में edit करके export करें।
+
+**महत्वपूर्ण:** YouTube preview से watch URL editable source नहीं बनता। AI transcription और MP4 export के लिए local या authorized direct media file जरूरी है। ऐप public YouTube captions अपने-आप fetch नहीं करता।
+
 ## 7. Editor का विस्तृत उपयोग
 
 ### Step 1: Source video चुनें
-**Choose video** दबाकर Android file picker खोलें। वही वीडियो चुनें जिसे edit करने का अधिकार आपके पास है। ऐप filename और Android द्वारा पढ़े जाने पर source duration दिखाता है।
+Local file के लिए **Choose video** इस्तेमाल करें या creator-authorized HTTPS media-file link को **AUTHORIZED DIRECT VIDEO FILE URL** से import करें। Media validation के बाद filename और duration दिखते हैं। YouTube URL को **Preview YouTube URL + mark clip timestamps** से embedded preview किया जा सकता है; यह केवल preview और time markers देता है, editable video file नहीं।
 
 ### Step 2: Transcript बनाएं
 इन तरीकों में से एक चुनें:
@@ -1107,6 +1183,7 @@ Transcript:
 ## 10. Data Handling और Privacy
 
 - Video selection और MP4 export Android डिवाइस पर होते हैं।
+- YouTube preview embedded YouTube player से दिखता है। Direct video-file URL HTTPS के जरिए request होता है और media editing के लिए ऐप की private storage में save होता है।
 - Cloud transcription में extracted audio चुने गए provider को भेजा जाता है।
 - Cloud highlight analysis में transcript text चुने गए AI provider को भेजा जाता है।
 - Local Whisper और Qwen3 inference model files download होने के बाद डिवाइस पर चलते हैं।
@@ -1118,7 +1195,7 @@ Private या confidential recordings cloud API को भेजने से �
 
 ## 11. मौजूदा सीमाएँ — क्या शामिल नहीं है
 
-निम्न सुविधाएँ **वर्तमान Version 1.6.0 में उपलब्ध नहीं हैं**:
+निम्न सुविधाएँ **वर्तमान Version 1.7.0 में उपलब्ध नहीं हैं**:
 - YouTube URL import या public YouTube video download।
 - Google Drive/Dropbox share-link import।
 - Direct internet video URL import।
@@ -1181,7 +1258,8 @@ Start और End fields जांचें। AI की 60/90-second windows sou
 - Source duration के लिए Android MediaMetadataRetriever।
 - Playback के लिए AndroidX Media3 ExoPlayer।
 - MP4 export और overlays के लिए AndroidX Media3 Transformer और Effects।
-- Cloud API requests और model downloads के लिए OkHttp।
+- Cloud API requests, offline-model downloads और authorized direct video-file imports के लिए OkHttp।
+- Embedded preview और clip timestamp markers के लिए Android WebView + YouTube IFrame Player API।
 - Cloud AI के लिए Groq, OpenAI और Anthropic APIs।
 - Local Qwen3 inference के लिए llama.cpp Android integration।
 - Local Whisper transcription के लिए whisper.cpp Android integration।
@@ -1238,12 +1316,12 @@ android/ या workflow file में बदलाव push करने पर
 
 ## 17. Latest Release
 
-- Release: 1.6.0।
-- Version code: 10।
+- Release: 1.7.0।
+- Version code: 11।
 - Build result: Successful।
-- Build run: [GitHub Actions run 44271305685](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44271305685)।
+- Build run: [GitHub Actions run 44276220935](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44276220935)।
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)।
-- SHA-256: `864282ffd23129cdbf2cc25b18c8250528e10c6a65ec7e20a1964f2912f87ecd`।
+- SHA-256: `c8b8d86b3d25a91ae7ebe8da56bc7195a69b49ba565e7a68b9537abd48d888eb`।
 
 Computer पर downloaded file verify करने के लिए उसका SHA-256 hash calculate करके ऊपर दिए गए value से compare करें।
 
@@ -1251,7 +1329,7 @@ Computer पर downloaded file verify करने के लिए उसक�
 
 केवल वही वीडियो चुनें, edit करें और publish करें जिनके आप owner हैं, जिनके लिए आपके पास permission है, या जिनका इस्तेमाल कानूनन कर सकते हैं। कम duration, credit देना या “no copyright intended” disclaimer अपने-आप permission नहीं देता। AI highlight suggestion से footage reuse करने का copyright अधिकार नहीं मिलता।
 
-ShortsForge Mobile YouTube video downloader नहीं है। यह user द्वारा चुनी गई local video file को source मानता है।
+ShortsForge Mobile YouTube watch-page video stream को extract या download नहीं करता। YouTube link से केवल embedded preview और timestamp markers मिलते हैं। AI processing और export के लिए local file या creator-authorized direct video-file source जरूरी है।
 
 APK build GitHub Actions में सफलतापूर्वक verify हुआ है। हर Android डिवाइस पर इसका स्वतंत्र परीक्षण नहीं हुआ है। Playback, local-model performance, export time और compatibility डिवाइस के अनुसार बदल सकते हैं।
 

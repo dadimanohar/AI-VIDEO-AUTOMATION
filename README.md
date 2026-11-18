@@ -3,7 +3,7 @@
 **AI-powered long-video to Shorts editor for Android.**  
 Turn a long interview, podcast, lecture, or other video file into short clips by finding useful moments in its timestamped transcript, reviewing the suggested time ranges, and exporting an MP4.
 
-[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279594974)
+[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279926419)
 
 | App detail | Value |
 |---|---|
@@ -458,9 +458,9 @@ A push that changes files under android/ or the workflow can trigger the build. 
 - Release: 1.8.0
 - Version code: 12
 - Build result: successful.
-- Build run: [GitHub Actions run 44279594974](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279594974)
+- Build run: [GitHub Actions run 44279926419](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279926419)
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)
-- SHA-256: `95a44d24fa012d0f03902633958f41e2372572ce12bde881aaf16b274c672715`
+- SHA-256: `d034dec515df740905146c384a333abd12371c11de66cea6956bee9fdca802e3`
 
 To verify a downloaded file on a computer, calculate its SHA-256 hash and compare it with the value above.
 
@@ -906,9 +906,9 @@ android/లో లేదా workflow fileలో మార్పులు push �
 - Release: 1.8.0.
 - Version code: 10.
 - Build result: Successful.
-- Build run: [GitHub Actions run 44279594974](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279594974).
+- Build run: [GitHub Actions run 44279926419](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279926419).
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk).
-- SHA-256: `95a44d24fa012d0f03902633958f41e2372572ce12bde881aaf16b274c672715`.
+- SHA-256: `d034dec515df740905146c384a333abd12371c11de66cea6956bee9fdca802e3`.
 
 Computerలో download చేసిన file verify చేయాలంటే దాని SHA-256 hash calculate చేసి పై విలువతో పోల్చండి.
 
@@ -1355,9 +1355,9 @@ android/ या workflow file में बदलाव push करने पर
 - Version code: 12।
 - APK size: लगभग 13.91 MB।
 - Build result: Successful।
-- Build run: [GitHub Actions run 44279594974](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279594974)।
+- Build run: [GitHub Actions run 44279926419](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44279926419)।
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)।
-- SHA-256: `95a44d24fa012d0f03902633958f41e2372572ce12bde881aaf16b274c672715`।
+- SHA-256: `d034dec515df740905146c384a333abd12371c11de66cea6956bee9fdca802e3`।
 
 Computer पर downloaded file verify करने के लिए उसका SHA-256 hash calculate करके ऊपर दिए गए value से compare करें।
 

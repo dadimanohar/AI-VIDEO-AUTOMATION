@@ -3,7 +3,7 @@
 **AI-powered long-video to Shorts editor for Android.**  
 Turn a long interview, podcast, lecture, or other video file into short clips by finding useful moments in its timestamped transcript, reviewing the suggested time ranges, and exporting an MP4.
 
-[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44285282851)
+[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44454891022)
 
 | App detail | Value |
 |---|---|
@@ -16,7 +16,7 @@ Turn a long interview, podcast, lecture, or other video file into short clips by
 | Export | MP4 (H.264 video + AAC audio) |
 | Build type | Debug-signed APK from GitHub Actions |
 
-> **Important source-video note (1.9.0):** You can paste a YouTube watch/Shorts link for an embedded preview and mark clip start/end timestamps. That link is **not** downloaded or used as an editable media file. To run AI transcription and export, choose a local video or import a creator-authorized direct HTTPS video-file URL. ShortsForge does not extract or download public YouTube streams.
+> **Important source-video note (1.10.0):** You can paste a YouTube watch/Shorts link for an embedded preview and mark clip start/end timestamps. That link is **not** downloaded or used as an editable media file. To run AI transcription and export, choose a local video or import a creator-authorized direct HTTPS video-file URL. ShortsForge does not extract or download public YouTube streams.
 
 ---
 
@@ -45,7 +45,7 @@ The intended workflow is:
 7. Choose an output aspect ratio, optionally add a text overlay, and export an MP4.
 8. Find the exported file in Movies/ShortsForge and share it using the Android share sheet.
 
-## 3. Features in version 1.9.0
+## 3. Features in version 1.10.0
 
 ### Source video
 - Select a video from device storage using Android's file picker.
@@ -54,7 +54,7 @@ The intended workflow is:
 - The source file is not intentionally overwritten by the export process.
 - Supported video formats depend on the Android device's media decoders.
 
-### YouTube URL preview and authorized direct-file import (new in 1.9.0)
+### YouTube URL preview and authorized direct-file import (new in 1.10.0)
 - Paste a standard YouTube watch URL, Shorts URL, or youtu.be URL and open it in the in-app embedded YouTube player.
 - Play, pause, and seek using the embedded player controls.
 - Set an IN marker and an OUT marker at the current player position, or manually edit the marker times in seconds.
@@ -74,7 +74,7 @@ The intended workflow is:
 - SRT/VTT cue timestamps are converted into timestamped transcript lines.
 - TXT files should contain usable timestamps if the AI is expected to identify exact moments.
 
-### Full-video topic discovery — Video Topic Map (new in 1.9.0)
+### Full-video topic discovery — Video Topic Map (new in 1.10.0)
 - Analyse the entire timestamped transcript in overlapping chunks instead of asking for only the eight most important highlights.
 - Cloud AI processes transcript windows of 80 non-empty lines with a 16-line overlap. It requests up to eight topic segments per window, then merges duplicate/overlapping results.
 - Offline Qwen3 processes windows of 36 non-empty lines with an 8-line overlap and requests up to five topic segments per window.
@@ -101,7 +101,7 @@ Topic mapping is transcript-based, not visual scene understanding. Accuracy depe
 - A single quick export is limited to 180 seconds (3 minutes).
 - Each queued highlight is checked against its own valid timestamp range before a batch export starts.
 
-### Export each queued topic as a separate Short (new in 1.9.0)
+### Export each queued topic as a separate Short (new in 1.10.0)
 - Add two or more topic cards to **Shorts queue** using their checkboxes.
 - Tap **Export N queued topics as separate Shorts**.
 - Confirm the batch. ShortsForge exports one MP4 for each selected topic using that card's exact start/end timestamps.
@@ -327,7 +327,7 @@ Review the selected AI provider's privacy terms before sending private, confiden
 
 ## 11. Current limitations — what is not included
 
-The following are **not** current 1.9.0 features:
+The following are **not** current 1.10.0 features:
 - Downloading/extracting a YouTube watch URL as an editable MP4/audio source. YouTube URLs support embedded preview and clip timestamp markers only.
 - Automatic downloading of public YouTube caption tracks or transcripts.
 - Importing Google Drive/Dropbox share-page URLs. The importer requires a direct HTTPS video-file response.
@@ -449,12 +449,12 @@ A push that changes files under android/ or the workflow can trigger the build. 
 
 ## 17. Latest release
 
-- Release: 1.9.0
-- Version code: 13
+- Release: 1.10.0
+- Version code: 14
 - Build result: successful.
-- Build run: [GitHub Actions run 44285282851](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44285282851)
+- Build run: [GitHub Actions run 44454891022](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44454891022)
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)
-- SHA-256: `622972ab992b687ceb3b8ce3ce6a86e6f1a8964b22a8177c90eec6d720216a75`
+- SHA-256: `9912bb523ad56ad55e6e7f4044bdb86f85428da09947e5c07dd7620d41a482fd`
 
 To verify a downloaded file on a computer, calculate its SHA-256 hash and compare it with the value above.
 
@@ -478,7 +478,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 
 ఈ యాప్ వీడియోలోని మాటలను timestamp ఉన్న transcript రూపంలో విశ్లేషించి గరిష్ఠంగా 8 ముఖ్యమైన moments సూచిస్తుంది. ప్రతి suggestionలో title/hook, timestamp, category, importance score, వివరణ ఉంటాయి. మొదటి suggestion ఆటోమేటిక్‌గా select అవుతుంది. మీరు వేరే suggestion ఎంచుకోవచ్చు, దాని సమయాన్ని preview చేయవచ్చు, Start/End మార్చవచ్చు, చివరికి MP4 export చేయవచ్చు.
 
-ఇది ప్రస్తుతం **AI క్లిప్ ఎంపిక, ఎడిటింగ్ మరియు MP4 ఎగుమతి యాప్**. 1.9.0లో YouTube URLను appలో preview చేసి IN/OUT timestamps గుర్తించవచ్చు; కానీ ఆ URL నుంచి అసలు video stream download చేయదు. AI transcription మరియు export కోసం local video లేదా creator-authorized direct video file అవసరం.
+ఇది ప్రస్తుతం **AI క్లిప్ ఎంపిక, ఎడిటింగ్ మరియు MP4 ఎగుమతి యాప్**. 1.10.0లో YouTube URLను appలో preview చేసి IN/OUT timestamps గుర్తించవచ్చు; కానీ ఆ URL నుంచి అసలు video stream download చేయదు. AI transcription మరియు export కోసం local video లేదా creator-authorized direct video file అవసరం.
 
 ## 2. ప్రాజెక్ట్ లక్ష్యం
 
@@ -495,7 +495,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 7. Aspect ratio ఎంచుకుని, కావాలంటే text overlay జోడించి MP4 export చేయాలి.
 8. Movies/ShortsForgeలో వీడియోను చూసి Android share menu ద్వారా share చేయాలి.
 
-## 3. Version 1.9.0లో ప్రస్తుతం ఉన్న ఫీచర్లు
+## 3. Version 1.10.0లో ప్రస్తుతం ఉన్న ఫీచర్లు
 
 ### Source video
 - ఫోన్ storage నుంచి Android file picker ద్వారా వీడియో ఎంచుకోవచ్చు.
@@ -504,7 +504,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 - Export సమయంలో source file‌ను ఉద్దేశపూర్వకంగా overwrite చేయదు.
 - ఏ video formats పని చేస్తాయో ఫోన్‌లో ఉన్న Android media decoders‌పై ఆధారపడి ఉంటుంది.
 
-### YouTube URL preview మరియు authorized direct-file import (1.9.0లో కొత్తది)
+### YouTube URL preview మరియు authorized direct-file import (1.10.0లో కొత్తది)
 - YouTube watch URL, Shorts URL లేదా youtu.be URLను paste చేసి appలో embedded YouTube playerలో preview చేయవచ్చు.
 - Embedded player controlsతో play, pause, seek చేయవచ్చు.
 - ప్రస్తుత playhead వద్ద IN marker మరియు OUT marker set చేయవచ్చు; లేదా secondsలో manually మార్చవచ్చు.
@@ -525,7 +525,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 - SRT/VTT subtitle cue timestamps‌ను transcript lines‌గా మార్చుతుంది.
 - TXTలో AIకి ఖచ్చితమైన clip సమయాలు కనుగొనడానికి ఉపయోగపడే timestamps ఉండాలి.
 
-### Full-video Topic Discovery — Video Topic Map (1.9.0లో కొత్తది)
+### Full-video Topic Discovery — Video Topic Map (1.10.0లో కొత్తది)
 - Timestamp ఉన్న మొత్తం transcript‌ను overlapping sectionsగా విశ్లేషిస్తుంది. పాత విధంగా 8 ముఖ్యమైన highlights మాత్రమే అడగదు.
 - Cloud AI ప్రతి sectionలో 80 non-empty transcript linesను 16-line overlapతో process చేసి, ఒక్క sectionకు గరిష్ఠంగా 8 topic segments అడుగుతుంది. తర్వాత duplicate/overlap results merge అవుతాయి.
 - Offline Qwen3 ప్రతి sectionలో 36 non-empty linesను 8-line overlapతో process చేసి, ఒక్క sectionకు గరిష్ఠంగా 5 topics అడుగుతుంది.
@@ -551,7 +551,7 @@ Topic Map transcript ఆధారంగా పని చేస్తుంది
 - Quick duration buttons: 15s, 30s, 45s, 60s.
 - ఒక్కో exported Short గరిష్ఠంగా 180 seconds.
 
-### Queue చేసిన ప్రతి topicను వేరే Shortగా Export చేయడం (1.9.0లో కొత్తది)
+### Queue చేసిన ప్రతి topicను వేరే Shortగా Export చేయడం (1.10.0లో కొత్తది)
 - కావాల్సిన ప్రతి topic cardలో **Add this topic to Shorts queue** tick చేయండి.
 - **Export N queued topics as separate Shorts** నొక్కండి.
 - Confirm చేసిన తర్వాత ప్రతి topic తన exact Start/End సమయాలతో వేరే MP4గా export అవుతుంది.
@@ -775,7 +775,7 @@ Private లేదా confidential recordingsను cloud APIకి పంపే 
 
 ## 11. ప్రస్తుత యాప్‌లో లేని ఫీచర్లు
 
-క్రింది అంశాలు **Version 1.9.0లో ఇంకా లేవు**:
+క్రింది అంశాలు **Version 1.10.0లో ఇంకా లేవు**:
 - YouTube watch URLను editable MP4/audio sourceగా download లేదా extract చేయడం. YouTube URL preview మరియు timestamp markers మాత్రమే ఇస్తుంది.
 - Public YouTube caption tracks లేదా transcriptsను ఆటోమేటిక్‌గా download చేయడం.
 - Google Drive/Dropbox share-page URLs import చేయడం. Importerకు direct HTTPS video-file response అవసరం.
@@ -896,12 +896,12 @@ android/లో లేదా workflow fileలో మార్పులు push �
 
 ## 17. తాజా Release
 
-- Release: 1.9.0.
-- Version code: 13.
+- Release: 1.10.0.
+- Version code: 14.
 - Build result: Successful.
-- Build run: [GitHub Actions run 44285282851](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44285282851).
+- Build run: [GitHub Actions run 44454891022](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44454891022).
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk).
-- SHA-256: `622972ab992b687ceb3b8ce3ce6a86e6f1a8964b22a8177c90eec6d720216a75`.
+- SHA-256: `9912bb523ad56ad55e6e7f4044bdb86f85428da09947e5c07dd7620d41a482fd`.
 
 Computerలో download చేసిన file verify చేయాలంటే దాని SHA-256 hash calculate చేసి పై విలువతో పోల్చండి.
 
@@ -925,7 +925,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 
 ऐप timestamp वाले transcript का विश्लेषण करके अधिकतम 8 उपयोगी moments सुझाता है। हर suggestion में title/hook, timestamp, category, importance score और explanation हो सकते हैं। पहला suggestion अपने-आप select होता है। आप दूसरा suggestion चुन सकते हैं, उसका समय preview कर सकते हैं, Start/End बदल सकते हैं और अंत में MP4 export कर सकते हैं।
 
-यह अभी **AI clip selection, editing और MP4 export ऐप** है। Version 1.9.0 में YouTube URL को ऐप के अंदर preview करके IN/OUT timestamps mark कर सकते हैं, लेकिन उस URL से video stream download नहीं होती। AI transcription और export के लिए local video या creator-authorized direct video file जरूरी है।
+यह अभी **AI clip selection, editing और MP4 export ऐप** है। Version 1.10.0 में YouTube URL को ऐप के अंदर preview करके IN/OUT timestamps mark कर सकते हैं, लेकिन उस URL से video stream download नहीं होती। AI transcription और export के लिए local video या creator-authorized direct video file जरूरी है।
 
 ## 2. परियोजना का लक्ष्य
 
@@ -942,7 +942,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 7. Aspect ratio चुनें, चाहें तो text overlay जोड़ें और MP4 export करें।
 8. वीडियो को Movies/ShortsForge में ढूंढें और Android share sheet से साझा करें।
 
-## 3. Version 1.9.0 में उपलब्ध सुविधाएँ
+## 3. Version 1.10.0 में उपलब्ध सुविधाएँ
 
 ### Source video
 - Android file picker से फोन की storage में मौजूद वीडियो चुनें।
@@ -951,7 +951,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 - Export प्रक्रिया source file को जानबूझकर overwrite नहीं करती।
 - कौन-से video formats चलेंगे, यह Android डिवाइस के media decoders पर निर्भर करता है।
 
-### YouTube URL preview और authorized direct-file import (1.9.0 में नया)
+### YouTube URL preview और authorized direct-file import (1.10.0 में नया)
 - YouTube watch URL, Shorts URL या youtu.be URL paste करके ऐप के embedded YouTube player में preview करें।
 - Embedded player controls से play, pause और seek करें।
 - मौजूदा playhead पर IN और OUT markers लगाएं, या seconds में timestamps manually बदलें।
@@ -972,7 +972,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 - SRT/VTT cue timestamps को timestamped transcript lines में बदला जाता है।
 - TXT में AI द्वारा सटीक clip समय पहचानने के लिए उपयोगी timestamps होने चाहिए।
 
-### पूरे वीडियो की Topic Discovery — Video Topic Map (1.9.0 में नया)
+### पूरे वीडियो की Topic Discovery — Video Topic Map (1.10.0 में नया)
 - पूरे timestamped transcript को overlapping sections में analyse करता है; अब केवल आठ सबसे महत्वपूर्ण highlights मांगने वाला तरीका नहीं है।
 - Cloud AI हर section में 80 non-empty transcript lines को 16-line overlap के साथ process करता है और हर section से अधिकतम 8 topic segments मांगता है। बाद में duplicate/overlapping results merge किए जाते हैं।
 - Offline Qwen3 हर section में 36 non-empty lines को 8-line overlap के साथ process करता है और हर section से अधिकतम 5 topics मांगता है।
@@ -998,7 +998,7 @@ Topic Map transcript पर आधारित है, visual scene understandin
 - Quick duration buttons: 15s, 30s, 45s और 60s।
 - हर individual exported Short अधिकतम 180 seconds हो सकता है।
 
-### Queue किए गए हर Topic को अलग Short के रूप में Export करना (1.9.0 में नया)
+### Queue किए गए हर Topic को अलग Short के रूप में Export करना (1.10.0 में नया)
 - जिन topic cards की जरूरत है, उनमें **Add this topic to Shorts queue** tick करें।
 - **Export N queued topics as separate Shorts** दबाएं।
 - Confirm करने पर हर topic अपने exact Start/End timestamps के साथ अलग MP4 में export होता है।
@@ -1222,7 +1222,7 @@ Private या confidential recordings cloud API को भेजने से �
 
 ## 11. मौजूदा सीमाएँ — क्या शामिल नहीं है
 
-निम्न सुविधाएँ **वर्तमान Version 1.9.0 में उपलब्ध नहीं हैं**:
+निम्न सुविधाएँ **वर्तमान Version 1.10.0 में उपलब्ध नहीं हैं**:
 - YouTube watch URL को editable MP4/audio source के रूप में download या extract करना। YouTube URL केवल embedded preview और timestamp markers देता है।
 - Public YouTube caption tracks या transcripts का automatic download।
 - Google Drive/Dropbox share-page URLs का import। Importer को direct HTTPS video-file response चाहिए।
@@ -1344,13 +1344,13 @@ android/ या workflow file में बदलाव push करने पर
 
 ## 17. Latest Release
 
-- Release: 1.9.0।
-- Version code: 13।
+- Release: 1.10.0।
+- Version code: 14।
 - APK size: लगभग 13.91 MB।
 - Build result: Successful।
-- Build run: [GitHub Actions run 44285282851](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44285282851)।
+- Build run: [GitHub Actions run 44454891022](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44454891022)।
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)।
-- SHA-256: `622972ab992b687ceb3b8ce3ce6a86e6f1a8964b22a8177c90eec6d720216a75`।
+- SHA-256: `9912bb523ad56ad55e6e7f4044bdb86f85428da09947e5c07dd7620d41a482fd`।
 
 Computer पर downloaded file verify करने के लिए उसका SHA-256 hash calculate करके ऊपर दिए गए value से compare करें।
 

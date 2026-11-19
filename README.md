@@ -8,15 +8,15 @@ Turn a long interview, podcast, lecture, or other video file into short clips by
 | App detail | Value |
 |---|---|
 | App name | ShortsForge Mobile |
-| Current release | 1.12.0 |
-| Version code | 16 |
+| Current release | 1.13.0 |
+| Version code | 17 |
 | Android package | `com.shortsforge.mobile` |
 | Minimum Android version | Android 8.0 (API 26) |
 | APK size | About 14 MB |
 | Export | MP4 (H.264 video + AAC audio) |
 | Build type | Debug-signed APK from GitHub Actions |
 
-> **Important source-video note (1.12.0):** Paste a YouTube URL and tap **Send URL to YTDLnis for video download** to hand it to the separately installed YTDLnis app using its documented Android intent. Review and start the download in YTDLnis. When it finishes, share the saved video to ShortsForge or choose it from Downloads. ShortsForge does not bundle YTDLnis/yt-dlp or extract YouTube streams. YouTube preview and timestamp markers remain available inside ShortsForge. Only download and edit videos where you have the necessary rights and the source service permits it.
+> **Important source-video note (1.13.0):** Paste a YouTube URL and tap **Send URL to YTDLnis for video download** to hand it to the separately installed YTDLnis app using its documented Android intent. Review and start the download in YTDLnis. When it finishes, share the saved video to ShortsForge or choose it from Downloads. ShortsForge does not bundle YTDLnis/yt-dlp or extract YouTube streams. YouTube preview and timestamp markers remain available inside ShortsForge. Only download and edit videos where you have the necessary rights and the source service permits it.
 
 ---
 
@@ -195,7 +195,7 @@ This APK is debug-signed and is distributed directly from the project's GitHub r
 5. Return to the editor.
 6. Tap **Choose video** and select a local video file.
 7. Wait for the filename, duration, and video preview to appear.
-8. Tap **Auto-transcribe + find clips**.
+8. Tap **Analyze entire video · transcribe + map every topic**.
 9. Wait for transcription and highlight analysis to complete.
 10. Review the suggestion cards. The first topic is selected automatically, and its exact timestamps are loaded into Start/End.
 11. Tap other cards to preview their exact topic time ranges.
@@ -223,7 +223,7 @@ After the models are downloaded, local transcription and transcript analysis can
 1. Choose the source video.
 2. Paste a timestamped transcript into **TRANSCRIPT**, or tap **Import subtitles / transcript (SRT, VTT, TXT)**.
 3. Select Groq, OpenAI, or Claude in Settings and save the relevant API key.
-4. Return to the editor and tap **Analyze pasted transcript**.
+4. Return to the editor and tap **Analyze all topics in transcript**.
 5. Review the ranked suggestions, choose one, preview the selected range, and export.
 
 ### Option D — YouTube preview + authorized video source
@@ -327,7 +327,7 @@ Review the selected AI provider's privacy terms before sending private, confiden
 
 ## 11. Current limitations — what is not included
 
-The following are **not** current 1.12.0 features:
+The following are **not** current 1.13.0 features:
 - Native YouTube stream extraction/downloading inside ShortsForge as an editable MP4/audio source. Version 1.12.0 can hand a pasted URL to the separately installed YTDLnis app; the user completes the download there and then shares/selects the saved file in ShortsForge. A YouTube URL by itself is not an editable media file.
 - Automatic downloading of public YouTube caption tracks or transcripts.
 - Importing Google Drive/Dropbox share-page URLs. The importer requires a direct HTTPS video-file response.
@@ -775,7 +775,7 @@ Private లేదా confidential recordingsను cloud APIకి పంపే 
 
 ## 11. ప్రస్తుత యాప్‌లో లేని ఫీచర్లు
 
-క్రింది అంశాలు **Version 1.12.0లో కూడా లేవు**:
+క్రింది అంశాలు **Version 1.13.0లో కూడా లేవు**:
 - ShortsForgeలోపలే YouTube streamను editable MP4/audio sourceగా extract/download చేయడం లేదు. 1.12.0లో URLను వేరుగా install చేసిన YTDLnisకి పంపవచ్చు; అక్కడ మీరు download పూర్తి చేసి saved videoను Share/Downloads ద్వారా ShortsForgeకి తీసుకురావాలి. URL ఒక్కటే editable source file కాదు.
 - Public YouTube caption tracks లేదా transcriptsను ఆటోమేటిక్‌గా download చేయడం.
 - Google Drive/Dropbox share-page URLs import చేయడం. Importerకు direct HTTPS video-file response అవసరం.
@@ -1222,7 +1222,7 @@ Private या confidential recordings cloud API को भेजने से �
 
 ## 11. मौजूदा सीमाएँ — क्या शामिल नहीं है
 
-निम्न सुविधाएँ **वर्तमान Version 1.12.0 में उपलब्ध नहीं हैं**:
+निम्न सुविधाएँ **वर्तमान Version 1.13.0 में उपलब्ध नहीं हैं**:
 - ShortsForge के अंदर native YouTube stream extraction/downloading करके editable MP4/audio source बनाना उपलब्ध नहीं है। Version 1.12.0 link को अलग से install किए गए YTDLnis app को भेज सकता है; download वहाँ पूरा करें, फिर saved file को ShortsForge में Share करें या Downloads से चुनें। URL अकेला editable source file नहीं है।
 - Public YouTube caption tracks या transcripts का automatic download।
 - Google Drive/Dropbox share-page URLs का import। Importer को direct HTTPS video-file response चाहिए।
@@ -1385,6 +1385,8 @@ This history is reconstructed from the repository's versioned source commits and
 | 1.9.0 | Full chronological Video Topic Map, overlapping transcript analysis, duplicate-topic merging, topic playback and queue-all controls. |
 | 1.10.0 | Removed the fixed global 60-topic cutoff, expanded per-window topic extraction and added duration to each topic card. |
 | 1.11.0 | Added Android file-share handoff and Downloads picker for videos already downloaded by YTDLnis or another app; preserved the existing feature set. |
+| 1.12.0 | Added YouTube URL hand-off to separately installed YTDLnis; import completed download through Android Share or Downloads. |
+| 1.13.0 | Fixed JSON/timestamp parsing, aligned chunk-relative times, retained long topics, and auto-started analysis after source/transcript import. |
 
 ### Version history — తెలుగు
 
@@ -1404,6 +1406,8 @@ This history is reconstructed from the repository's versioned source commits and
 | 1.9.0 | పూర్తి chronological Video Topic Map, overlapping transcript analysis, duplicate merge, topic playback, queue-all. |
 | 1.10.0 | Fixed global 60-topic పరిమితి తొలగింపు, chunk-wise topic extraction పెంపు, ప్రతి cardలో duration. |
 | 1.11.0 | YTDLnis లేదా ఇతర appలో ముందే download అయిన videoను Android Share ద్వారా import చేయడం, Downloads picker; పాత features అన్నీ కొనసాగింపు. |
+| 1.12.0 | YouTube URLను వేరుగా install చేసిన YTDLnisకి పంపడం; download పూర్తయ్యాక వీడియోను Share/Downloads ద్వారా import చేయడం. |
+| 1.13.0 | JSON/timestamp parsing మెరుగుదల, chunk-relative timestamps సరిచేయడం, long topicsను mapలో ఉంచడం, source/transcript import తర్వాత auto-analysis. |
 
 ### संस्करण इतिहास — हिन्दी
 
@@ -1423,6 +1427,8 @@ This history is reconstructed from the repository's versioned source commits and
 | 1.9.0 | पूर्ण chronological Video Topic Map, overlapping transcript analysis, duplicate merge, topic playback और queue-all. |
 | 1.10.0 | Fixed global 60-topic सीमा हटाई, per-window topic extraction बढ़ाया और हर topic card में duration जोड़ा. |
 | 1.11.0 | YTDLnis या दूसरे app में पहले से डाउनलोड की गई video को Android Share और Downloads picker से import करना; पुराने features सुरक्षित रखे. |
+| 1.12.0 | YouTube URL को अलग से install किए गए YTDLnis app में भेजना; download के बाद वीडियो को Share/Downloads से import करना. |
+| 1.13.0 | JSON/timestamp parsing सुधार, chunk-relative timestamp alignment, लंबे topics को map में रखना और source/transcript import के बाद auto-analysis. |
 
 ---
 
@@ -1706,3 +1712,45 @@ Version 1.12.0 में URL hand-off जोड़ा गया है। Shorts
 - 1.12.0 — YTDLnis URL hand-off: Paste किए link को YTDLnis भेजना; download पूरा होने पर file को ShortsForge में Share/import करना.
 
 वर्तमान cumulative features: Groq/OpenAI/Claude cloud analysis, cloud Whisper, offline Whisper Base/Qwen3 0.6B, SRT/VTT/TXT transcript, chronological topic cards (title/time/duration/category/importance/explanation), topic preview/selection/queue, separate Shorts batch export, duration presets, Studio timeline, YouTube embedded preview, authorised direct-file import, MP4 export, Gallery save और Android sharing.
+
+
+---
+
+# Version 1.13.0 update — English
+
+This update addresses the supplied screen recording where timestamped transcript text was visible but the Video Topic Map showed no cards.
+
+- Selecting a local video or importing a downloaded file shared from YTDLnis automatically starts transcription and topic mapping when Groq/OpenAI credentials or both offline models are already configured. Otherwise the app explains the required setup; it does not initiate cloud analysis without a key.
+- Importing timestamped SRT/VTT/TXT starts topic mapping automatically. For manually pasted text, use **Analyze all topics in transcript**.
+- The parser accepts JSON arrays and wrapper objects such as `topics`, `topic_map`, `segments`, `highlights`, and `results`.
+- Timestamp values can be numeric seconds or MM:SS / HH:MM:SS strings; common title and description field aliases are also supported.
+- Chunk-relative AI timestamps are shifted to the original video timeline when detected.
+- Coherent topics longer than 180 seconds remain in the topic index. The 180-second restriction remains for a single MP4 Short export, so trim a longer topic before exporting it as one Short.
+- The previous card design remains: title, start/end, duration, category, importance, explanation, selected state, topic playback and queue controls.
+- YTDLnis stays a separate app. ShortsForge sends a link to it and imports the completed video through Android Share or Downloads; native YouTube stream extraction is not bundled.
+
+# Version 1.13.0 నవీకరణ — తెలుగు
+
+మీ screen recordingలో timestamped transcript కనిపించినా Video Topic Mapలో cards రాకపోవడాన్ని ఈ update లక్ష్యంగా తీసుకుంది.
+
+- Local video ఎంచుకున్నప్పుడు లేదా YTDLnis నుంచి download చేసిన fileను Share చేసినప్పుడు, Groq/OpenAI key లేదా రెండు offline models ముందుగానే సిద్ధంగా ఉంటే transcription మరియు topic mapping ఆటోమేటిక్‌గా ప్రారంభమవుతాయి. Setup లేకపోతే app అవసరమైన సూచనలు చూపిస్తుంది.
+- Timestamp ఉన్న SRT/VTT/TXT import చేసిన వెంటనే topic mapping ప్రారంభమవుతుంది. Manually paste చేసిన transcript కోసం **Analyze all topics in transcript** నొక్కండి.
+- JSON arraysతో పాటు `topics`, `topic_map`, `segments`, `highlights`, `results` వంటి wrapper objectsను parser అంగీకరిస్తుంది.
+- Numeric seconds, MM:SS, HH:MM:SS time formats మరియు title/description aliasesను అంగీకరిస్తుంది.
+- Chunk-relative timestampsను గుర్తిస్తే original video timelineకు మార్చుతుంది.
+- 180 seconds కంటే ఎక్కువ ఉండే coherent topic కూడా Topic Mapలో కనిపిస్తుంది. ఒక్క Short exportకు 180-second limit కొనసాగుతుంది; పొడవైన topicను exportకు ముందు trim చేయాలి.
+- పాత card design అలాగే ఉంటుంది: title, start/end, duration, category, importance, explanation, selected status, topic playback మరియు queue controls.
+- YTDLnis వేరే appగానే ఉంటుంది. ShortsForge linkను దానికి పంపి, download అయిన fileను Android Share లేదా Downloads ద్వారా import చేస్తుంది; native YouTube stream downloaderను bundle చేయదు.
+
+# Version 1.13.0 अपडेट — हिन्दी
+
+यह update उस समस्या को ध्यान में रखकर बनाया गया है जिसमें screen recording में timestamp वाला transcript दिखा, लेकिन Video Topic Map में cards नहीं आए।
+
+- Local video चुनने या YTDLnis से download की गई file Share करने पर, Groq/OpenAI key या दोनों offline models configured हों तो transcription और topic mapping अपने-आप शुरू होते हैं। Setup न होने पर ऐप निर्देश दिखाता है।
+- Timestamp वाले SRT/VTT/TXT import के बाद topic mapping अपने-आप शुरू होती है। Manually paste किए transcript के लिए **Analyze all topics in transcript** दबाएँ।
+- Parser JSON arrays और `topics`, `topic_map`, `segments`, `highlights`, `results` जैसे wrapper objects स्वीकार करता है।
+- Numeric seconds, MM:SS, HH:MM:SS timestamps तथा title/description aliases स्वीकार किए जाते हैं।
+- Chunk-relative timestamps पहचाने जाने पर original video timeline से align किए जाते हैं।
+- 180 सेकंड से लंबे coherent topics भी Topic Map में रहेंगे। एक Short export की सीमा 180 सेकंड ही है; लंबे topic को export से पहले trim करें।
+- पुराना card design बना रहेगा: title, start/end, duration, category, importance, explanation, selected status, topic playback और queue controls।
+- YTDLnis अलग app रहेगा। ShortsForge link को YTDLnis भेजता है और download की गई file Android Share या Downloads से import करता है; native YouTube stream downloader शामिल नहीं है।

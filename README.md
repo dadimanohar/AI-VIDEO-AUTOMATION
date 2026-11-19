@@ -3,7 +3,7 @@
 **AI-powered long-video to Shorts editor for Android.**  
 Turn a long interview, podcast, lecture, or other video file into short clips by finding useful moments in its timestamped transcript, reviewing the suggested time ranges, and exporting an MP4.
 
-[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44463742925)
+[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44472698840)
 
 | App detail | Value |
 |---|---|
@@ -16,9 +16,9 @@ Turn a long interview, podcast, lecture, or other video file into short clips by
 | Export | MP4 (H.264 video + AAC audio) |
 | Build type | Debug-signed APK from GitHub Actions |
 | Release APK size | 13,925,543 bytes (~13.9 MB) |
-| Release APK SHA-256 | `8fe038e97104bf19aee1a3bb0332782b2995352519ee783db29a8ee36cf928ba` |
+| Release APK SHA-256 | `7630863f747e5bbef7082281507d21169423666a14e4e0e4f752595553097924` |
 
-> **Important source-video note (1.13.0):** Paste a YouTube URL and tap **Send URL to YTDLnis for video download** to hand it to the separately installed YTDLnis app using its documented Android intent. Review and start the download in YTDLnis. When it finishes, share the saved video to ShortsForge or choose it from Downloads. ShortsForge does not bundle YTDLnis/yt-dlp or extract YouTube streams. YouTube preview and timestamp markers remain available inside ShortsForge. Only download and edit videos where you have the necessary rights and the source service permits it.
+> **Important source-video note (1.14.0):** Paste a YouTube URL and tap **Send URL to YTDLnis for video download** to hand it to the separately installed YTDLnis app using its documented Android intent. Review and start the download in YTDLnis. When it finishes, share the saved video to ShortsForge or choose it from Downloads. ShortsForge does not bundle YTDLnis/yt-dlp or extract YouTube streams. YouTube preview and timestamp markers remain available inside ShortsForge. Only download and edit videos where you have the necessary rights and the source service permits it.
 
 ---
 
@@ -451,12 +451,13 @@ A push that changes files under android/ or the workflow can trigger the build. 
 
 ## 17. Latest release
 
-- Release: 1.12.0
-- Version code: 16
+- Release: 1.14.0
+- Version code: 19
 - Build result: successful.
-- Build run: [GitHub Actions run 44459451960](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44459451960)
+- Build run: [GitHub Actions run 44472698840](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44472698840)
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)
-- SHA-256: `ac4a7e39a21ffffaf2d93516f7e89f6d1d9b3ab933a6c1ad511e9be051387e08`
+- APK size: 13,925,543 bytes (~13.9 MB).
+- SHA-256: `7630863f747e5bbef7082281507d21169423666a14e4e0e4f752595553097924`
 
 To verify a downloaded file on a computer, calculate its SHA-256 hash and compare it with the value above.
 
@@ -897,12 +898,13 @@ android/లో లేదా workflow fileలో మార్పులు push �
 
 ## 17. తాజా Release
 
-- Release: 1.12.0.
-- Version code: 16.
+- Release: 1.14.0.
+- Version code: 19.
 - Build result: Successful.
-- Build run: [GitHub Actions run 44459451960](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44459451960).
+- Build run: [GitHub Actions run 44472698840](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44472698840).
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk).
-- SHA-256: `ac4a7e39a21ffffaf2d93516f7e89f6d1d9b3ab933a6c1ad511e9be051387e08`.
+- APK size: 13,925,543 bytes (~13.9 MB).
+- SHA-256: `7630863f747e5bbef7082281507d21169423666a14e4e0e4f752595553097924`.
 
 Computerలో download చేసిన file verify చేయాలంటే దాని SHA-256 hash calculate చేసి పై విలువతో పోల్చండి.
 
@@ -1344,13 +1346,13 @@ android/ या workflow file में बदलाव push करने पर
 
 ## 17. Latest Release
 
-- Release: 1.12.0।
-- Version code: 16।
-- APK size: लगभग 13.93 MB।
+- Release: 1.14.0।
+- Version code: 19।
+- APK size: 13,925,543 bytes (~13.9 MB)।
 - Build result: Successful।
-- Build run: [GitHub Actions run 44459451960](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44459451960)।
-- APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)।
-- SHA-256: `ac4a7e39a21ffffaf2d93516f7e89f6d1d9b3ab933a6c1ad511e9be051387e08`।
+- Build run: [GitHub Actions run 44472698840](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44472698840)।
+- APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)。
+- SHA-256: `7630863f747e5bbef7082281507d21169423666a14e4e0e4f752595553097924`।
 
 Computer पर downloaded file verify करने के लिए उसका SHA-256 hash calculate करके ऊपर दिए गए value से compare करें।
 

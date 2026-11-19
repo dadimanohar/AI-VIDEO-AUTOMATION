@@ -2381,6 +2381,7 @@ $chunkText
                 val importedDuration = readDuration(importedUri)
                 if (importedDuration <= 0L) throw IOException("Android could not read the video's duration. The file may be unsupported or damaged.")
                 runOnUiThread {
+                    busy = false
                     val preserveMarkers = pendingYoutubeStartSeconds != null && pendingYoutubeEndSeconds != null
                     clearCurrentVideoProject(preserveYoutubeMarkers = preserveMarkers, updateStatus = false)
                     selectedVideo = importedUri

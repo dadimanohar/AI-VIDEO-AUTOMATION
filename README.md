@@ -449,12 +449,12 @@ A push that changes files under android/ or the workflow can trigger the build. 
 
 ## 17. Latest release
 
-- Release: 1.10.0
-- Version code: 14
+- Release: 1.12.0
+- Version code: 16
 - Build result: successful.
-- Build run: [GitHub Actions run 44454891022](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44454891022)
+- Build run: [GitHub Actions run 44459451960](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44459451960)
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)
-- SHA-256: `9912bb523ad56ad55e6e7f4044bdb86f85428da09947e5c07dd7620d41a482fd`
+- SHA-256: `ac4a7e39a21ffffaf2d93516f7e89f6d1d9b3ab933a6c1ad511e9be051387e08`
 
 To verify a downloaded file on a computer, calculate its SHA-256 hash and compare it with the value above.
 
@@ -896,12 +896,12 @@ android/లో లేదా workflow fileలో మార్పులు push �
 
 ## 17. తాజా Release
 
-- Release: 1.10.0.
-- Version code: 14.
+- Release: 1.12.0.
+- Version code: 16.
 - Build result: Successful.
-- Build run: [GitHub Actions run 44454891022](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44454891022).
+- Build run: [GitHub Actions run 44459451960](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44459451960).
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk).
-- SHA-256: `9912bb523ad56ad55e6e7f4044bdb86f85428da09947e5c07dd7620d41a482fd`.
+- SHA-256: `ac4a7e39a21ffffaf2d93516f7e89f6d1d9b3ab933a6c1ad511e9be051387e08`.
 
 Computerలో download చేసిన file verify చేయాలంటే దాని SHA-256 hash calculate చేసి పై విలువతో పోల్చండి.
 
@@ -1344,13 +1344,13 @@ android/ या workflow file में बदलाव push करने पर
 
 ## 17. Latest Release
 
-- Release: 1.10.0।
-- Version code: 14।
-- APK size: लगभग 13.91 MB।
+- Release: 1.12.0।
+- Version code: 16।
+- APK size: लगभग 13.93 MB।
 - Build result: Successful।
-- Build run: [GitHub Actions run 44454891022](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44454891022)।
+- Build run: [GitHub Actions run 44459451960](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44459451960)।
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)।
-- SHA-256: `9912bb523ad56ad55e6e7f4044bdb86f85428da09947e5c07dd7620d41a482fd`।
+- SHA-256: `ac4a7e39a21ffffaf2d93516f7e89f6d1d9b3ab933a6c1ad511e9be051387e08`।
 
 Computer पर downloaded file verify करने के लिए उसका SHA-256 hash calculate करके ऊपर दिए गए value से compare करें।
 

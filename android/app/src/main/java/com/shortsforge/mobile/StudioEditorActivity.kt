@@ -950,8 +950,17 @@ class StudioEditorActivity : ComponentActivity() {
     private fun createVolumeProcessor(gain: Float): ChannelMixingAudioProcessor {
         val processor = ChannelMixingAudioProcessor()
         for (channels in 1..6) {
-            // Export each sequence as stereo PCM so source audio and background music can mix.
-            val matrix = ChannelMixingMatrix.createForConstantPower(channels, 2).scaleBy(gain.coerceIn(0f, 1f))
+            // Media3 1.5.1 has ChannelMixingMatrix's public constructor, but not newer
+            // createForConstantPower helpers. Convert each supported layout to stereo explicitly.
+            val coefficients = when (channels) {
+                1 -> floatArrayOf(1f, 1f) // mono -> left + right
+                2 -> floatArrayOf(1f, 0f, 0f, 1f) // stereo passthrough
+                3 -> floatArrayOf(1f, 0f, 0f, 1f, 0.707f, 0.707f)
+                4 -> floatArrayOf(1f, 0f, 0f, 1f, 0.707f, 0f, 0f, 0.707f)
+                5 -> floatArrayOf(1f, 0f, 0f, 1f, 0.5f, 0.5f, 0.707f, 0f, 0f, 0.707f)
+                else -> floatArrayOf(1f, 0f, 0f, 1f, 0.5f, 0.5f, 0.25f, 0.25f, 0.707f, 0f, 0f, 0.707f)
+            }
+            val matrix = ChannelMixingMatrix(channels, 2, coefficients).scaleBy(gain.coerceIn(0f, 1f))
             processor.putChannelMixingMatrix(matrix)
         }
         return processor

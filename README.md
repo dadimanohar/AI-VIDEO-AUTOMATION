@@ -1767,7 +1767,7 @@ This update addresses the supplied screen recording where timestamped transcript
 
 The screenshot supplied for this update showed that some videos played in ShortsForge but cloud transcription failed with `Failed to add the track to the muxer`. The former cloud transcription path copied the source audio codec directly into an MP4/M4A container using Android MediaMuxer. Some source audio codecs/containers are not accepted by that muxer.
 
-Version 1.13.1 changes cloud transcription to use the same Android MediaCodec decode path already used by offline Whisper: source audio is decoded, downmixed to mono, resampled to 16 kHz, and written as a WAV file. The WAV is sent to Groq/OpenAI as `audio/wav`; the source video is not modified. This removes the source-codec-to-MP4 remux step that caused the reported failure. The 24 MB transcription upload safety limit remains.
+Version 1.13.1 keeps the fast M4A remux path for source audio tracks the MP4 muxer accepts. If the muxer rejects the audio track (including the reported `addTrack` failure), ShortsForge automatically falls back to Android MediaCodec decoding, downmixes the decoded audio to mono, resamples it to 16 kHz, and writes a WAV file. The selected file is then sent to Groq/OpenAI with the matching `audio/mp4` or `audio/wav` MIME type. The source video is not modified. The 24 MB transcription upload safety limit remains.
 
 This is an Android source/build fix. Build success confirms compilation and APK packaging, not a real-device test against the exact uploaded video. Videos whose audio codec cannot be decoded by the device's MediaCodec may still need a compatible source file or an imported timestamped transcript.
 
@@ -1775,6 +1775,6 @@ This is an Android source/build fix. Build success confirms compilation and APK 
 
 మీ screenshotలో వీడియో preview అవుతున్నా Groq/OpenAI transcription సమయంలో `Failed to add the track to the muxer` error వచ్చింది. పాత cloud path అసలు audio codecను MediaMuxer ద్వారా MP4/M4Aలో నేరుగా copy చేయడానికి ప్రయత్నించేది. కొన్ని source codecsను ఆ muxer అంగీకరించదు.
 
-Version 1.13.1లో cloud transcription కూడా offline Whisper ఉపయోగించే Android MediaCodec decode మార్గాన్నే ఉపయోగిస్తుంది: source audioను decode చేసి monoగా మార్చి, 16 kHzకు resample చేసి WAVగా తయారు చేస్తుంది. ఆ WAVను Groq/OpenAIకు `audio/wav`గా పంపుతుంది. Source video మారదు; సమస్య కలిగించిన direct audio remux దశ తొలగించబడింది. 24 MB upload safety limit అలాగే ఉంది.
+Version 1.13.1లో MP4 muxer అంగీకరించే audio tracksకు వేగవంతమైన పాత M4A మార్గం కొనసాగుతుంది. Muxer audio trackను reject చేస్తే (మీ screenshotలోని `addTrack` failure లాంటిది), ShortsForge ఆటోమేటిక్‌గా Android MediaCodec decode fallback ఉపయోగిస్తుంది: audioను monoగా మార్చి, 16 kHzకు resample చేసి WAVగా తయారు చేస్తుంది. తర్వాత file extensionకు సరిపోయే `audio/mp4` లేదా `audio/wav` MIME typeతో Groq/OpenAIకు పంపుతుంది. Source video మారదు. 24 MB upload safety limit అలాగే ఉంది.
 
 ఇది Android source/build fix. Build success అనేది compile/APK packaging విజయాన్ని మాత్రమే నిర్ధారిస్తుంది; మీ అసలు videoతో physical device test చేసినట్లు కాదు. Device MediaCodec decode చేయలేని audio codec ఉన్న వీడియోలకు compatible source file లేదా timestamped transcript అవసరం కావచ్చు.

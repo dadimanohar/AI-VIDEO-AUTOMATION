@@ -333,11 +333,12 @@ class MainActivity : ComponentActivity() {
                 }
                 val safeBase = sourceName.substringBeforeLast('.', sourceName)
                     .replace(Regex("[^A-Za-z0-9._-]"), "_").take(70).ifBlank { "shared-video" }
-                destination = File(importDir, System.currentTimeMillis().toString() + "_" + safeBase + "." + outputExtension)
+                val outFile = File(importDir, System.currentTimeMillis().toString() + "_" + safeBase + "." + outputExtension)
+                destination = outFile
                 val input = contentResolver.openInputStream(uri) ?: throw IOException("Android could not open the shared video.")
                 var totalBytes = 0L
                 input.use { source ->
-                    FileOutputStream(destination).use { output ->
+                    FileOutputStream(outFile).use { output ->
                         val buffer = ByteArray(128 * 1024)
                         while (true) {
                             val count = source.read(buffer)
@@ -349,12 +350,12 @@ class MainActivity : ComponentActivity() {
                         output.flush()
                     }
                 }
-                if (destination.length() <= 0L) throw IOException("The shared video file is empty.")
-                val localUri = android.net.Uri.fromFile(destination)
+                if (outFile.length() <= 0L) throw IOException("The shared video file is empty.")
+                val localUri = android.net.Uri.fromFile(outFile)
                 val importedDuration = readDuration(localUri)
                 runOnUiThread {
                     selectedVideo = localUri
-                    videoName = destination.name
+                    videoName = outFile.name
                     durationMs = importedDuration
                     applyPendingMarkersOrDefault()
                     if (::videoNameView.isInitialized) {

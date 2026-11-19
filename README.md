@@ -3,7 +3,7 @@
 **AI-powered long-video to Shorts editor for Android.**  
 Turn a long interview, podcast, lecture, or other video file into short clips by finding useful moments in its timestamped transcript, reviewing the suggested time ranges, and exporting an MP4.
 
-[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44460324274)
+[Download the latest Android APK](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk) · [Latest build status](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44463742925)
 
 | App detail | Value |
 |---|---|
@@ -16,7 +16,7 @@ Turn a long interview, podcast, lecture, or other video file into short clips by
 | Export | MP4 (H.264 video + AAC audio) |
 | Build type | Debug-signed APK from GitHub Actions |
 | Release APK size | 13,925,543 bytes (~13.9 MB) |
-| Release APK SHA-256 | `9d22d7b8b1c495a4472dd323dc76dabf6a163da013a8127c34dc8ff5ff2be1c6` |
+| Release APK SHA-256 | `8fe038e97104bf19aee1a3bb0332782b2995352519ee783db29a8ee36cf928ba` |
 
 > **Important source-video note (1.13.0):** Paste a YouTube URL and tap **Send URL to YTDLnis for video download** to hand it to the separately installed YTDLnis app using its documented Android intent. Review and start the download in YTDLnis. When it finishes, share the saved video to ShortsForge or choose it from Downloads. ShortsForge does not bundle YTDLnis/yt-dlp or extract YouTube streams. YouTube preview and timestamp markers remain available inside ShortsForge. Only download and edit videos where you have the necessary rights and the source service permits it.
 

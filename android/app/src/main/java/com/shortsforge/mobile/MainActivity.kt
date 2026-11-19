@@ -410,6 +410,11 @@ class MainActivity : ComponentActivity() {
         }, full(dp(7)))
         source.addView(text("Embedded preview and timestamp markers only. YouTube watch URLs do not provide an editable video file.", 11f, muted)
             .apply { setPadding(0, dp(5), 0, dp(5)) })
+        source.addView(button("Send URL to YTDLnis for video download", true) {
+            sendYouTubeLinkToYtdlnis()
+        }, full(dp(7)))
+        source.addView(text("YTDLnis must be installed separately. You will review and start the download there. When it finishes, use Share → ShortsForge or choose the saved file from Downloads to use it as the source video.", 11f, muted)
+            .apply { setPadding(0, dp(5), 0, dp(7)) })
 
         source.addView(label("AUTHORIZED DIRECT VIDEO FILE URL"))
         directVideoUrlEdit = input("Paste creator-authorized HTTPS MP4 / MOV / WebM / MKV link", directVideoUrlText, false)
@@ -1835,6 +1840,43 @@ $chunkText
         val intent = Intent(this, YouTubePreviewActivity::class.java)
             .putExtra(YouTubePreviewActivity.EXTRA_VIDEO_ID, id)
         youtubePreviewLauncher.launch(intent)
+    }
+
+    private fun sendYouTubeLinkToYtdlnis() {
+        val raw = youtubeUrlEdit.text.toString().trim()
+        val url = raw.toHttpUrlOrNull()
+        if (url == null || url.scheme !in setOf("http", "https") || !isYouTubeHost(url.host)) {
+            setStatus("Paste a valid YouTube watch, Shorts, or youtu.be URL first.")
+            return
+        }
+
+        // YTDLnis documents this third-party hand-off: ACTION_SEND + text/*,
+        // EXTRA_TEXT=<URL>, TYPE=video, BACKGROUND=false.
+        // The user reviews and starts the download inside the separately installed app.
+        val handoff = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, raw)
+            putExtra("TYPE", "video")
+            putExtra("BACKGROUND", "false")
+            setPackage("com.deniscerri.ytdl")
+        }
+        try {
+            startActivity(handoff)
+            setStatus("Link sent to YTDLnis. Complete the download there, then share the saved video to ShortsForge or choose it from Downloads.")
+        } catch (_: android.content.ActivityNotFoundException) {
+            android.app.AlertDialog.Builder(this)
+                .setTitle("YTDLnis is not installed")
+                .setMessage("Install YTDLnis separately from its official GitHub releases. Return to ShortsForge and tap this button again. After downloading, share the video file back to ShortsForge.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Open official releases") { _, _ ->
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/deniscerri/ytdlnis/releases")))
+                    } catch (_: Exception) {
+                        setStatus("Open github.com/deniscerri/ytdlnis/releases in your browser to install YTDLnis.")
+                    }
+                }
+                .show()
+        }
     }
 
     private fun importAuthorizedVideoUrl() {

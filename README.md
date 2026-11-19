@@ -8,15 +8,15 @@ Turn a long interview, podcast, lecture, or other video file into short clips by
 | App detail | Value |
 |---|---|
 | App name | ShortsForge Mobile |
-| Current release | 1.11.0 |
-| Version code | 15 |
+| Current release | 1.12.0 |
+| Version code | 16 |
 | Android package | `com.shortsforge.mobile` |
 | Minimum Android version | Android 8.0 (API 26) |
 | APK size | About 14 MB |
 | Export | MP4 (H.264 video + AAC audio) |
 | Build type | Debug-signed APK from GitHub Actions |
 
-> **Important source-video note (1.10.0):** You can paste a YouTube watch/Shorts link for an embedded preview and mark clip start/end timestamps. That link is **not** downloaded or used as an editable media file. To run AI transcription and export, choose a local video or import a creator-authorized direct HTTPS video-file URL. ShortsForge does not extract or download public YouTube streams.
+> **Important source-video note (1.12.0):** Paste a YouTube URL and tap **Send URL to YTDLnis for video download** to hand it to the separately installed YTDLnis app using its documented Android intent. Review and start the download in YTDLnis. When it finishes, share the saved video to ShortsForge or choose it from Downloads. ShortsForge does not bundle YTDLnis/yt-dlp or extract YouTube streams. YouTube preview and timestamp markers remain available inside ShortsForge. Only download and edit videos where you have the necessary rights and the source service permits it.
 
 ---
 
@@ -45,7 +45,7 @@ The intended workflow is:
 7. Choose an output aspect ratio, optionally add a text overlay, and export an MP4.
 8. Find the exported file in Movies/ShortsForge and share it using the Android share sheet.
 
-## 3. Features in version 1.10.0
+## 3. Features carried forward from version 1.10.0
 
 ### Source video
 - Select a video from device storage using Android's file picker.
@@ -54,7 +54,7 @@ The intended workflow is:
 - The source file is not intentionally overwritten by the export process.
 - Supported video formats depend on the Android device's media decoders.
 
-### YouTube URL preview and authorized direct-file import (new in 1.10.0)
+### YouTube URL preview and authorized direct-file import (introduced in 1.10.0)
 - Paste a standard YouTube watch URL, Shorts URL, or youtu.be URL and open it in the in-app embedded YouTube player.
 - Play, pause, and seek using the embedded player controls.
 - Set an IN marker and an OUT marker at the current player position, or manually edit the marker times in seconds.
@@ -74,10 +74,10 @@ The intended workflow is:
 - SRT/VTT cue timestamps are converted into timestamped transcript lines.
 - TXT files should contain usable timestamps if the AI is expected to identify exact moments.
 
-### Full-video topic discovery — Video Topic Map (new in 1.10.0)
+### Full-video topic discovery — Video Topic Map (introduced in 1.10.0)
 - Analyse the entire timestamped transcript in overlapping chunks instead of asking for only the eight most important highlights.
-- Cloud AI processes transcript windows of 80 non-empty lines with a 16-line overlap. It requests up to eight topic segments per window, then merges duplicate/overlapping results.
-- Offline Qwen3 processes windows of 36 non-empty lines with an 8-line overlap and requests up to five topic segments per window.
+- Cloud AI processes transcript windows of 80 non-empty lines with a 16-line overlap. It requests up to 16 topic candidates per window, then merges duplicate/overlapping results.
+- Offline Qwen3 processes windows of 36 non-empty lines with an 8-line overlap and requests up to 10 topic candidates per window.
 - Results are sorted chronologically by source-video start time, not ranked into a viral-first order.
 - No fixed global 60-topic cutoff is applied. Cloud analysis requests up to 16 topic candidates per transcript window; offline Qwen3 requests up to 10 per window. The final number depends on transcript content, model output, and successful processing.
 - Topic types include introduction, background, each distinct subject/subtopic, complete Q&A, stories, examples, announcements, explanations, opinions, debates, predictions, practical advice and conclusions.
@@ -101,7 +101,7 @@ Topic mapping is transcript-based, not visual scene understanding. Accuracy depe
 - A single quick export is limited to 180 seconds (3 minutes).
 - Each queued highlight is checked against its own valid timestamp range before a batch export starts.
 
-### Export each queued topic as a separate Short (new in 1.10.0)
+### Export each queued topic as a separate Short (introduced in 1.10.0)
 - Add two or more topic cards to **Shorts queue** using their checkboxes.
 - Tap **Export N queued topics as separate Shorts**.
 - Confirm the batch. ShortsForge exports one MP4 for each selected topic using that card's exact start/end timestamps.
@@ -327,8 +327,8 @@ Review the selected AI provider's privacy terms before sending private, confiden
 
 ## 11. Current limitations — what is not included
 
-The following are **not** current 1.10.0 features:
-- Downloading/extracting a YouTube watch URL as an editable MP4/audio source. YouTube URLs support embedded preview and clip timestamp markers only.
+The following are **not** current 1.12.0 features:
+- Native YouTube stream extraction/downloading inside ShortsForge as an editable MP4/audio source. Version 1.12.0 can hand a pasted URL to the separately installed YTDLnis app; the user completes the download there and then shares/selects the saved file in ShortsForge. A YouTube URL by itself is not an editable media file.
 - Automatic downloading of public YouTube caption tracks or transcripts.
 - Importing Google Drive/Dropbox share-page URLs. The importer requires a direct HTTPS video-file response.
 - Automatic YouTube channel upload, scheduling, or publishing.
@@ -478,7 +478,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 
 ఈ యాప్ వీడియోలోని మాటలను timestamp ఉన్న transcript రూపంలో విశ్లేషించి గరిష్ఠంగా 8 ముఖ్యమైన moments సూచిస్తుంది. ప్రతి suggestionలో title/hook, timestamp, category, importance score, వివరణ ఉంటాయి. మొదటి suggestion ఆటోమేటిక్‌గా select అవుతుంది. మీరు వేరే suggestion ఎంచుకోవచ్చు, దాని సమయాన్ని preview చేయవచ్చు, Start/End మార్చవచ్చు, చివరికి MP4 export చేయవచ్చు.
 
-ఇది ప్రస్తుతం **AI క్లిప్ ఎంపిక, ఎడిటింగ్ మరియు MP4 ఎగుమతి యాప్**. 1.10.0లో YouTube URLను appలో preview చేసి IN/OUT timestamps గుర్తించవచ్చు; కానీ ఆ URL నుంచి అసలు video stream download చేయదు. AI transcription మరియు export కోసం local video లేదా creator-authorized direct video file అవసరం.
+ఇది **AI topic discovery, clip selection, editing మరియు MP4 export యాప్**. YouTube URLను appలో preview చేసి IN/OUT timestamps గుర్తించవచ్చు. Version 1.12.0లో ఆ linkను వేరుగా install చేసిన YTDLnisకి పంపి అక్కడ download ప్రారంభించవచ్చు; download పూర్తయ్యాక saved fileను ShortsForgeకి Share చేయాలి లేదా Downloads నుంచి ఎంచుకోవాలి. AI transcription/exportకు actual video file అవసరం.
 
 ## 2. ప్రాజెక్ట్ లక్ష్యం
 
@@ -495,7 +495,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 7. Aspect ratio ఎంచుకుని, కావాలంటే text overlay జోడించి MP4 export చేయాలి.
 8. Movies/ShortsForgeలో వీడియోను చూసి Android share menu ద్వారా share చేయాలి.
 
-## 3. Version 1.10.0లో ప్రస్తుతం ఉన్న ఫీచర్లు
+## 3. Version 1.10.0 నుంచి కొనసాగుతున్న ఫీచర్లు
 
 ### Source video
 - ఫోన్ storage నుంచి Android file picker ద్వారా వీడియో ఎంచుకోవచ్చు.
@@ -775,8 +775,8 @@ Private లేదా confidential recordingsను cloud APIకి పంపే 
 
 ## 11. ప్రస్తుత యాప్‌లో లేని ఫీచర్లు
 
-క్రింది అంశాలు **Version 1.10.0లో ఇంకా లేవు**:
-- YouTube watch URLను editable MP4/audio sourceగా download లేదా extract చేయడం. YouTube URL preview మరియు timestamp markers మాత్రమే ఇస్తుంది.
+క్రింది అంశాలు **Version 1.12.0లో కూడా లేవు**:
+- ShortsForgeలోపలే YouTube streamను editable MP4/audio sourceగా extract/download చేయడం లేదు. 1.12.0లో URLను వేరుగా install చేసిన YTDLnisకి పంపవచ్చు; అక్కడ మీరు download పూర్తి చేసి saved videoను Share/Downloads ద్వారా ShortsForgeకి తీసుకురావాలి. URL ఒక్కటే editable source file కాదు.
 - Public YouTube caption tracks లేదా transcriptsను ఆటోమేటిక్‌గా download చేయడం.
 - Google Drive/Dropbox share-page URLs import చేయడం. Importerకు direct HTTPS video-file response అవసరం.
 - Automatic YouTube channel upload, scheduling లేదా publishing.
@@ -925,7 +925,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 
 ऐप timestamp वाले transcript का विश्लेषण करके अधिकतम 8 उपयोगी moments सुझाता है। हर suggestion में title/hook, timestamp, category, importance score और explanation हो सकते हैं। पहला suggestion अपने-आप select होता है। आप दूसरा suggestion चुन सकते हैं, उसका समय preview कर सकते हैं, Start/End बदल सकते हैं और अंत में MP4 export कर सकते हैं।
 
-यह अभी **AI clip selection, editing और MP4 export ऐप** है। Version 1.10.0 में YouTube URL को ऐप के अंदर preview करके IN/OUT timestamps mark कर सकते हैं, लेकिन उस URL से video stream download नहीं होती। AI transcription और export के लिए local video या creator-authorized direct video file जरूरी है।
+यह **AI topic discovery, clip selection, editing और MP4 export ऐप** है। YouTube URL को ऐप में preview करके IN/OUT timestamps mark कर सकते हैं। Version 1.12.0 में link को अलग से install किए गए YTDLnis app में भेजकर वहाँ download शुरू किया जा सकता है; download पूरा होने पर saved file को ShortsForge में Share करें या Downloads से चुनें। AI transcription/export के लिए actual video file आवश्यक है।
 
 ## 2. परियोजना का लक्ष्य
 
@@ -942,7 +942,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 7. Aspect ratio चुनें, चाहें तो text overlay जोड़ें और MP4 export करें।
 8. वीडियो को Movies/ShortsForge में ढूंढें और Android share sheet से साझा करें।
 
-## 3. Version 1.10.0 में उपलब्ध सुविधाएँ
+## 3. Version 1.10.0 से जारी सुविधाएँ
 
 ### Source video
 - Android file picker से फोन की storage में मौजूद वीडियो चुनें।
@@ -951,7 +951,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 - Export प्रक्रिया source file को जानबूझकर overwrite नहीं करती।
 - कौन-से video formats चलेंगे, यह Android डिवाइस के media decoders पर निर्भर करता है।
 
-### YouTube URL preview और authorized direct-file import (1.10.0 में नया)
+### YouTube URL preview और authorized direct-file import (1.10.0 में जोड़ा गया)
 - YouTube watch URL, Shorts URL या youtu.be URL paste करके ऐप के embedded YouTube player में preview करें।
 - Embedded player controls से play, pause और seek करें।
 - मौजूदा playhead पर IN और OUT markers लगाएं, या seconds में timestamps manually बदलें।
@@ -972,7 +972,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 - SRT/VTT cue timestamps को timestamped transcript lines में बदला जाता है।
 - TXT में AI द्वारा सटीक clip समय पहचानने के लिए उपयोगी timestamps होने चाहिए।
 
-### पूरे वीडियो की Topic Discovery — Video Topic Map (1.10.0 में नया)
+### पूरे वीडियो की Topic Discovery — Video Topic Map (1.10.0 में जोड़ा गया)
 - पूरे timestamped transcript को overlapping sections में analyse करता है; अब केवल आठ सबसे महत्वपूर्ण highlights मांगने वाला तरीका नहीं है।
 - Cloud AI हर section में 80 non-empty transcript lines को 16-line overlap के साथ process करता है और हर section से अधिकतम 8 topic segments मांगता है। बाद में duplicate/overlapping results merge किए जाते हैं।
 - Offline Qwen3 हर section में 36 non-empty lines को 8-line overlap के साथ process करता है और हर section से अधिकतम 5 topics मांगता है।
@@ -998,7 +998,7 @@ Topic Map transcript पर आधारित है, visual scene understandin
 - Quick duration buttons: 15s, 30s, 45s और 60s।
 - हर individual exported Short अधिकतम 180 seconds हो सकता है।
 
-### Queue किए गए हर Topic को अलग Short के रूप में Export करना (1.10.0 में नया)
+### Queue किए गए हर Topic को अलग Short के रूप में Export करना (1.10.0 में जोड़ा गया)
 - जिन topic cards की जरूरत है, उनमें **Add this topic to Shorts queue** tick करें।
 - **Export N queued topics as separate Shorts** दबाएं।
 - Confirm करने पर हर topic अपने exact Start/End timestamps के साथ अलग MP4 में export होता है।
@@ -1222,8 +1222,8 @@ Private या confidential recordings cloud API को भेजने से �
 
 ## 11. मौजूदा सीमाएँ — क्या शामिल नहीं है
 
-निम्न सुविधाएँ **वर्तमान Version 1.10.0 में उपलब्ध नहीं हैं**:
-- YouTube watch URL को editable MP4/audio source के रूप में download या extract करना। YouTube URL केवल embedded preview और timestamp markers देता है।
+निम्न सुविधाएँ **वर्तमान Version 1.12.0 में उपलब्ध नहीं हैं**:
+- ShortsForge के अंदर native YouTube stream extraction/downloading करके editable MP4/audio source बनाना उपलब्ध नहीं है। Version 1.12.0 link को अलग से install किए गए YTDLnis app को भेज सकता है; download वहाँ पूरा करें, फिर saved file को ShortsForge में Share करें या Downloads से चुनें। URL अकेला editable source file नहीं है।
 - Public YouTube caption tracks या transcripts का automatic download।
 - Google Drive/Dropbox share-page URLs का import। Importer को direct HTTPS video-file response चाहिए।
 - Automatic YouTube channel upload, scheduling या publishing।
@@ -1573,3 +1573,136 @@ Downloads में मौजूद original file बदली नहीं ज�
 - H.264/AAC MP4 export, Movies/ShortsForge में save, cancel और Android sharing.
 
 Studio Editor अभी पूर्ण CapCut/KineMaster replacement नहीं है। Independent multi-source video tracks, picture-in-picture, keyframe animation, transitions library, animated word-level captions और advanced multi-track audio mixing अभी उपलब्ध नहीं हैं.
+
+
+---
+
+# Version 1.12.0 update — English
+
+## Send a pasted video link to YTDLnis, then use the downloaded file as the ShortsForge source
+
+Version 1.12.0 adds an app-to-app hand-off. Paste a YouTube URL in YOUTUBE VIDEO URL and tap Send URL to YTDLnis for video download.
+
+1. Install YTDLnis separately from its official GitHub releases (https://github.com/deniscerri/ytdlnis/releases) if it is not already installed.
+2. Paste the YouTube link in ShortsForge.
+3. Tap Send URL to YTDLnis for video download. ShortsForge opens the installed YTDLnis package com.deniscerri.ytdl using its documented Android share intent with video mode and foreground interaction.
+4. Review the download format/options in YTDLnis and start the download there. ShortsForge does not silently download in the background.
+5. When the file is saved, use YTDLnis Share and choose ShortsForge Mobile, or return to ShortsForge and use Choose downloaded video · YTDLnis / Downloads.
+6. Confirm you own the video or have permission to edit it. ShortsForge copies a shared file into its private import folder (2 GB maximum per shared import), selects it as the source, and loads its duration/preview.
+7. Run transcription and the Full Video Topic Map, select topic cards, queue multiple topics, edit in Studio, and export MP4 Shorts.
+
+If YTDLnis is not installed, the button offers to open the official releases page. Installation is a separate, user-controlled Android install; ShortsForge does not silently install another APK.
+
+### Integration boundary
+- This is an intent integration, not a bundled downloader. YTDLnis remains a separate GPL-3.0 project.
+- ShortsForge does not copy YTDLnis source code, bundle yt-dlp, downloader cookies, PO-token handling, or YouTube stream extraction.
+- You review and start each YTDLnis download there. The saved video then enters ShortsForge through Android file/share APIs.
+- A successful download does not establish copyright permission. Use only videos you own or are authorised to download, edit, and publish, and follow source-service terms.
+
+## Cumulative feature history — previous APK versions
+
+- 1.1.0 — Native Android baseline: source-video selection, playback, editor/media workflow, export and Android file sharing.
+- 1.2.0 — Timestamped clip workflow: key-moment suggestions, importance ranking, 60/90-second clip modes, transcript/subtitle import and authorised source-link handling.
+- 1.3.0 — Offline AI engines: local Qwen3 and Whisper engines plus offline model controls.
+- 1.3.1 — Offline fallback stability: local AI fallback when supported cloud calls fail, overlapping transcript analysis and busy-state fix.
+- 1.4.0 — YouTube preview: embedded player, play/pause/seek and manual clip IN/OUT markers.
+- 1.4.1 — Source-flow cleanup: removed unsupported generic source-URL import UI while preserving local video editing.
+- 1.5.0 — Highlight selection: persistent selected highlight, automatic top suggestion selection and exact clip-range preview.
+- 1.5.1 — Restored suggestion cards: screenshot-matched highlight cards, selected status and card details.
+- 1.6.0 — Studio timeline editor: split, trim, reorder, delete, undo, speed, aspect ratio, text overlay, audio controls and MP4 export.
+- 1.7.0 — Source-link handling: YouTube preview markers plus authorised direct HTTPS video-file import.
+- 1.8.0 — Multi-topic Shorts: topic queue, multiple selections, Studio timeline hand-off and separate MP4 batch export with progress/cancel handling.
+- 1.9.0 — Full Video Topic Map: chronological topic cards, duplicate merging, per-topic playback, queue-all and topic-wise selection.
+- 1.10.0 — Expanded topic analysis: removed fixed global 60-topic cap; up to 16 Cloud and 10 Offline Qwen3 candidates per transcript window; content-led boundaries and topic duration display.
+- 1.11.0 — YTDLnis file import bridge: choose saved files from Android storage or share downloaded video files from YTDLnis/other apps into ShortsForge.
+- 1.12.0 — YTDLnis URL hand-off: send the pasted link to the separately installed YTDLnis app using its documented Android intent, then share/import the completed video file into ShortsForge.
+
+The retained feature set includes Groq, OpenAI and Claude cloud analysis; cloud Whisper; offline Whisper Base and Qwen3 0.6B; SRT/VTT/TXT transcripts; chronological topic cards with title/time/duration/category/importance/explanation; topic preview/selection/queue; separate Shorts batch export; duration presets; Studio timeline editing; YouTube embedded preview; authorised direct-file import; MP4 export; Gallery save and Android sharing.
+
+---
+
+# Version 1.12.0 నవీకరణ — తెలుగు
+
+## YTDLnisకి YouTube లింక్ పంపి, డౌన్‌లోడ్ అయిన వీడియోను ShortsForge Sourceగా ఎంచుకోవడం
+
+Version 1.12.0లో URL hand-off జోడించబడింది. ShortsForgeలో YOUTUBE VIDEO URL బాక్స్‌లో YouTube లింక్ paste చేసి Send URL to YTDLnis for video download నొక్కండి.
+
+1. YTDLnis ఫోన్‌లో లేకపోతే, అధికారిక GitHub Releases (https://github.com/deniscerri/ytdlnis/releases) నుంచి వేరుగా install చేయండి.
+2. ShortsForgeలో YouTube URL paste చేయండి.
+3. Send URL to YTDLnis for video download నొక్కండి. ShortsForge, YTDLnis documented Android share intent ద్వారా video modeలో ఆ యాప్‌ను తెరుస్తుంది.
+4. Download format/optionsను YTDLnisలో పరిశీలించి, అక్కడే మీరు download ప్రారంభించండి. ShortsForge backgroundలో లేదా మీకు తెలియకుండా download చేయదు.
+5. Download పూర్తయ్యాక YTDLnisలో Share ద్వారా ShortsForge Mobile ఎంచుకోండి. లేదా ShortsForgeకి తిరిగి వచ్చి Choose downloaded video · YTDLnis / Downloads నొక్కండి.
+6. వీడియో మీ సొంతదని లేదా edit చేయడానికి అనుమతి ఉందని నిర్ధారించండి. ShortsForge shared fileను private import folderలో కాపీ చేస్తుంది (ఒక్క shared importకు గరిష్ఠం 2 GB), దాన్ని sourceగా ఎంచుకుని duration/preview లోడ్ చేస్తుంది.
+7. Transcription, Full Video Topic Map, topic cards, multi-topic queue, Studio Editor, MP4 export కొనసాగించండి.
+
+YTDLnis install చేయకపోతే, బటన్ అధికారిక releases page తెరవడానికి అవకాశం చూపిస్తుంది. మరో APK install చేయడం Androidలో మీరే చేసే వేరు చర్య; ShortsForge స్వయంగా install చేయదు.
+
+### Integration పరిమితి
+- ఇది రెండు apps మధ్య Android intent integration మాత్రమే; downloaderను ShortsForgeలో bundle చేయలేదు. YTDLnis వేరే GPL-3.0 project.
+- YTDLnis source code, yt-dlp, downloader cookies, PO-token handling లేదా YouTube stream extractionను ShortsForgeలో కాపీ చేయలేదు.
+- Download format ఎంచుకుని download ప్రారంభించడం YTDLnisలో మీరే చేయాలి. ఆ తర్వాత video fileను Android Share/File Picker ద్వారా ShortsForgeకి తీసుకురావచ్చు.
+- Download చేయగలగడం వల్ల copyright permission ఆటోమేటిక్‌గా రాదు. మీ సొంత లేదా download/edit/publish అనుమతి ఉన్న వీడియోలనే ఉపయోగించండి; source service నియమాలను పాటించండి.
+
+## పాత APK వెర్షన్ల నుంచి వచ్చిన ఫీచర్ల చరిత్ర
+
+- 1.1.0 — Android ప్రాథమిక వెర్షన్: Local source video ఎంపిక, playback, editing/media workflow, export, Android file sharing.
+- 1.2.0 — Timestamped clips: Key moments, importance ranking, 60/90-second modes, transcript/subtitle import, అనుమతితో source-link handling.
+- 1.3.0 — Offline AI: Local Qwen3/Whisper engines, offline model settings.
+- 1.3.1 — Offline fallback మెరుగుదల: Cloud request విఫలమైనప్పుడు local fallback, overlapping transcript analysis, busy-state fix.
+- 1.4.0 — YouTube preview: In-app player, play/pause/seek, manual IN/OUT markers.
+- 1.4.1 — Source UI cleanup: Unsupported generic source URL import తొలగింపు; local editing అలాగే ఉంచడం.
+- 1.5.0 — Highlight selection: Selected card persistence, మొదటి suggestion auto-select, exact clip preview.
+- 1.5.1 — Suggestion cards తిరిగి: Screenshot తరహా cards, selected status, card details.
+- 1.6.0 — Studio Timeline: Split, trim, reorder, delete, undo, speed, aspect ratio, text overlay, audio controls, MP4 export.
+- 1.7.0 — Source links: YouTube preview markers, అనుమతితో direct HTTPS video-file import.
+- 1.8.0 — Multi-topic Shorts: Topic queue, multiple selections, Studio timeline hand-off, separate MP4 batch export, progress/cancel.
+- 1.9.0 — Full Video Topic Map: Chronological cards, duplicate merge, per-topic playback, queue-all.
+- 1.10.0 — Expanded Topic Analysis: Fixed global 60-topic cap తొలగింపు; ప్రతి transcript windowకు Cloud 16 / Offline Qwen3 10 candidates; content-led boundaries, card duration.
+- 1.11.0 — YTDLnis file import: Android storage నుంచి saved video ఎంచుకోవడం లేదా YTDLnis/ఇతర app నుంచి video file Share చేయడం.
+- 1.12.0 — YTDLnis URL hand-off: Paste చేసిన linkను YTDLnisకి పంపి download పూర్తయ్యాక video fileను ShortsForgeకి Share/import చేయడం.
+
+ప్రస్తుత cumulative features: Groq/OpenAI/Claude cloud analysis, cloud Whisper, offline Whisper Base/Qwen3 0.6B, SRT/VTT/TXT transcript, chronological topic cards (title/time/duration/category/importance/explanation), topic preview/selection/queue, separate Shorts batch export, duration presets, Studio timeline, YouTube embedded preview, authorised direct-file import, MP4 export, Gallery save, Android sharing.
+
+---
+
+# Versión 1.12.0 — हिन्दी
+
+## YTDLnis को YouTube लिंक भेजें और डाउनलोड की गई वीडियो को ShortsForge Source बनाएं
+
+Version 1.12.0 में URL hand-off जोड़ा गया है। ShortsForge के YOUTUBE VIDEO URL बॉक्स में YouTube लिंक paste करें और Send URL to YTDLnis for video download दबाएँ।
+
+1. यदि YTDLnis फोन में install नहीं है, तो इसे आधिकारिक GitHub Releases (https://github.com/deniscerri/ytdlnis/releases) से अलग से install करें।
+2. ShortsForge में YouTube URL paste करें।
+3. Send URL to YTDLnis for video download दबाएँ। ShortsForge, YTDLnis के documented Android share intent के जरिए video mode में उस app को खोलता है।
+4. YTDLnis में download format/options देखें और download वहीं आप शुरू करें। ShortsForge background में या बिना आपकी पुष्टि download नहीं करता।
+5. Download पूरा होने पर YTDLnis में Share चुनकर ShortsForge Mobile भेजें। या ShortsForge में लौटकर Choose downloaded video · YTDLnis / Downloads दबाएँ।
+6. पुष्टि करें कि वीडियो आपकी है या आपको edit करने की अनुमति है। ShortsForge shared file को private import folder में copy करता है (प्रति shared import अधिकतम 2 GB), उसे source बनाता है और duration/preview लोड करता है।
+7. इसके बाद transcription, Full Video Topic Map, topic cards, multi-topic queue, Studio Editor और MP4 export इस्तेमाल करें।
+
+यदि YTDLnis install नहीं है, तो बटन official releases page खोलने का विकल्प दिखाता है। दूसरी APK install करना Android पर आपका अलग user-controlled कदम है; ShortsForge उसे अपने-आप install नहीं करता।
+
+### Integration की सीमा
+- यह Android intent के जरिए दो apps के बीच hand-off है; downloader ShortsForge में bundle नहीं है। YTDLnis अलग GPL-3.0 project है।
+- YTDLnis source code, yt-dlp, downloader cookies, PO-token handling या YouTube stream extraction ShortsForge में copy नहीं किए गए हैं।
+- Download format चुनना और download शुरू करना YTDLnis में आपको करना होगा। उसके बाद video file Android Share/File Picker से ShortsForge में लाई जा सकती है।
+- किसी app से download संभव होना copyright permission नहीं देता। केवल वही वीडियो उपयोग करें जिसे download, edit और publish करने का अधिकार आपके पास है; source service की शर्तें मानें।
+
+## पुराने APK Versions से आए Features का इतिहास
+
+- 1.1.0 — Android आधार: Local source video चयन, playback, editing/media workflow, export, Android file sharing.
+- 1.2.0 — Timestamp clips: Key moments, importance ranking, 60/90-second modes, transcript/subtitle import, authorised source-link handling.
+- 1.3.0 — Offline AI: Local Qwen3/Whisper engines और offline model settings.
+- 1.3.1 — Offline fallback सुधार: Cloud request failure पर local fallback, overlapping transcript analysis, busy-state fix.
+- 1.4.0 — YouTube preview: In-app player, play/pause/seek, manual IN/OUT markers.
+- 1.4.1 — Source UI cleanup: Unsupported generic source-URL import हटाया और local editing बरकरार रखी.
+- 1.5.0 — Highlight selection: Selected card persistence, पहली suggestion auto-select, exact clip preview.
+- 1.5.1 — Suggestion cards वापस: Screenshot-जैसे cards, selected status और details.
+- 1.6.0 — Studio Timeline: Split, trim, reorder, delete, undo, speed, aspect ratio, text overlay, audio controls, MP4 export.
+- 1.7.0 — Source links: YouTube preview markers और authorised direct HTTPS video-file import.
+- 1.8.0 — Multi-topic Shorts: Topic queue, multiple selection, Studio hand-off, अलग MP4 batch export, progress/cancel.
+- 1.9.0 — Full Video Topic Map: Chronological cards, duplicate merging, per-topic playback, queue-all.
+- 1.10.0 — Expanded topic analysis: Fixed global 60-topic cap हटाया; Cloud 16 / Offline Qwen3 10 candidates प्रति transcript window; content-led boundaries और card duration.
+- 1.11.0 — YTDLnis file import: Android storage से saved video चुनना या YTDLnis/अन्य app से video file Share करना.
+- 1.12.0 — YTDLnis URL hand-off: Paste किए link को YTDLnis भेजना; download पूरा होने पर file को ShortsForge में Share/import करना.
+
+वर्तमान cumulative features: Groq/OpenAI/Claude cloud analysis, cloud Whisper, offline Whisper Base/Qwen3 0.6B, SRT/VTT/TXT transcript, chronological topic cards (title/time/duration/category/importance/explanation), topic preview/selection/queue, separate Shorts batch export, duration presets, Studio timeline, YouTube embedded preview, authorised direct-file import, MP4 export, Gallery save और Android sharing.

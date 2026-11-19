@@ -117,12 +117,14 @@ Topic mapping is transcript-based, not visual scene understanding. Accuracy depe
 Open **Studio Editor · Timeline, split, speed, text, audio** after selecting a highlight. The Studio button also accepts all queued topics and places them together in one editing timeline. Studio now includes AI hook ideas, timed captions, picture looks, rotate/fit/fill controls, duplicate clip, and separate source/music volume sliders.
 - Preview the source video in a dedicated dark editing workspace.
 - Work with an ordered timeline of clip segments from the same source video. Queued topic titles appear on their timeline clips.
-- Split, delete, move, reorder, and undo timeline segments.
+- Split, duplicate, delete, move, reorder, trim, and undo timeline segments.
 - Trim the selected segment using Start and End fields, and scrub it with the playhead.
 - Change playback/export speed: 0.5×, 0.75×, 1×, 1.25×, 1.5×, or 2×.
-- Choose vertical 9:16, square 1:1, or landscape 16:9 output.
-- Add a text overlay (up to 140 characters), choose top/centre/bottom position, clean/bold/large style, and white/yellow/cyan text.
-- Mute the source video's audio or add one looping background music track. The selected music track replaces the source audio; separate track mixing and volume automation are not provided.
+- Choose vertical 9:16, square 1:1, or landscape 16:9 output. Choose Fill (crop edges) or Fit (keep the full frame), and rotate by 90°, 180°, or 270°.
+- Add a text overlay (up to 140 characters), choose top/centre/bottom position, clean/bold/large style, and white/yellow/cyan text. Use AI to generate three transcript-aware hook/title ideas, then edit the chosen wording and style.
+- Keep or mute the source audio, add one looping background music track, and adjust original-video and music volume separately. Music mixes underneath the source sound.
+- Turn on timed transcript captions to burn timestamp-matched caption lines into selected clips. Use **Edit timed caption words / timestamps** to correct transcript text before export. Captions are timed lines, not animated word-level karaoke captions.
+- Choose a Natural, Black & white, Negative, Bright, or Cinematic contrast look; fine-tune brightness and contrast. Picture changes and captions are rendered on export; the preview player shows source playback.
 - Export the ordered timeline as one MP4 (H.264/AAC). The combined Studio timeline is limited to 180 seconds.
 - Use separate batch export when you want each topic to become its own MP4 rather than combining them into one timeline.
 - After export, share the MP4 or open it again in Studio Editor for another edit.
@@ -451,13 +453,13 @@ A push that changes files under android/ or the workflow can trigger the build. 
 
 ## 17. Latest release
 
-- Release: 1.14.0
-- Version code: 19
-- Build result: successful.
-- Build run: [GitHub Actions run 44472698840](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44472698840)
+- Release: 1.15.0
+- Version code: 20
+- Build result: GitHub Actions verification in progress.
+- Build run: [Latest 1.15.0 build](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44493262712)
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)
-- APK size: 13,925,543 bytes (~13.9 MB).
-- SHA-256: `7630863f747e5bbef7082281507d21169423666a14e4e0e4f752595553097924`
+- APK size and SHA-256: will be recorded after the successful 1.15.0 release build.
+
 
 To verify a downloaded file on a computer, calculate its SHA-256 hash and compare it with the value above.
 
@@ -898,13 +900,13 @@ android/లో లేదా workflow fileలో మార్పులు push �
 
 ## 17. తాజా Release
 
-- Release: 1.14.0.
-- Version code: 19.
-- Build result: Successful.
-- Build run: [GitHub Actions run 44472698840](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44472698840).
+- Release: 1.15.0.
+- Version code: 20.
+- Build result: GitHub Actions verification in progress.
+- Build run: [Latest 1.15.0 build](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44493262712).
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk).
-- APK size: 13,925,543 bytes (~13.9 MB).
-- SHA-256: `7630863f747e5bbef7082281507d21169423666a14e4e0e4f752595553097924`.
+- APK size and SHA-256: successful 1.15.0 release build తర్వాత update చేస్తాను.
+
 
 Computerలో download చేసిన file verify చేయాలంటే దాని SHA-256 hash calculate చేసి పై విలువతో పోల్చండి.
 
@@ -1346,13 +1348,13 @@ android/ या workflow file में बदलाव push करने पर
 
 ## 17. Latest Release
 
-- Release: 1.14.0।
-- Version code: 19।
-- APK size: 13,925,543 bytes (~13.9 MB)।
-- Build result: Successful।
-- Build run: [GitHub Actions run 44472698840](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44472698840)।
+- Release: 1.15.0।
+- Version code: 20।
+- APK size और SHA-256: सफल 1.15.0 release build के बाद update होंगे।
+- Build result: GitHub Actions verification in progress।
+- Build run: [Latest 1.15.0 build](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/actions/runs/44493262712)।
 - APK: [ShortsForge-Mobile.apk](https://github.com/dadimanohar/AI-VIDEO-AUTOMATION/releases/download/mobile-latest/ShortsForge-Mobile.apk)。
-- SHA-256: `7630863f747e5bbef7082281507d21169423666a14e4e0e4f752595553097924`।
+
 
 Computer पर downloaded file verify करने के लिए उसका SHA-256 hash calculate करके ऊपर दिए गए value से compare करें।
 

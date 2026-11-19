@@ -118,6 +118,7 @@ class MainActivity : ComponentActivity() {
     private var highlightItems: List<Highlight> = emptyList()
     private var selectedHighlightIndex = -1
     private val queuedHighlightIndices = linkedSetOf<Int>()
+    private val queuedHighlightRanges = linkedMapOf<Int, Pair<Double, Double>>()
     private var previewStopTask: Runnable? = null
     private var clipDurationSeconds = 60
     private var startText = "0"
@@ -490,8 +491,12 @@ class MainActivity : ComponentActivity() {
         ai.addView(button("Add all detected topics to Shorts queue", false) {
             var added = 0
             highlightItems.indices.forEach { index -> if (setHighlightQueued(index, true)) added++ }
+            val longTopics = highlightItems.count { item ->
+                item.start != null && item.end != null && item.end - item.start > 180.0
+            }
             showHighlights(highlightItems)
-            setStatus(added.toString() + " topic(s) are now in your Shorts queue. You can remove any topic individually.")
+            setStatus(added.toString() + " topic(s) queued. " + longTopics +
+                " long topic(s) stay in the map; select one, trim Start/End to 180 seconds or less, then add it separately.")
         }, full(dp(6)))
 
         val edit = card(body, "03  •  EDIT YOUR SHORT", "Tap a topic to load its exact timestamps. Add multiple topics to a single Studio timeline or export each topic separately.")
@@ -503,6 +508,7 @@ class MainActivity : ComponentActivity() {
         edit.addView(batchExportButton, full(dp(7)))
         edit.addView(button("Clear Shorts topic queue", false) {
             queuedHighlightIndices.clear()
+            queuedHighlightRanges.clear()
             refreshQueueControls()
             showHighlights(highlightItems)
             setStatus("Shorts topic queue cleared. The current highlight remains selected.")
@@ -1816,9 +1822,13 @@ $chunkText
 
     private fun showHighlights(items: List<Highlight>) {
         if (!::highlightsView.isInitialized) return
-        if (items !== highlightItems) queuedHighlightIndices.clear()
+        if (items !== highlightItems) {
+            queuedHighlightIndices.clear()
+            queuedHighlightRanges.clear()
+        }
         highlightItems = items
         queuedHighlightIndices.removeAll { it !in items.indices }
+        queuedHighlightRanges.keys.removeAll { it !in items.indices }
         if (::topicMapSummaryView.isInitialized) {
             topicMapSummaryView.text = if (items.isEmpty()) "VIDEO TOPIC MAP  ·  No timestamped topics found" else
                 "VIDEO TOPIC MAP  ·  " + items.size + " topics detected  ·  chronological order"
@@ -1912,18 +1922,37 @@ $chunkText
 
     private fun setHighlightQueued(index: Int, add: Boolean): Boolean {
         val item = highlightItems.getOrNull(index) ?: return false
-        val start = item.start ?: return false
-        val end = item.end ?: return false
-        if (end <= start) return false
+        val topicStart = item.start ?: return false
+        val topicEnd = item.end ?: return false
+        if (topicEnd <= topicStart) return false
         if (!add) {
             queuedHighlightIndices.remove(index)
+            queuedHighlightRanges.remove(index)
             refreshQueueControls()
             return true
         }
         if (index in queuedHighlightIndices) return true
-        // Topic-map cards are chronological and can be queued independently; separate exports
-        // keep their own timestamp ranges and do not share the single-timeline duration cap.
+
+        var exportStart = topicStart
+        var exportEnd = topicEnd
+        if (index == selectedHighlightIndex && ::startEdit.isInitialized && ::endEdit.isInitialized) {
+            val editedStart = startEdit.text.toString().toDoubleOrNull()
+            val editedEnd = endEdit.text.toString().toDoubleOrNull()
+            if (editedStart != null && editedEnd != null &&
+                editedStart.isFinite() && editedEnd.isFinite() &&
+                editedStart >= topicStart && editedEnd <= topicEnd && editedEnd > editedStart) {
+                exportStart = editedStart
+                exportEnd = editedEnd
+            }
+        }
+        if (exportEnd - exportStart > 180.0) {
+            setStatus("This complete topic is longer than 180 seconds. Select the card, shorten Start/End to a range of 180 seconds or less, then add it to the Shorts queue.")
+            return false
+        }
+        if (durationMs > 0L && exportEnd * 1000.0 > durationMs + 250.0) return false
+
         queuedHighlightIndices.add(index)
+        queuedHighlightRanges[index] = Pair(exportStart, exportEnd)
         refreshQueueControls()
         return true
     }
@@ -1931,8 +1960,12 @@ $chunkText
     private fun refreshQueueControls() {
         if (::queueSummaryView.isInitialized) {
             val totalMs = queuedHighlightIndices.sumOf { index ->
-                val item = highlightItems.getOrNull(index)
-                if (item?.start != null && item.end != null) ((item.end - item.start) * 1000.0).toLong() else 0L
+                val range = queuedHighlightRanges[index]
+                if (range != null) ((range.second - range.first) * 1000.0).toLong()
+                else {
+                    val item = highlightItems.getOrNull(index)
+                    if (item?.start != null && item.end != null) ((item.end - item.start) * 1000.0).toLong() else 0L
+                }
             }
             queueSummaryView.text = if (queuedHighlightIndices.isEmpty()) {
                 "No topics queued. The Video Topic Map is chronological. Add any number of detected topics to export separate Shorts."
@@ -2197,9 +2230,10 @@ $chunkText
         val uri = selectedVideo ?: run { setStatus("Choose a video first."); return }
         val chosen = queuedHighlightIndices.mapNotNull { index ->
             val item = highlightItems.getOrNull(index) ?: return@mapNotNull null
-            val from = item.start ?: return@mapNotNull null
-            val to = item.end ?: return@mapNotNull null
-            if (to <= from) null else item
+            val range = queuedHighlightRanges[index]
+            val from = range?.first ?: item.start ?: return@mapNotNull null
+            val to = range?.second ?: item.end ?: return@mapNotNull null
+            if (to <= from) null else item.copy(start = from, end = to)
         }
         val ranges = if (chosen.isNotEmpty()) {
             chosen.flatMap { item -> listOf((item.start!! * 1000).toLong(), (item.end!! * 1000).toLong()) }.toLongArray()
@@ -2233,14 +2267,19 @@ $chunkText
             setStatus("Choose a source video before exporting topics.")
             return
         }
-        val topics = queuedHighlightIndices.mapNotNull { index -> highlightItems.getOrNull(index) }
-            .filter { item ->
-                val a = item.start
-                val b = item.end
-                a != null && b != null && a >= 0.0 && b > a &&
-                    (durationMs <= 0L || b * 1000.0 <= durationMs + 250.0) &&
-                    b - a <= 180.0
-            }
+        val topics = queuedHighlightIndices.mapNotNull { index ->
+            val item = highlightItems.getOrNull(index) ?: return@mapNotNull null
+            val range = queuedHighlightRanges[index]
+            val a = range?.first ?: item.start ?: return@mapNotNull null
+            val b = range?.second ?: item.end ?: return@mapNotNull null
+            item.copy(start = a, end = b)
+        }.filter { item ->
+            val a = item.start
+            val b = item.end
+            a != null && b != null && a >= 0.0 && b > a &&
+                (durationMs <= 0L || b * 1000.0 <= durationMs + 250.0) &&
+                b - a <= 180.0
+        }
         if (topics.isEmpty()) {
             setStatus("Add at least one valid timestamped topic to the Shorts queue.")
             return

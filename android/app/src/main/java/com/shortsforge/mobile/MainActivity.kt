@@ -181,6 +181,12 @@ class MainActivity : ComponentActivity() {
 
     private val pickVideo = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
+            if (busy) {
+                setStatus("A video analysis or export is still running. Wait for it to finish before switching the source.")
+                return@registerForActivityResult
+            }
+            val preserveMarkers = pendingYoutubeStartSeconds != null && pendingYoutubeEndSeconds != null
+            clearCurrentVideoProject(preserveYoutubeMarkers = preserveMarkers, updateStatus = false)
             selectedVideo = uri
             try { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch (_: Exception) { }
             videoName = displayName(uri)
@@ -197,7 +203,7 @@ class MainActivity : ComponentActivity() {
                 endEdit.setText(endText)
                 refreshFooter()
             }
-            setStatus("Video ready. Starting full-video analysis when the selected AI provider is configured.")
+            setStatus("New source loaded. Previous video transcript, topics and queue were cleared. Starting full-video analysis when the selected AI provider is configured.")
             autoStartAnalysisForSelectedSource()
         }
     }
@@ -356,6 +362,9 @@ class MainActivity : ComponentActivity() {
                 val localUri = android.net.Uri.fromFile(outFile)
                 val importedDuration = readDuration(localUri)
                 runOnUiThread {
+                    busy = false
+                    val preserveMarkers = pendingYoutubeStartSeconds != null && pendingYoutubeEndSeconds != null
+                    clearCurrentVideoProject(preserveYoutubeMarkers = preserveMarkers, updateStatus = false)
                     selectedVideo = localUri
                     videoName = outFile.name
                     durationMs = importedDuration
@@ -370,9 +379,8 @@ class MainActivity : ComponentActivity() {
                         startEdit.setText(startText)
                         endEdit.setText(endText)
                     }
-                    busy = false
                     refreshFooter()
-                    setStatus("Downloaded video imported successfully. Starting full-video topic discovery…")
+                    setStatus("Downloaded video imported successfully. Previous video content was cleared. Starting full-video topic discovery…")
                     autoStartAnalysisForSelectedSource()
                 }
             } catch (e: Exception) {
@@ -408,6 +416,149 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun showSourceManagementDialog() {
+        if (busy || batchExportActive) {
+            setStatus("A transcription, topic analysis or export is still running. Wait for it to finish before switching videos.")
+            return
+        }
+        val choices = arrayOf(
+            "Choose a different video",
+            "Remove current video and clear its related content"
+        )
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Switch or remove source video")
+            .setItems(choices) { _, which ->
+                when (which) {
+                    0 -> {
+                        // Keep the current project intact unless the user actually chooses a replacement.
+                        pickVideo.launch(arrayOf("video/*"))
+                    }
+                    1 -> confirmClearCurrentVideoProject()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun confirmClearCurrentVideoProject() {
+        if (busy || batchExportActive) {
+            setStatus("Wait for the current operation to finish before clearing this video.")
+            return
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Clear current video project?")
+            .setMessage(
+                "This clears the selected source from ShortsForge, its transcript, detected topic cards, " +
+                    "selected timestamps, Shorts queue, YouTube preview markers and video-specific text overlay.\n\n" +
+                    "It deletes only imported copies stored inside ShortsForge. It does not delete your original phone video, " +
+                    "exported Shorts, API keys, settings or downloaded Qwen3/Whisper models."
+            )
+            .setNegativeButton("Keep this video", null)
+            .setPositiveButton("Clear video and analysis") { _, _ ->
+                clearCurrentVideoProject()
+            }
+            .show()
+    }
+
+    /**
+     * Clears only the active video workspace. Original files selected through Android's picker,
+     * finished exports, API credentials and offline model files are deliberately preserved.
+     * App-owned copies imported from Share/YTDLnis or an authorized direct-file URL are deleted.
+     */
+    private fun clearCurrentVideoProject(
+        preserveYoutubeMarkers: Boolean = false,
+        updateStatus: Boolean = true
+    ): Boolean {
+        if (busy || batchExportActive) {
+            setStatus("A transcription, analysis or export is still running. Wait for it to finish before clearing the current video.")
+            return false
+        }
+
+        val oldSource = selectedVideo
+        previewStopTask?.let { handler.removeCallbacks(it) }
+        previewStopTask = null
+        try {
+            player?.pause()
+            player?.clearMediaItems()
+        } catch (_: Exception) { }
+
+        if (oldSource != null) {
+            if (oldSource.scheme == "content") {
+                try {
+                    contentResolver.releasePersistableUriPermission(
+                        oldSource,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (_: Exception) { }
+            } else if (oldSource.scheme == "file") {
+                val oldFile = runCatching { File(oldSource.path.orEmpty()).canonicalFile }.getOrNull()
+                if (oldFile != null) {
+                    val managedFolders = listOf(
+                        File(filesDir, "shared-video-imports"),
+                        File(filesDir, "imported-videos")
+                    )
+                    val isManagedCopy = managedFolders.any { folder ->
+                        val rootPath = runCatching { folder.canonicalPath + File.separator }.getOrNull()
+                        rootPath != null && oldFile.path.startsWith(rootPath)
+                    }
+                    if (isManagedCopy) runCatching { oldFile.delete() }
+                }
+            }
+        }
+
+        // Remove only transient audio extraction files, never source videos, exports or AI models.
+        cacheDir.listFiles()?.filter { file ->
+            file.name.startsWith("sf-local-") && (file.extension == "wav" || file.extension == "pcm") ||
+                file.name.startsWith("sf-audio-") && file.extension == "m4a"
+        }?.forEach { runCatching { it.delete() } }
+
+        selectedVideo = null
+        videoName = ""
+        durationMs = 0L
+        transcript = ""
+        highlightItems = emptyList()
+        selectedHighlightIndex = -1
+        queuedHighlightIndices.clear()
+        queuedHighlightRanges.clear()
+        batchExportItems = emptyList()
+        batchExportIndex = 0
+        batchExportUris.clear()
+        batchExportActive = false
+        startText = "0"
+        endText = "30"
+        overlayText = ""
+        directVideoUrlText = ""
+
+        if (!preserveYoutubeMarkers) {
+            youtubeUrlText = ""
+            youtubeTitle = ""
+            pendingYoutubeStartSeconds = null
+            pendingYoutubeEndSeconds = null
+        }
+
+        if (::videoNameView.isInitialized) videoNameView.text = "No video selected"
+        if (::videoDurationView.isInitialized) videoDurationView.text = "MP4, MOV and Android-supported formats"
+        if (::playerView.isInitialized) playerView.visibility = View.GONE
+        if (::transcriptEdit.isInitialized) transcriptEdit.setText("")
+        if (::startEdit.isInitialized) startEdit.setText(startText)
+        if (::endEdit.isInitialized) endEdit.setText(endText)
+        if (::overlayEdit.isInitialized) overlayEdit.setText("")
+        if (::directVideoUrlEdit.isInitialized) directVideoUrlEdit.setText("")
+        if (!preserveYoutubeMarkers && ::youtubeUrlEdit.isInitialized) youtubeUrlEdit.setText("")
+        if (::topicMapSummaryView.isInitialized) topicMapSummaryView.text = "VIDEO TOPIC MAP  ·  Waiting for transcript analysis"
+        if (::highlightsView.isInitialized) {
+            highlightsView.removeAllViews()
+            highlightsView.addView(
+                text("Choose a video and analyse it to discover its topic cards.", 12f, muted)
+                    .apply { setPadding(0, dp(8), 0, 0) }
+            )
+        }
+        refreshQueueControls()
+        if (updateStatus) setStatus("Current video removed. Its transcript, topics, timestamps and Shorts queue have been cleared. Choose another video to start a new project.")
+        else refreshFooter()
+        return true
+    }
+
     private fun showEditor() {
         root.removeAllViews()
         root.addView(toolbar("ShortsForge", "MOBILE SHORTS STUDIO", "Settings") { showSettings() })
@@ -422,6 +573,9 @@ class MainActivity : ComponentActivity() {
         source.addView(button("Choose video", true) { pickVideo.launch(arrayOf("video/*")) }, full())
         source.addView(button("Choose downloaded video · YTDLnis / Downloads", false) {
             pickVideo.launch(arrayOf("video/*"))
+        }, full(dp(7)))
+        source.addView(button("Switch / remove current video", false) {
+            showSourceManagementDialog()
         }, full(dp(7)))
         source.addView(text("You can also open YTDLnis → Share → ShortsForge to send a video file directly into this app. ShortsForge imports the shared file; it does not include YTDLnis or download YouTube streams.", 11f, muted)
             .apply { setPadding(0, dp(6), 0, dp(7)) })
@@ -2227,6 +2381,8 @@ $chunkText
                 val importedDuration = readDuration(importedUri)
                 if (importedDuration <= 0L) throw IOException("Android could not read the video's duration. The file may be unsupported or damaged.")
                 runOnUiThread {
+                    val preserveMarkers = pendingYoutubeStartSeconds != null && pendingYoutubeEndSeconds != null
+                    clearCurrentVideoProject(preserveYoutubeMarkers = preserveMarkers, updateStatus = false)
                     selectedVideo = importedUri
                     videoName = destination!!.name
                     durationMs = importedDuration
@@ -2246,7 +2402,7 @@ $chunkText
                     val markersMessage = if (pendingYoutubeStartSeconds != null && pendingYoutubeEndSeconds != null) {
                         " The saved YouTube preview markers were applied where they fit this source file."
                     } else ""
-                    setStatus("Authorized video file imported. Starting full-video topic discovery…" + markersMessage)
+                    setStatus("Authorized video file imported. Previous video content was cleared. Starting full-video topic discovery…" + markersMessage)
                     autoStartAnalysisForSelectedSource()
                 }
                 partial?.delete()

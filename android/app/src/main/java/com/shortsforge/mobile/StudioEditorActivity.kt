@@ -505,7 +505,7 @@ class StudioEditorActivity : ComponentActivity() {
             buttonTintList = android.content.res.ColorStateList.valueOf(accent)
             setOnCheckedChangeListener { _, checked ->
                 muteOriginalAudio = checked
-                setStatus(if (checked) "Original video audio will be removed on export." else "Original video audio will be kept unless a music track replaces it.")
+                setStatus(if (checked) "Original video audio will be removed on export." else "Original video sound will remain and can mix with background music.")
             }
         }
         panel.addView(muteCheck, full())
@@ -876,7 +876,7 @@ class StudioEditorActivity : ComponentActivity() {
     private data class TimedCaption(val startMs: Long, val endMs: Long, val text: String)
 
     private fun buildTimedCaptionEffects(segment: ClipSegment): List<androidx.media3.common.Effect> {
-        val stamp = Regex("""^\\s*\\[\\s*(\\d{1,3}:\\d{2}(?:\\.\\d{1,3})?)\\s*[-–]\\s*(\\d{1,3}:\\d{2}(?:\\.\\d{1,3})?)\\s*\\]\\s*(.*)$""")
+        val stamp = Regex("""^\s*\[\s*(\d{1,3}:\d{2}(?:\.\d{1,3})?)\s*[-–]\s*(\d{1,3}:\d{2}(?:\.\d{1,3})?)\s*\]\s*(.*)$""")
         val segmentStart = segment.startMs
         val segmentEnd = segment.endMs
         val captions = transcriptContext.lineSequence().mapNotNull { line ->
@@ -889,7 +889,7 @@ class StudioEditorActivity : ComponentActivity() {
             val clippedEnd = minOf(sourceEnd, segmentEnd)
             if (clippedEnd - clippedStart < 100L) return@mapNotNull null
             TimedCaption(clippedStart - segmentStart, clippedEnd - segmentStart, text)
-        }.toList().take(500)
+        }.toList().take(200)
 
         return captions.map { caption ->
             val span = SpannableString(caption.text)

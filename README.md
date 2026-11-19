@@ -1727,6 +1727,7 @@ This update addresses the supplied screen recording where timestamped transcript
 - Chunk-relative AI timestamps are shifted to the original video timeline when detected.
 - Coherent topics longer than 180 seconds remain in the topic index. The 180-second restriction remains for a single MP4 Short export, so trim a longer topic before exporting it as one Short.
 - The previous card design remains: title, start/end, duration, category, importance, explanation, selected state, topic playback and queue controls.
+- For a topic longer than 180 seconds, select its card, edit Start/End to a range of 180 seconds or less, then queue it. The edited range is preserved for batch MP4 export and Studio; the original full-topic card timestamps remain unchanged.
 - YTDLnis stays a separate app. ShortsForge sends a link to it and imports the completed video through Android Share or Downloads; native YouTube stream extraction is not bundled.
 
 # Version 1.13.0 నవీకరణ — తెలుగు
@@ -1740,6 +1741,7 @@ This update addresses the supplied screen recording where timestamped transcript
 - Chunk-relative timestampsను గుర్తిస్తే original video timelineకు మార్చుతుంది.
 - 180 seconds కంటే ఎక్కువ ఉండే coherent topic కూడా Topic Mapలో కనిపిస్తుంది. ఒక్క Short exportకు 180-second limit కొనసాగుతుంది; పొడవైన topicను exportకు ముందు trim చేయాలి.
 - పాత card design అలాగే ఉంటుంది: title, start/end, duration, category, importance, explanation, selected status, topic playback మరియు queue controls.
+- 180 seconds కంటే ఎక్కువ topic కోసం card select చేసి Start/Endను 180 seconds లోపు మార్చి queue చేయండి. ఆ custom range batch MP4 export మరియు Studioలో అలాగే ఉపయోగించబడుతుంది; అసలు పూర్తి topic timestamps cardలో మారవు.
 - YTDLnis వేరే appగానే ఉంటుంది. ShortsForge linkను దానికి పంపి, download అయిన fileను Android Share లేదా Downloads ద్వారా import చేస్తుంది; native YouTube stream downloaderను bundle చేయదు.
 
 # Version 1.13.0 अपडेट — हिन्दी
@@ -1753,4 +1755,5 @@ This update addresses the supplied screen recording where timestamped transcript
 - Chunk-relative timestamps पहचाने जाने पर original video timeline से align किए जाते हैं।
 - 180 सेकंड से लंबे coherent topics भी Topic Map में रहेंगे। एक Short export की सीमा 180 सेकंड ही है; लंबे topic को export से पहले trim करें।
 - पुराना card design बना रहेगा: title, start/end, duration, category, importance, explanation, selected status, topic playback और queue controls।
+- 180 सेकंड से लंबे topic के लिए card चुनें, Start/End को 180 सेकंड या उससे कम करें और queue में जोड़ें। यह custom range batch MP4 export और Studio में सुरक्षित रहेगा; मूल full-topic timestamps card में नहीं बदलेंगे।
 - YTDLnis अलग app रहेगा। ShortsForge link को YTDLnis भेजता है और download की गई file Android Share या Downloads से import करता है; native YouTube stream downloader शामिल नहीं है।

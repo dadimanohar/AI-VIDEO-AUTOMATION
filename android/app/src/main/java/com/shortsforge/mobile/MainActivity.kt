@@ -11,7 +11,6 @@ import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
-import android.media.MediaMuxer
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -949,13 +948,17 @@ class MainActivity : ComponentActivity() {
         if (busy) return
         busy = true
         refreshFooter()
-        setStatus("Preparing audio from the selected video…")
+        setStatus("Decoding source audio to a speech-ready 16 kHz mono WAV…")
         executor.execute {
             var audio: File? = null
             try {
-                audio = extractAudio(uri)
-                if (audio.length() > 24L * 1024L * 1024L) throw IOException("Audio exceeds the provider upload limit. Use a shorter source or paste a transcript.")
-                runOnUiThread { setStatus("Transcribing speech and creating timestamps…") }
+                // Decode to PCM/WAV instead of copying the source codec into an MP4 container.
+                // MediaMuxer rejects some audio MIME formats (for example, Opus in MP4).
+                audio = extractWav16kMono(uri)
+                if (audio.length() > 24L * 1024L * 1024L) {
+                    throw IOException("Decoded WAV exceeds the 24 MB transcription upload limit. Use a shorter source video or import a timestamped transcript.")
+                }
+                runOnUiThread { setStatus("Uploading WAV audio and transcribing speech with timestamps…") }
                 val result = transcribe(audio, key, provider)
                 if (result.isBlank()) throw IOException("No speech was detected. You can paste a transcript manually.")
                 runOnUiThread {
@@ -1417,59 +1420,13 @@ $chunkText
         } catch (e: Exception) {
             rawPcm.delete()
             wavFile.delete()
-            throw IOException("Could not prepare local Whisper audio: " + (e.message ?: "audio decoder error"), e)
+            throw IOException("Could not decode the selected video's audio to a 16 kHz mono WAV: " + (e.message ?: "unsupported audio codec"), e)
         } finally {
             try { if (decoderStarted) decoder?.stop() } catch (_: Exception) { }
             try { decoder?.release() } catch (_: Exception) { }
             try { extractor.release() } catch (_: Exception) { }
             rawPcm.delete()
         }
-    }
-
-    private fun extractAudio(uri: android.net.Uri): File {
-        val extractor = MediaExtractor()
-        var muxer: MediaMuxer? = null
-        var started = false
-        val file = File(cacheDir, "sf-audio-" + System.currentTimeMillis() + ".m4a")
-        try {
-            extractor.setDataSource(this, uri, null)
-            var track = -1
-            var format: MediaFormat? = null
-            for (i in 0 until extractor.trackCount) {
-                val f = extractor.getTrackFormat(i)
-                if ((f.getString(MediaFormat.KEY_MIME) ?: "").startsWith("audio/")) { track = i; format = f; break }
-            }
-            if (track < 0 || format == null) throw IOException("The selected video has no audio track.")
-            extractor.selectTrack(track)
-            muxer = MediaMuxer(file.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
-            val dest = muxer.addTrack(format)
-            muxer.start()
-            started = true
-            val declaredBufferSize = try { format.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE) } catch (_: Exception) { 0 }
-            val bufferSize = maxOf(1_048_576, declaredBufferSize)
-            val buffer = java.nio.ByteBuffer.allocateDirect(bufferSize)
-            val info = MediaCodec.BufferInfo()
-            while (true) {
-                buffer.clear()
-                val size = extractor.readSampleData(buffer, 0)
-                if (size < 0) break
-                info.offset = 0
-                info.size = size
-                info.presentationTimeUs = extractor.sampleTime
-                info.flags = extractor.sampleFlags
-                muxer.writeSampleData(dest, buffer, info)
-                if (!extractor.advance()) break
-            }
-        } catch (e: Exception) {
-            file.delete()
-            throw IOException("Could not read the video's audio: " + (e.message ?: "unsupported format"), e)
-        } finally {
-            try { if (started) muxer?.stop() } catch (_: Exception) { }
-            try { muxer?.release() } catch (_: Exception) { }
-            try { extractor.release() } catch (_: Exception) { }
-        }
-        if (!file.exists() || file.length() == 0L) throw IOException("No audio samples were extracted.")
-        return file
     }
 
     private fun transcribe(file: File, key: String, providerId: Int): String {
@@ -1479,7 +1436,7 @@ $chunkText
             .addFormDataPart("model", model)
             .addFormDataPart("response_format", "verbose_json")
             .addFormDataPart("timestamp_granularities[]", "segment")
-            .addFormDataPart("file", file.name, file.asRequestBody("audio/mp4".toMediaType()))
+            .addFormDataPart("file", file.name, file.asRequestBody("audio/wav".toMediaType()))
             .build()
         val req = Request.Builder().url(url).header("Authorization", "Bearer " + key).post(body).build()
         http.newCall(req).execute().use { response ->

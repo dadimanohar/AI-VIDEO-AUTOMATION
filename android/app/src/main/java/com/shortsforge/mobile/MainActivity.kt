@@ -102,7 +102,6 @@ class MainActivity : ComponentActivity() {
         .build()
     private val qwenModelName = "Qwen3-0.6B-Q4_0.gguf"
     private val videoExtensions = setOf("mp4", "mov", "m4v", "webm", "mkv", "3gp")
-    private val maxTopicMapItems = 60
     private val whisperModelName = "ggml-base.bin"
     private val handler = Handler(Looper.getMainLooper())
     private val progressHolder = ProgressHolder()
@@ -986,13 +985,13 @@ class MainActivity : ComponentActivity() {
                     val prompt = """
 Build a chronological VIDEO TOPIC MAP for this transcript segment. This is NOT just a top-highlights list.
 Identify every meaningful distinct topic, subtopic, question-and-answer exchange, story, announcement, explanation, example, debate, prediction, practical lesson and conclusion actually discussed in this segment.
-Return ONLY a JSON array with up to 5 distinct topic segments:
+Return ONLY a JSON array with up to 10 distinct topic segments. Include every meaningful topic supported by this segment.
 [{"start_seconds":120.5,"end_seconds":164.2,"hook":"Clear specific topic title","reason":"What is discussed and why the viewer may care","category":"Question and answer","importance_score":9}]
 Rules:
 - Put topics in chronological order. Do not rank/reorder them by importance.
 - Use exact start and end boundaries supported by the transcript timestamps. Convert mm:ss.cc to seconds from the beginning of the original video.
 - Each topic must describe a coherent continuous section, not one isolated sentence.
-- Keep each topic suitable for a Short: normally 20–150 seconds and never over 180 seconds. Split a longer discussion into meaningful subtopics where the transcript supports it.
+- A topic may be shorter than 20 seconds when it contains a complete, meaningful point. Prefer natural content boundaries over fixed durations. Keep each exportable topic at or below 180 seconds; split longer discussions only at real subject or context boundaries.
 - Include the question with its answer when needed for context. Preserve complete thoughts.
 - Do not invent timestamps, events, names, facts or topics. Do not duplicate a topic from another segment.
 - Give each title a clear subject, not generic text such as "Important point".
@@ -1006,7 +1005,7 @@ $chunkText
                             model,
                             prompt = prompt,
                             systemPrompt = "You are a factual long-form video topic mapper. Cover the segment comprehensively, preserve chronology and timestamps, and return strict JSON only.",
-                            maxTokens = 720
+                            maxTokens = 1400
                         )
                     }
                     candidates.addAll(parseHighlights(answer.text))
@@ -1330,14 +1329,14 @@ Look for:
 - Product launches, announcements, facts and claims.
 - Opinions, debates, predictions and practical lessons.
 - Topic changes, transitions and the conclusion.
-Return ONLY a valid JSON array with up to 8 topic segments for this transcript segment.
+Return ONLY a valid JSON array with up to 16 topic segments for this transcript segment. Identify all meaningful topics supported by this segment; do not stop early merely because several topics have already been found.
 Exact shape:
 [{"start_seconds":120.5,"end_seconds":164.2,"hook":"Specific topic title","reason":"What is discussed in this section and why it matters","category":"Question and answer","importance_score":9}]
 Topic segmentation rules:
 1. List topics in chronological order. Never sort the list by importance.
 2. Use exact numeric start_seconds and end_seconds from transcript timing boundaries. They are seconds from the beginning of the ORIGINAL video.
 3. A topic covers the continuous section where that subject is discussed, with its real beginning and ending. Do not use a generic 60/90-second window as the topic timestamp.
-4. Each topic should normally be 20–150 seconds and must not exceed 180 seconds. Split a longer discussion into coherent subtopics at supported topic boundaries.
+4. A topic may be shorter than 20 seconds when it contains a complete, meaningful point. Prefer natural content boundaries over fixed durations. Keep a single topic at or below 180 seconds; split longer discussions into coherent subtopics only at real subject or context boundaries.
 5. Include every meaningful distinct topic; do not limit results to only eight for the whole video. This response covers only one overlapping transcript chunk. Other chunks will be analysed and merged.
 6. Include the complete question with its answer when needed for context. Do not start halfway through an answer or end mid-sentence.
 7. Do not invent or guess timestamps, speakers, topics, statements or facts. Use only content supported by this transcript segment.
@@ -1444,7 +1443,7 @@ $chunkText
                 )
             )
         }
-        return out.take(maxTopicMapItems)
+        return out
     }
 
     private fun normalizeTopicMap(candidates: List<Highlight>): List<Highlight> {
@@ -1471,7 +1470,7 @@ $chunkText
                 merged.add(candidate)
             }
         }
-        return merged.sortedBy { it.start }.take(maxTopicMapItems)
+        return merged.sortedBy { it.start }
     }
 
     private fun suggestionSelectedStatus(index: Int): String =
@@ -1531,6 +1530,8 @@ $chunkText
             if (item.start != null && item.end != null) {
                 row.addView(text(clock(item.start) + "  →  " + clock(item.end), 12f, accent, true)
                     .apply { setPadding(0, dp(5), 0, 0) })
+                row.addView(text("Duration  " + clock(item.end - item.start), 11f, muted, true)
+                    .apply { setPadding(0, dp(3), 0, 0) })
             } else {
                 row.addView(text("Timestamp unavailable", 12f, accent, true)
                     .apply { setPadding(0, dp(5), 0, 0) })

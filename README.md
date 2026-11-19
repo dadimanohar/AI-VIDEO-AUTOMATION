@@ -8,8 +8,8 @@ Turn a long interview, podcast, lecture, or other video file into short clips by
 | App detail | Value |
 |---|---|
 | App name | ShortsForge Mobile |
-| Current release | 1.9.0 |
-| Version code | 13 |
+| Current release | 1.10.0 |
+| Version code | 14 |
 | Android package | `com.shortsforge.mobile` |
 | Minimum Android version | Android 8.0 (API 26) |
 | APK size | About 13.91 MB |
@@ -26,7 +26,7 @@ Turn a long interview, podcast, lecture, or other video file into short clips by
 
 ShortsForge Mobile is an Android-first video clipping studio for creators, students, podcasters, educators, and editors who work with long-form recordings.
 
-The app analyses the full timestamped transcript in overlapping sections and creates a chronological Video Topic Map. It can return up to 60 distinct topic segments, including introductions, background, subtopics, question-and-answer exchanges, stories, announcements, explanations, examples, debates, predictions, lessons and conclusions. Every topic card has a title, exact suggested time range, category, importance score and explanation. Tap a card to select its timestamps or play that topic, queue individual topics, or export multiple topics as separate Shorts.
+The app analyses the full timestamped transcript in overlapping sections and creates a chronological Video Topic Map. It builds a chronological topic map without a fixed global 60-topic cutoff, including introductions, background, subtopics, question-and-answer exchanges, stories, announcements, explanations, examples, debates, predictions, lessons and conclusions. Every topic card has a title, exact suggested time range, category, importance score and explanation. Tap a card to select its timestamps or play that topic, queue individual topics, or export multiple topics as separate Shorts.
 
 The app is a **clip-selection and export tool**. It is not currently a full video-generation suite, a YouTube downloader, or an automatic YouTube publishing service.
 
@@ -79,7 +79,7 @@ The intended workflow is:
 - Cloud AI processes transcript windows of 80 non-empty lines with a 16-line overlap. It requests up to eight topic segments per window, then merges duplicate/overlapping results.
 - Offline Qwen3 processes windows of 36 non-empty lines with an 8-line overlap and requests up to five topic segments per window.
 - Results are sorted chronologically by source-video start time, not ranked into a viral-first order.
-- The map supports up to 60 topic cards per analysis.
+- No fixed global 60-topic cutoff is applied. Cloud analysis requests up to 16 topic candidates per transcript window; offline Qwen3 requests up to 10 per window. The final number depends on transcript content, model output, and successful processing.
 - Topic types include introduction, background, each distinct subject/subtopic, complete Q&A, stories, examples, announcements, explanations, opinions, debates, predictions, practical advice and conclusions.
 - Each card shows a specific title, exact start/end time, category, importance (1–10 when returned), and a short explanation of what is discussed.
 - Tap a card to load that topic's exact timestamps into the Start/End fields.
@@ -88,7 +88,7 @@ The intended workflow is:
 - Export queued topics as separate MP4 Shorts, or send selected topics together into the Studio timeline.
 - Overlapping duplicate candidates from adjacent transcript chunks are merged before display.
 
-Topic mapping is transcript-based, not visual scene understanding. Accuracy depends on transcript quality, timestamp accuracy and the AI model. It is capped at 60 displayed topics per analysis; the map cannot promise that every tiny conversational shift will be detected. Cloud topic mapping makes multiple AI requests for long transcripts, so provider token/request charges can be higher than the previous single-request, eight-highlight approach. The smaller offline model may miss topics that a larger cloud model identifies.
+Topic mapping is transcript-based, not visual scene understanding. Accuracy depends on transcript quality, timestamp accuracy and the AI model. There is no fixed global 60-card cap, but the map still cannot guarantee detection of every tiny conversational shift; results depend on transcript quality, timestamps, model output, and successful processing. Cloud topic mapping makes multiple AI requests for long transcripts, so provider token/request charges can be higher than the previous single-request, eight-highlight approach. The smaller offline model may miss topics that a larger cloud model identifies.
 
 
 
@@ -530,7 +530,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 - Cloud AI ప్రతి sectionలో 80 non-empty transcript linesను 16-line overlapతో process చేసి, ఒక్క sectionకు గరిష్ఠంగా 8 topic segments అడుగుతుంది. తర్వాత duplicate/overlap results merge అవుతాయి.
 - Offline Qwen3 ప్రతి sectionలో 36 non-empty linesను 8-line overlapతో process చేసి, ఒక్క sectionకు గరిష్ఠంగా 5 topics అడుగుతుంది.
 - Results importance ఆధారంగా కాకుండా source-video Start time ఆధారంగా chronological orderలో చూపబడతాయి.
-- ఒక్క analysisలో గరిష్ఠంగా 60 topic cards చూపిస్తుంది.
+- ఒక్క analysisలో fixed global 60-topic limit లేదు. Cloud AI ప్రతి transcript windowకు 16 వరకు candidates, Offline Qwen3 ప్రతి windowకు 10 వరకు candidates కోరుతుంది. మొత్తం topics సంఖ్య transcript మరియు model outputపై ఆధారపడి ఉంటుంది.
 - Topic types: introduction, background, వేర్వేరు subjects/subtopics, complete Q&A, stories, examples, announcements, explanations, opinions, debates, predictions, practical advice మరియు conclusions.
 - ప్రతి cardలో specific title, exact Start/End timestamps, category, importance score (model ఇచ్చినప్పుడు 1–10), ఆ topicలో ఏమి చర్చించారో చిన్న explanation ఉంటుంది.
 - Card నొక్కితే ఆ topic exact timestamps Start/End fieldsలోకి వస్తాయి.
@@ -539,7 +539,7 @@ ShortsForge Mobile అనేది Android ఫోన్ల కోసం తయ�
 - Queueలోని topicsను వేరువేరు MP4 Shortsగా export చేయవచ్చు లేదా selected topicsను Studio timelineలో కలిపి edit చేయవచ్చు.
 - పక్కపక్కన ఉన్న transcript sectionsలో వచ్చిన overlapping duplicate topicsను displayకు ముందు merge చేస్తుంది.
 
-Topic Map transcript ఆధారంగా పని చేస్తుంది; videoలోని visual scenesను స్వయంగా అర్థం చేసుకోదు. Transcript quality, timestamp accuracy, AI model నాణ్యతపై ఫలితాలు ఆధారపడతాయి. ఒక్క analysisలో గరిష్ఠం 60 topics మాత్రమే చూపిస్తుంది; ప్రతి చిన్న conversational shift తప్పకుండా గుర్తిస్తుందని హామీ లేదు. Long transcriptsకు Cloud AI అనేక requests పంపుతుంది కాబట్టి పాత single-request 8-highlights విధానంతో పోలిస్తే API/token charges ఎక్కువ కావచ్చు. చిన్న offline model పెద్ద cloud model గుర్తించే కొన్ని topicsను మిస్ చేయవచ్చు.
+Topic Map transcript ఆధారంగా పని చేస్తుంది; videoలోని visual scenesను స్వయంగా అర్థం చేసుకోదు. Transcript quality, timestamp accuracy, AI model నాణ్యతపై ఫలితాలు ఆధారపడతాయి. ఇప్పుడు fixed global 60-topic cap లేదు; అయినప్పటికీ ప్రతి చిన్న conversational shift తప్పకుండా గుర్తిస్తుందని హామీ లేదు. Long transcriptsకు Cloud AI అనేక requests పంపుతుంది కాబట్టి పాత single-request 8-highlights విధానంతో పోలిస్తే API/token charges ఎక్కువ కావచ్చు. చిన్న offline model పెద్ద cloud model గుర్తించే కొన్ని topicsను మిస్ చేయవచ్చు.
 
 
 
@@ -977,7 +977,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 - Cloud AI हर section में 80 non-empty transcript lines को 16-line overlap के साथ process करता है और हर section से अधिकतम 8 topic segments मांगता है। बाद में duplicate/overlapping results merge किए जाते हैं।
 - Offline Qwen3 हर section में 36 non-empty lines को 8-line overlap के साथ process करता है और हर section से अधिकतम 5 topics मांगता है।
 - Results importance ranking के बजाय source-video के start time के अनुसार chronological order में दिखते हैं।
-- एक analysis में अधिकतम 60 topic cards दिखाए जाते हैं।
+- एक analysis पर fixed global 60-topic limit नहीं है। Cloud AI हर transcript window से अधिकतम 16 candidates और Offline Qwen3 हर window से अधिकतम 10 candidates माँगता है। कुल topics transcript और model output पर निर्भर हैं।
 - Topic types: introduction, background, अलग-अलग subjects/subtopics, complete Q&A, stories, examples, announcements, explanations, opinions, debates, predictions, practical advice और conclusions।
 - हर card में specific title, exact Start/End timestamps, category, model द्वारा मिलने पर 1–10 importance score और topic में क्या चर्चा हुई उसका छोटा explanation होता है।
 - Card दबाने पर उस topic के exact timestamps Start/End fields में आते हैं।
@@ -986,7 +986,7 @@ ShortsForge Mobile Android के लिए बनाया गया AI-सह�
 - Queue किए गए topics को अलग-अलग MP4 Shorts के रूप में export करें या selected topics को एक Studio timeline में edit करें।
 - पास-पास के transcript sections से आए overlapping duplicate topics को display से पहले merge किया जाता है।
 
-Topic Map transcript पर आधारित है, visual scene understanding पर नहीं। परिणाम transcript की quality, timestamp accuracy और AI model पर निर्भर करते हैं। एक analysis में अधिकतम 60 topics दिखाए जाते हैं; हर छोटे conversational shift के detection की गारंटी नहीं है। लंबे transcript के लिए Cloud AI कई requests भेजता है, इसलिए पुराने single-request, आठ-highlight तरीके से अधिक API/token charges हो सकते हैं। छोटा offline model कुछ ऐसे topics छोड़ सकता है जिन्हें बड़ा cloud model पहचानता।
+Topic Map transcript पर आधारित है, visual scene understanding पर नहीं। परिणाम transcript की quality, timestamp accuracy और AI model पर निर्भर करते हैं। अब fixed global 60-topic cap नहीं है; फिर भी हर छोटे conversational shift के detection की गारंटी नहीं है। लंबे transcript के लिए Cloud AI कई requests भेजता है, इसलिए पुराने single-request, आठ-highlight तरीके से अधिक API/token charges हो सकते हैं। छोटा offline model कुछ ऐसे topics छोड़ सकता है जिन्हें बड़ा cloud model पहचानता।
 
 
 

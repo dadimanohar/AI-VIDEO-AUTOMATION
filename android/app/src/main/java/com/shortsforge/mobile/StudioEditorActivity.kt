@@ -478,7 +478,8 @@ class StudioEditorActivity : ComponentActivity() {
             }
         }
         panel.addView(autoCaptionCheck, full(dp(7)))
-        panel.addView(labelText("Captions use the selected topic's timestamped transcript. They appear only during each matching spoken segment.").apply { setPadding(0, dp(2), 0, dp(4)) })
+        panel.addView(actionButton("Edit timed caption words / timestamps", false) { editTimedTranscriptDialog() }, full(dp(5)))
+        panel.addView(labelText("Captions use the selected topic's timestamped transcript. They appear only during each matching spoken segment. Edit the words or timestamps above before exporting.").apply { setPadding(0, dp(2), 0, dp(4)) })
         panel.addView(labelText("AI ideas use the selected topic transcript and your saved cloud AI key. Choose an idea to add it as an editable text overlay.").apply { setPadding(0, dp(5), 0, dp(4)) })
         panel.addView(labelText("POSITION").apply { setPadding(0, dp(10), 0, dp(5)) })
         positionSpinner = darkSpinner(listOf("Top", "Centre", "Bottom"))
@@ -830,7 +831,10 @@ class StudioEditorActivity : ComponentActivity() {
                 }
                 val audioProcessors = mutableListOf<androidx.media3.common.audio.AudioProcessor>()
                 if (speed != 1f) audioProcessors.add(SpeedChangingAudioProcessor(speedProvider))
-                if (!muteOriginalAudio && originalVolume < 0.999f) audioProcessors.add(createVolumeProcessor(originalVolume))
+                if (!muteOriginalAudio && (originalVolume < 0.999f || (musicUri != null && musicVolume > 0.001f))) {
+                    // When mixing sequences, process both the source and music tracks to compatible PCM layouts.
+                    audioProcessors.add(createVolumeProcessor(originalVolume))
+                }
                 EditedMediaItem.Builder(clipped)
                     .setEffects(Effects(audioProcessors, effects))
                     .setRemoveAudio(muteOriginalAudio || originalVolume <= 0.001f)
@@ -838,7 +842,7 @@ class StudioEditorActivity : ComponentActivity() {
                     .build()
             }
             val videoSequence = EditedMediaItemSequence.Builder(editedItems).build()
-            val composition = if (musicUri != null) {
+            val composition = if (musicUri != null && musicVolume > 0.001f) {
                 val music = EditedMediaItem.Builder(MediaItem.fromUri(musicUri!!))
                     .setRemoveVideo(true)
                     .setEffects(Effects(listOf(createVolumeProcessor(musicVolume)), emptyList()))
@@ -874,6 +878,44 @@ class StudioEditorActivity : ComponentActivity() {
     }
 
     private data class TimedCaption(val startMs: Long, val endMs: Long, val text: String)
+
+    private fun editTimedTranscriptDialog() {
+        if (transcriptContext.isBlank()) {
+            setStatus("No timestamped transcript was passed to Studio. Import or transcribe the video in the main editor first.")
+            return
+        }
+        val editor = EditText(this).apply {
+            setText(transcriptContext)
+            setTextColor(Color.WHITE)
+            setHintTextColor(muted)
+            textSize = 13f
+            minLines = 10
+            maxLines = 18
+            setSingleLine(false)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            background = rounded(Color.rgb(35, 39, 52), 10, border)
+        }
+        val container = ScrollView(this).apply {
+            addView(editor)
+            setPadding(dp(14), dp(8), dp(14), dp(5))
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Edit timed captions")
+            .setMessage("Edit the words inside each timestamp line. Keep the [start - end] time at the beginning so captions stay synced.")
+            .setView(container)
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Save caption text") { _, _ ->
+                val updated = editor.text.toString().trim()
+                if (updated.isBlank()) {
+                    setStatus("Caption text was left unchanged because the transcript cannot be empty.")
+                } else {
+                    transcriptContext = updated.take(24000)
+                    setStatus("Timed caption transcript updated. Burn captions on export to use your corrections.")
+                }
+            }
+            .show()
+    }
 
     private fun buildTimedCaptionEffects(segment: ClipSegment): List<androidx.media3.common.Effect> {
         val stamp = Regex("""^\s*\[\s*(\d{1,3}:\d{2}(?:\.\d{1,3})?)\s*[-–]\s*(\d{1,3}:\d{2}(?:\.\d{1,3})?)\s*\]\s*(.*)$""")

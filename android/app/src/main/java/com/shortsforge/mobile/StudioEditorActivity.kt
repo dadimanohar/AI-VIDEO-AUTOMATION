@@ -950,8 +950,8 @@ class StudioEditorActivity : ComponentActivity() {
     private fun createVolumeProcessor(gain: Float): ChannelMixingAudioProcessor {
         val processor = ChannelMixingAudioProcessor()
         for (channels in 1..6) {
-            val outputChannels = if (channels == 1) 1 else 2
-            val matrix = ChannelMixingMatrix.createForConstantPower(channels, outputChannels).scaleBy(gain.coerceIn(0f, 1f))
+            // Export each sequence as stereo PCM so source audio and background music can mix.
+            val matrix = ChannelMixingMatrix.createForConstantPower(channels, 2).scaleBy(gain.coerceIn(0f, 1f))
             processor.putChannelMixingMatrix(matrix)
         }
         return processor

@@ -8,8 +8,8 @@ Turn a long interview, podcast, lecture, or other video file into short clips by
 | App detail | Value |
 |---|---|
 | App name | ShortsForge Mobile |
-| Current release | 1.14.0 |
-| Version code | 19 |
+| Current release | 1.15.0 |
+| Version code | 20 |
 | Android package | `com.shortsforge.mobile` |
 | Minimum Android version | Android 8.0 (API 26) |
 | APK size | About 14 MB |
@@ -18,7 +18,7 @@ Turn a long interview, podcast, lecture, or other video file into short clips by
 | Release APK size | 13,925,543 bytes (~13.9 MB) |
 | Release APK SHA-256 | `7630863f747e5bbef7082281507d21169423666a14e4e0e4f752595553097924` |
 
-> **Important source-video note (1.14.0):** Paste a YouTube URL and tap **Send URL to YTDLnis for video download** to hand it to the separately installed YTDLnis app using its documented Android intent. Review and start the download in YTDLnis. When it finishes, share the saved video to ShortsForge or choose it from Downloads. ShortsForge does not bundle YTDLnis/yt-dlp or extract YouTube streams. YouTube preview and timestamp markers remain available inside ShortsForge. Only download and edit videos where you have the necessary rights and the source service permits it.
+> **Important source-video note (1.15.0):** Paste a YouTube URL and tap **Send URL to YTDLnis for video download** to hand it to the separately installed YTDLnis app using its documented Android intent. Review and start the download in YTDLnis. When it finishes, share the saved video to ShortsForge or choose it from Downloads. ShortsForge does not bundle YTDLnis/yt-dlp or extract YouTube streams. YouTube preview and timestamp markers remain available inside ShortsForge. Only download and edit videos where you have the necessary rights and the source service permits it.
 
 ---
 
@@ -114,7 +114,7 @@ Topic mapping is transcript-based, not visual scene understanding. Accuracy depe
 - Each individual Short can be up to 180 seconds; the total duration of all separate Shorts is not combined into one 180-second limit.
 
 ### ShortsForge Studio timeline editor
-Open **Studio Editor · Timeline, split, speed, text, audio** after selecting a highlight. The Studio button also accepts all queued topics and places them together in one editing timeline.
+Open **Studio Editor · Timeline, split, speed, text, audio** after selecting a highlight. The Studio button also accepts all queued topics and places them together in one editing timeline. Studio now includes AI hook ideas, timed captions, picture looks, rotate/fit/fill controls, duplicate clip, and separate source/music volume sliders.
 - Preview the source video in a dedicated dark editing workspace.
 - Work with an ordered timeline of clip segments from the same source video. Queued topic titles appear on their timeline clips.
 - Split, delete, move, reorder, and undo timeline segments.
@@ -329,7 +329,7 @@ Review the selected AI provider's privacy terms before sending private, confiden
 
 ## 11. Current limitations — what is not included
 
-The following are **not** current 1.13.0 features:
+The following are **not** current 1.15.0 features:
 - Native YouTube stream extraction/downloading inside ShortsForge as an editable MP4/audio source. Version 1.12.0 can hand a pasted URL to the separately installed YTDLnis app; the user completes the download there and then shares/selects the saved file in ShortsForge. A YouTube URL by itself is not an editable media file.
 - Automatic downloading of public YouTube caption tracks or transcripts.
 - Importing Google Drive/Dropbox share-page URLs. The importer requires a direct HTTPS video-file response.
@@ -337,11 +337,11 @@ The following are **not** current 1.13.0 features:
 - Automatic YouTube caption-track downloading.
 - AI-generated animated word-by-word subtitles or karaoke captions.
 - Automatic B-roll, images, scene generation, or presenter generation.
-- Full multi-source, multi-layer CapCut/KineMaster editing: picture-in-picture tracks, transitions, keyframes, filters, advanced colour grading, waveform editing, independent audio volume automation, and frame-by-frame professional tools.
-- Automatic video title, description, hashtags, or thumbnail generation.
+- Full multi-source, multi-layer CapCut/KineMaster editing: picture-in-picture tracks, transitions, keyframes, advanced colour grading beyond the new basic presets/sliders, waveform editing, multiple independently editable music tracks, and frame-by-frame professional tools.
+- Automatic YouTube upload metadata packages (description, hashtags, thumbnail) or channel publishing. The AI hook helper creates editable on-screen text only.
 - A server-side user account, cloud project sync, or team collaboration.
 
-Studio Editor supports a styled static text overlay; it is not an animated subtitle editor. Studio timelines currently arrange ranges from one selected source video and support one added music track that replaces the source audio. They do not provide independent multi-track audio mixing. The AI analyses transcript text; it does not currently perform visual scene understanding or face tracking.
+Studio Editor now supports editable static hook text, AI-generated hook/title ideas, timed transcript captions burned into exports, basic picture filters/brightness/contrast/rotation/framing, and a single looping music bed mixed with adjustable original audio. It is not an animated word-level subtitle editor or a full multi-track compositor. The AI assistant generates text from the selected transcript; it does not perform visual scene understanding or face tracking.
 
 ## 12. Future roadmap — ideas, not yet implemented
 
@@ -565,7 +565,7 @@ Topic Map transcript ఆధారంగా పని చేస్తుంది
 - ప్రతి Short గరిష్ఠం 180 seconds. వేర్వేరు Shorts durations మొత్తాన్ని కలిపి ఒకే 180 seconds పరిమితిగా లెక్కించదు.
 
 ### ShortsForge Studio Timeline Editor
-**Open Studio Editor · Timeline, split, speed, text, audio** ద్వారా selected topic లేదా queueలోని అన్ని topicsను ఒకే editing timelineలో తెరవవచ్చు.
+**Open Studio Editor · Timeline, split, speed, text, audio** ద్వారా selected topic లేదా queueలోని అన్ని topicsను ఒకే editing timelineలో తెరవవచ్చు. Studioలో AI hook ideas, timed captions, picture looks, rotate/fit/fill, duplicate clip, original/music volume sliders కూడా ఉన్నాయి.
 - ప్రతి queued topic దాని titleతో timeline clipగా కనిపిస్తుంది.
 - Split, Delete, Move, Reorder, Undo, trim మరియు playhead scrubbing.
 - Playback/export speed 0.5× నుంచి 2× వరకు.
@@ -777,7 +777,7 @@ Private లేదా confidential recordingsను cloud APIకి పంపే 
 
 ## 11. ప్రస్తుత యాప్‌లో లేని ఫీచర్లు
 
-క్రింది అంశాలు **Version 1.14.0లో కూడా లేవు**:
+క్రింది అంశాలు **Version 1.15.0లో కూడా లేవు**:
 - ShortsForgeలోపలే YouTube streamను editable MP4/audio sourceగా extract/download చేయడం లేదు. 1.12.0లో URLను వేరుగా install చేసిన YTDLnisకి పంపవచ్చు; అక్కడ మీరు download పూర్తి చేసి saved videoను Share/Downloads ద్వారా ShortsForgeకి తీసుకురావాలి. URL ఒక్కటే editable source file కాదు.
 - Public YouTube caption tracks లేదా transcriptsను ఆటోమేటిక్‌గా download చేయడం.
 - Google Drive/Dropbox share-page URLs import చేయడం. Importerకు direct HTTPS video-file response అవసరం.
@@ -788,7 +788,7 @@ Private లేదా confidential recordingsను cloud APIకి పంపే 
 - Automatic video title, description, hashtags లేదా thumbnail generation.
 - Server-side user account, cloud project sync లేదా team collaboration.
 
-Studio Editorలో styles ఉన్న static text overlay ఉంది; animated subtitle editor ఇంకా లేదు. ప్రస్తుత timeline ఒకే selected source videoలోని ranges‌ను క్రమపరుస్తుంది; ఒక music track source audio స్థానంలో వస్తుంది. స్వతంత్ర multi-track audio mixing లేదు. AI transcript textనే విశ్లేషిస్తుంది; ప్రస్తుతం video visual scene understanding లేదా face tracking చేయదు.
+Studio Editorలో AI hook/title suggestions, editable static text overlays, transcript timestamps ఆధారంగా burn-in captions, basic filters/brightness/contrast/rotation/frame-fit controls ఉన్నాయి. Original audio మరియు ఒక background-music trackను వేర్వేరు volume slidersతో mix చేయవచ్చు. Animated word-level captions, independent multi-source video layers, transitions/keyframes వంటి పూర్తి CapCut/KineMaster editing ఇంకా లేవు. AI text assistant transcriptను ఉపయోగిస్తుంది; video visualsను గుర్తించదు లేదా face tracking చేయదు.
 
 ## 12. భవిష్యత్తు Roadmap — ఇంకా నిర్మించని ఆలోచనలు
 
@@ -1012,7 +1012,7 @@ Topic Map transcript पर आधारित है, visual scene understandin
 - हर Short की सीमा 180 seconds है। अलग-अलग Shorts की durations को जोड़कर एक combined 180-second limit नहीं लगती।
 
 ### ShortsForge Studio Timeline Editor
-**Open Studio Editor · Timeline, split, speed, text, audio** दबाकर current topic या queue के सभी topics को एक ही editing timeline में खोलें।
+**Open Studio Editor · Timeline, split, speed, text, audio** दबाकर current topic या queue के सभी topics को एक ही editing timeline में खोलें। Studio में AI hook ideas, timed captions, picture looks, rotate/fit/fill, duplicate clip और original/music volume sliders भी हैं।
 - हर queued topic अपनी title के साथ timeline clip के रूप में दिखता है।
 - Split, Delete, Move, Reorder, Undo, trim और playhead scrubbing।
 - Playback/export speed 0.5× से 2× तक।
@@ -1224,7 +1224,7 @@ Private या confidential recordings cloud API को भेजने से �
 
 ## 11. मौजूदा सीमाएँ — क्या शामिल नहीं है
 
-निम्न सुविधाएँ **वर्तमान Version 1.14.0 में उपलब्ध नहीं हैं**:
+निम्न सुविधाएँ **वर्तमान Version 1.15.0 में उपलब्ध नहीं हैं**:
 - ShortsForge के अंदर native YouTube stream extraction/downloading करके editable MP4/audio source बनाना उपलब्ध नहीं है। Version 1.12.0 link को अलग से install किए गए YTDLnis app को भेज सकता है; download वहाँ पूरा करें, फिर saved file को ShortsForge में Share करें या Downloads से चुनें। URL अकेला editable source file नहीं है।
 - Public YouTube caption tracks या transcripts का automatic download।
 - Google Drive/Dropbox share-page URLs का import। Importer को direct HTTPS video-file response चाहिए।
@@ -1236,7 +1236,7 @@ Private या confidential recordings cloud API को भेजने से �
 - Automatic video title, description, hashtags या thumbnail generation।
 - Server-side user account, cloud project sync या team collaboration।
 
-Studio Editor में styles वाला static text overlay है; animated subtitle editor अभी नहीं है। मौजूदा timeline एक selected source video के ranges को क्रमबद्ध करती है और एक music track source audio को replace करता है। अलग-अलग multi-track audio mixing नहीं है। AI transcript text का विश्लेषण करता है; अभी visual scene understanding या face tracking नहीं करता।
+Studio Editor में AI hook/title ideas, editable static text overlays, transcript timestamps से synced burn-in captions, basic filters/brightness/contrast/rotation/frame-fit controls उपलब्ध हैं। Original audio और एक background-music track को अलग volume sliders से mix किया जा सकता है। Animated word-level captions, independent multi-source video layers, transitions/keyframes और पूर्ण CapCut/KineMaster editing अभी शामिल नहीं हैं। AI text assistant transcript का उपयोग करता है; video visuals या face tracking नहीं करता।
 
 ## 12. Future Roadmap — विचार, अभी लागू नहीं हुए
 
@@ -1391,6 +1391,7 @@ This history is reconstructed from the repository's versioned source commits and
 | 1.13.0 | Fixed JSON/timestamp parsing, aligned chunk-relative times, retained long topics, and auto-started analysis after source/transcript import. |
 | 1.13.1 | Preserved fast compatible M4A extraction and added MediaCodec-decoded WAV fallback when Android MediaMuxer rejects a source audio track. |
 | 1.14.0 | Added Switch / remove current video: clear the active source workspace, transcript, topic map, selected range, queue, URL markers and overlay; reset old state automatically after a replacement source imports successfully. |
+| 1.15.0 | Expanded Studio with transcript-aware AI hook/title ideas, editable timed captions, burn-in subtitle rendering, duplicate clips, picture looks, brightness/contrast, rotate, fit/fill, and independently adjustable source/music volume with mixed background audio. |
 
 ### Version history — తెలుగు
 
@@ -1414,6 +1415,7 @@ This history is reconstructed from the repository's versioned source commits and
 | 1.13.0 | JSON/timestamp parsing మెరుగుదల, chunk-relative timestamps సరిచేయడం, long topicsను mapలో ఉంచడం, source/transcript import తర్వాత auto-analysis. |
 | 1.13.1 | MediaMuxer source audio trackను reject చేసినప్పుడు MediaCodec WAV fallback; సాధారణ M4A కోసం వేగవంతమైన పాత మార్గం కొనసాగింపు. |
 | 1.14.0 | Switch / remove current video: ప్రస్తుత source, transcript, topic map, selected range, queue, URL markers, overlay clear చేయడం; కొత్త source విజయవంతంగా import అయినప్పుడు పాత video stateను ఆటోమేటిక్‌గా reset చేయడం. |
+| 1.15.0 | Studioలో transcript ఆధారంగా AI hook/title ideas, editable timed captions, burn-in subtitles, clip duplicate, picture looks, brightness/contrast, rotate, fit/fill, original/music వేర్వేరు volume sliders మరియు mixed background audio. |
 
 ### संस्करण इतिहास — हिन्दी
 
@@ -1437,6 +1439,7 @@ This history is reconstructed from the repository's versioned source commits and
 | 1.13.0 | JSON/timestamp parsing सुधार, chunk-relative timestamp alignment, लंबे topics को map में रखना और source/transcript import के बाद auto-analysis. |
 | 1.13.1 | MediaMuxer द्वारा source audio track reject होने पर MediaCodec WAV fallback; compatible M4A के लिए तेज पुराना path बरकरार. |
 | 1.14.0 | Switch / remove current video: active source, transcript, topic map, selected range, queue, URL markers और overlay साफ करना; नया source सफलतापूर्वक import होने पर पुराने video state को auto-reset करना. |
+| 1.15.0 | Studio में transcript-based AI hook/title ideas, editable timed captions, burn-in subtitles, duplicate clip, picture looks, brightness/contrast, rotate, fit/fill, original/music volume sliders और mixed background audio. |
 
 ---
 
@@ -1483,7 +1486,7 @@ This version builds on the existing ShortsForge Android project. The following p
 - Chronological Full Video Topic Map, topic title, category, importance, explanation, start, end, and duration.
 - Topic playback, topic selection, manual range editing, per-topic queue, queue-all, and separate MP4 batch export.
 - 60/90-second expansion controls and quick duration presets where available.
-- Studio timeline editing: clip segments from the selected source, split, trim, reorder, delete, undo, speed control, aspect ratio, text overlay, source mute, and one looping music bed.
+- Studio editing: split, trim, duplicate, reorder, delete, undo, playback speed, 9:16/1:1/16:9, fit/fill framing, rotation, picture filters, brightness/contrast, editable text, AI hook suggestions, timed transcript captions, original/music volume controls, and one looping mixed music bed.
 - MP4 H.264/AAC export, Movies/ShortsForge output, cancellation, and Android sharing.
 
 The Studio editor is not a full CapCut/KineMaster replacement: it does not yet provide independent multi-source video tracks, picture-in-picture layers, keyframe animation, a transitions library, animated word-level captions, or advanced multi-track audio mixing.
@@ -1533,7 +1536,7 @@ Downloadsలోని అసలు ఫైల్‌ను మార్చదు. 
 - Chronological Full Video Topic Map: title, category, importance, explanation, start, end, duration.
 - Topic playback, topic selection, manual time editing, per-topic queue, queue-all, separate MP4 batch export.
 - అవసరమైన చోట 60/90-second expansion మరియు quick duration presets.
-- Studio timeline: source segments, split, trim, reorder, delete, undo, speed, aspect ratio, text overlay, source mute, ఒక looping music bed.
+- Studio editing: split, trim, duplicate, reorder, delete, undo, speed, 9:16/1:1/16:9, fit/fill, rotation, filters, brightness/contrast, editable text, AI hook ideas, timed captions, original/music volume controls, ఒక looping mixed music bed.
 - H.264/AAC MP4 export, Movies/ShortsForge save, cancel, Android share.
 
 Studio Editor ఇంకా పూర్తి CapCut/KineMaster ప్రత్యామ్నాయం కాదు. Independent multi-source video tracks, picture-in-picture, keyframe animation, transitions library, animated word-level captions, advanced multi-track audio mixing ఇంకా లేవు.
@@ -1583,7 +1586,7 @@ Downloads में मौजूद original file बदली नहीं ज�
 - Chronological Full Video Topic Map: title, category, importance, explanation, start, end और duration.
 - Topic playback, चयन, manual timestamp editing, per-topic queue, queue-all और अलग-अलग MP4 batch export.
 - जहाँ उपलब्ध हो 60/90-second expansion और quick duration presets.
-- Studio timeline: source segments, split, trim, reorder, delete, undo, speed, aspect ratio, text overlay, source mute और एक looping music track.
+- Studio editing: split, trim, duplicate, reorder, delete, undo, speed, 9:16/1:1/16:9, fit/fill, rotation, filters, brightness/contrast, editable text, AI hook ideas, timed captions, original/music volume controls और एक looping mixed music bed.
 - H.264/AAC MP4 export, Movies/ShortsForge में save, cancel और Android sharing.
 
 Studio Editor अभी पूर्ण CapCut/KineMaster replacement नहीं है। Independent multi-source video tracks, picture-in-picture, keyframe animation, transitions library, animated word-level captions और advanced multi-track audio mixing अभी उपलब्ध नहीं हैं.
@@ -1832,3 +1835,78 @@ Android Share/YTDLnis या अधिकृत direct video-file URL से न
 **जब कोई operation चल रहा हो:** transcription, topic analysis या export के दौरान switch/clear रोक दिया जाता है। मौजूदा operation पूरा होने के बाद source बदलें।
 
 **YTDLnis integration की स्थिति:** YTDLnis अलग से install किया गया app बना रहता है और उसका documented Android Share/intent hand-off उपलब्ध है। उसका source इस APK में embed नहीं किया गया है। YTDLnis GPL-3.0 project है और उसके README में derivative downloader builds में YTDLnis नाम के उपयोग पर अतिरिक्त रोक है। निजी/personal APK या open-source downloader होना YouTube content download/alter करने की अनुमति अपने-आप नहीं देता। YouTube Terms के अनुसार Service की स्पष्ट अनुमति या आवश्यक लिखित permissions के बिना content डाउनलोड या बदलना सीमित है। इसलिए ShortsForge editable source के रूप में local files और अधिकृत direct media files स्वीकार करता है।
+
+
+---
+
+# Version 1.15.0 — easier Studio editing and AI text tools (English)
+
+Version 1.15.0 expands the existing Studio without replacing the topic-card workflow.
+
+- **Duplicate clip:** make a copy of the selected timeline segment, then trim, move, or delete the copy independently. Existing undo support remains.
+- **AI hook/title assistant:** from the selected topic transcript, generate three short on-screen hook ideas using the saved Groq, OpenAI, or Claude key. Choose one; it is placed in the editable text field, where wording, position, style, and colour can be changed.
+- **Edit timed caption text:** open the caption editor to correct transcript words or timestamp ranges. Keep each line in the form \`[start - end] spoken words\` so synchronization remains intact.
+- **Burn timed captions:** enable the checkbox to burn transcript lines only during their corresponding timestamps within each selected clip. This is timed line-caption burn-in, not animated word-level karaoke captions.
+- **Video looks:** Natural, Black & white, Negative, Bright, and Cinematic contrast, plus brightness and contrast sliders.
+- **Framing:** Fill frame (crop edges) or Fit whole video (preserve the complete frame), plus 0°, 90°, 180°, and 270° rotation.
+- **Audio mix:** keep or mute the source sound, add one looping background music track, and set separate original-video and background-music volume levels. Background music is mixed underneath source audio.
+
+The AI hook assistant requires a saved Groq/OpenAI/Claude key and an internet connection. It uses the transcript and selected topic context passed from the main Video Topic Map. Picture adjustments and burn-in captions are rendered during export; the Studio preview player continues to show the source playback.
+
+## Easy workflow
+
+1. Open a topic in **Studio Editor**.
+2. Trim/split/duplicate the clip segments and arrange their order.
+3. Use **AI · Generate 3 hook / title ideas** or type your own text.
+4. Edit timed caption words if needed, then enable **Burn timed transcript captions into the video**.
+5. Choose a picture look, brightness/contrast, rotation, and Fit/Fill framing.
+6. Add music, balance the two volume sliders, and keep or mute source sound.
+7. Preview the source range and tap **Export edited timeline**.
+
+# Version 1.15.0 — Studio editing సులభతరం మరియు AI text tools (తెలుగు)
+
+Version 1.15.0 పాత Topic Card workflowను మార్చకుండా Studio editing controlsను పెంచుతుంది.
+
+- **Duplicate clip:** Timelineలో select చేసిన segment copy తయారు చేసి, ఆ copyని వేరుగా trim, move లేదా delete చేయవచ్చు. Undo support అలాగే ఉంటుంది.
+- **AI hook/title assistant:** Selected topic transcript ఆధారంగా saved Groq, OpenAI లేదా Claude keyతో మూడు short on-screen hook ideas రూపొందిస్తుంది. ఒకదాన్ని select చేస్తే editable text fieldలోకి వస్తుంది; wording, position, style, colour మార్చవచ్చు.
+- **Edit timed caption text:** Caption editorలో transcript పదాలు లేదా timestamp ranges సరిచేయవచ్చు. Sync కోసం ప్రతి lineను \`[start - end] spoken words\` రూపంలో ఉంచండి.
+- **Burn timed captions:** Checkbox enable చేస్తే ప్రతి transcript line దాని timestamp సమయంలో మాత్రమే సంబంధిత clipలో render అవుతుంది. ఇది timed line captions; animated word-level karaoke captions కాదు.
+- **Video looks:** Natural, Black & white, Negative, Bright, Cinematic contrast presetsతో పాటు brightness/contrast sliders.
+- **Framing:** Fill frame (edges crop) లేదా Fit whole video (పూర్తి frame అలాగే ఉంచడం), అలాగే 0°, 90°, 180°, 270° rotation.
+- **Audio mix:** Source sound ఉంచడం లేదా mute చేయడం, ఒక looping background music track జోడించడం, original-video మరియు background-music volumeలను వేరుగా సెట్ చేయడం. Background music source audio కింద mix అవుతుంది.
+
+AI hook assistantకు saved Groq/OpenAI/Claude key మరియు Internet అవసరం. Main Video Topic Map నుంచి పంపిన transcript మరియు selected topic contextను ఉపయోగిస్తుంది. Picture adjustments మరియు burn-in captions export సమయంలో render అవుతాయి; Studio preview player source playbackనే చూపిస్తుంది.
+
+## సులభమైన workflow
+
+1. Topicను **Studio Editor**లో తెరవండి.
+2. Clip segmentsను trim/split/duplicate చేసి అవసరమైన క్రమంలో అమర్చండి.
+3. **AI · Generate 3 hook / title ideas** నొక్కండి లేదా మీ text టైప్ చేయండి.
+4. అవసరమైతే timed caption పదాలు edit చేసి **Burn timed transcript captions into the video** enable చేయండి.
+5. Picture look, brightness/contrast, rotation, Fit/Fill ఎంచుకోండి.
+6. Music జోడించి రెండు volume slidersను balance చేసి, source soundను ఉంచండి లేదా mute చేయండి.
+7. Source range preview చేసి **Export edited timeline** నొక్కండి.
+
+# Version 1.15.0 — आसान Studio editing और AI text tools (हिन्दी)
+
+Version 1.15.0 पुराने Topic Card workflow को बदले बिना Studio editing controls बढ़ाता है।
+
+- **Duplicate clip:** चुने हुए timeline segment की copy बनाएं; copy को अलग से trim, move या delete करें। Undo support बना रहता है।
+- **AI hook/title assistant:** चुने हुए topic transcript से saved Groq, OpenAI या Claude key का उपयोग करके तीन छोटे on-screen hook ideas बनाता है। एक idea चुनें; वह editable text field में आ जाएगा, जहाँ wording, position, style और colour बदले जा सकते हैं।
+- **Edit timed caption text:** Caption editor में transcript के शब्द या timestamp ranges ठीक करें। Sync बनाए रखने के लिए हर line को \`[start - end] spoken words\` रूप में रखें।
+- **Burn timed captions:** Checkbox चालू करने पर transcript line केवल अपने timestamp के दौरान संबंधित clip में render होगी। यह timed line-caption burn-in है, animated word-level karaoke captions नहीं।
+- **Video looks:** Natural, Black & white, Negative, Bright और Cinematic contrast presets के साथ brightness/contrast sliders।
+- **Framing:** Fill frame (किनारे crop करें) या Fit whole video (पूरा frame रखें), साथ में 0°, 90°, 180° और 270° rotation।
+- **Audio mix:** Original sound रखें या mute करें, एक looping background music track जोड़ें और original-video तथा background-music volume अलग-अलग सेट करें। Background music source audio के नीचे mix होता है।
+
+AI hook assistant के लिए saved Groq/OpenAI/Claude key और Internet आवश्यक हैं। यह main Video Topic Map से भेजे गए transcript और selected topic context का उपयोग करता है। Picture adjustments और burn-in captions export के समय render होते हैं; Studio preview player source playback दिखाता है।
+
+## आसान workflow
+
+1. Topic को **Studio Editor** में खोलें।
+2. Clip segments trim/split/duplicate करके क्रम में लगाएं।
+3. **AI · Generate 3 hook / title ideas** दबाएं या अपना text लिखें।
+4. जरूरत हो तो timed caption के शब्द edit करें और **Burn timed transcript captions into the video** चालू करें।
+5. Picture look, brightness/contrast, rotation और Fit/Fill चुनें।
+6. Music जोड़ें, दोनों volume sliders balance करें और source sound रखें या mute करें।
+7. Source range preview करके **Export edited timeline** दबाएं।

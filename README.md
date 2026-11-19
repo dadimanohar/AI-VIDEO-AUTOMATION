@@ -8,8 +8,8 @@ Turn a long interview, podcast, lecture, or other video file into short clips by
 | App detail | Value |
 |---|---|
 | App name | ShortsForge Mobile |
-| Current release | 1.13.1 |
-| Version code | 18 |
+| Current release | 1.14.0 |
+| Version code | 19 |
 | Android package | `com.shortsforge.mobile` |
 | Minimum Android version | Android 8.0 (API 26) |
 | APK size | About 14 MB |
@@ -215,7 +215,7 @@ This APK is debug-signed and is distributed directly from the project's GitHub r
 5. Confirm that both model statuses show **Downloaded**.
 6. Select **Offline local AI · Qwen3 + Whisper** in **AI MODE**.
 7. Tap **Save AI settings** and return to the editor.
-8. Choose a local video and tap **Auto-transcribe + find clips**.
+8. Choose a local video. With both offline models configured, analysis starts automatically; otherwise tap **Analyze entire video · transcribe + map every topic**.
 9. Wait while Whisper transcribes locally and Qwen3 analyses the timestamped transcript.
 10. Select a suggestion, preview it, edit the range if required, and export.
 
@@ -225,7 +225,7 @@ After the models are downloaded, local transcription and transcript analysis can
 1. Choose the source video.
 2. Paste a timestamped transcript into **TRANSCRIPT**, or tap **Import subtitles / transcript (SRT, VTT, TXT)**.
 3. Select Groq, OpenAI, or Claude in Settings and save the relevant API key.
-4. Return to the editor and tap **Analyze all topics in transcript**.
+4. Importing timestamped SRT/VTT/TXT starts topic mapping automatically. For manually pasted text, tap **Analyze all topics in transcript**.
 5. Review the ranked suggestions, choose one, preview the selected range, and export.
 
 ### Option D — YouTube preview + authorized video source
@@ -644,8 +644,7 @@ Offline వేగం మరియు ఫలితాల నాణ్యత ఫ�
 5. Editorకి తిరిగి రండి.
 6. **Choose video** నొక్కి ఫోన్‌లోని video file ఎంచుకోండి.
 7. Filename, duration, video preview కనిపించే వరకు వేచి ఉండండి.
-8. **Auto-transcribe + find clips** నొక్కండి.
-9. Transcription మరియు AI highlight analysis పూర్తయ్యే వరకు వేచి ఉండండి.
+8. Groq/OpenAI key లేదా రెండు offline models ముందుగానే configure చేసి ఉంటే, video import తర్వాత transcription మరియు topic mapping ఆటోమేటిక్‌గా ప్రారంభమవుతాయి. లేకపోతే Settingsలో configure చేసి **Analyze entire video · transcribe + map every topic** నొక్కండి.
 10. Suggestion cards చూడండి. మొదటి suggestion ఆటోమేటిక్‌గా select అవుతుంది.
 11. కావాలంటే వేరే topic card ఎంచుకోండి; **Play this topic** ద్వారా ఆ topic preview చేయండి.
 12. 60 seconds లేదా 90 seconds ఎంచుకుని **Preview selected clip** నొక్కండి.
@@ -662,7 +661,7 @@ Offline వేగం మరియు ఫలితాల నాణ్యత ఫ�
 5. రెండు model statuses **Downloaded**గా ఉన్నాయో చూడండి.
 6. **AI MODE**లో **Offline local AI · Qwen3 + Whisper** ఎంచుకోండి.
 7. **Save AI settings** నొక్కి Editorకి తిరిగి రండి.
-8. Local video ఎంచుకుని **Auto-transcribe + find clips** నొక్కండి.
+8. Local video ఎంచుకోండి. రెండు offline models సిద్ధంగా ఉంటే analysis ఆటోమేటిక్‌గా ప్రారంభమవుతుంది; లేకపోతే **Analyze entire video · transcribe + map every topic** నొక్కండి.
 9. Whisper localగా transcript తయారు చేస్తుంది; Qwen3 timestamp transcript‌ను విశ్లేషిస్తుంది.
 10. Suggestion cardsలో ప్రతి topicకు exact timestamps చూడండి. కావాల్సిన cardsలో **Add this topic to Shorts queue** tick చేయండి.
 11. ఒక్కో topicను వేరే MP4గా చేయడానికి **Export N queued topics as separate Shorts** నొక్కండి; ఒకే timelineగా edit చేయడానికి **Open Studio Editor · N topic(s) as one timeline** నొక్కండి.
@@ -674,7 +673,7 @@ Models download చేసిన తర్వాత local transcription మరి
 1. Source video ఎంచుకోండి.
 2. Timestamp ఉన్న transcript‌ను **TRANSCRIPT**లో paste చేయండి లేదా **Import subtitles / transcript (SRT, VTT, TXT)** నొక్కండి.
 3. Settingsలో Groq, OpenAI లేదా Claude ఎంచుకుని అవసరమైన API key save చేయండి.
-4. Editorకి తిరిగి వచ్చి **Analyze pasted transcript** నొక్కండి.
+4. Timestamp ఉన్న SRT/VTT/TXT import చేసిన వెంటనే topic mapping ప్రారంభమవుతుంది. Manually paste చేసిన transcript కోసం **Analyze all topics in transcript** నొక్కండి.
 5. Suggestions పరిశీలించి ఒకటి select చేయండి, preview చేసి export చేయండి.
 
 ### Option D — YouTube preview + అనుమతి ఉన్న video source
@@ -777,7 +776,7 @@ Private లేదా confidential recordingsను cloud APIకి పంపే 
 
 ## 11. ప్రస్తుత యాప్‌లో లేని ఫీచర్లు
 
-క్రింది అంశాలు **Version 1.13.0లో కూడా లేవు**:
+క్రింది అంశాలు **Version 1.14.0లో కూడా లేవు**:
 - ShortsForgeలోపలే YouTube streamను editable MP4/audio sourceగా extract/download చేయడం లేదు. 1.12.0లో URLను వేరుగా install చేసిన YTDLnisకి పంపవచ్చు; అక్కడ మీరు download పూర్తి చేసి saved videoను Share/Downloads ద్వారా ShortsForgeకి తీసుకురావాలి. URL ఒక్కటే editable source file కాదు.
 - Public YouTube caption tracks లేదా transcriptsను ఆటోమేటిక్‌గా download చేయడం.
 - Google Drive/Dropbox share-page URLs import చేయడం. Importerకు direct HTTPS video-file response అవసరం.
@@ -1091,8 +1090,7 @@ Offline transcription और highlight analysis के लिए:
 5. Editor में वापस जाएं।
 6. **Choose video** दबाकर फोन की local video file चुनें।
 7. Filename, duration और video preview दिखने तक प्रतीक्षा करें।
-8. **Auto-transcribe + find clips** दबाएं।
-9. Transcription और highlight analysis पूरा होने दें।
+8. यदि Groq/OpenAI key या दोनों offline models configured हैं, तो video import के बाद transcription और topic mapping अपने-आप शुरू होते हैं। अन्यथा Settings में configure करके **Analyze entire video · transcribe + map every topic** दबाएं।
 10. Chronological Video Topic Map देखें। पहला topic अपने-आप select होता है। किसी card पर tap करके उसके exact timestamps load करें या **Play this topic** दबाकर topic preview करें।
 11. चाहें तो दूसरा card चुनें।
 12. 60 या 90 seconds चुनें और **Preview selected clip** दबाएं।
@@ -1109,7 +1107,7 @@ Offline transcription और highlight analysis के लिए:
 5. जाँचें कि दोनों model statuses **Downloaded** दिखा रहे हैं।
 6. **AI MODE** में **Offline local AI · Qwen3 + Whisper** चुनें।
 7. **Save AI settings** दबाकर Editor में वापस आएं।
-8. Local video चुनें और **Auto-transcribe + find clips** दबाएं।
+8. Local video चुनें। दोनों offline models तैयार हों तो analysis अपने-आप शुरू होगा; अन्यथा **Analyze entire video · transcribe + map every topic** दबाएं।
 9. Whisper locally transcript बनाएगा और Qwen3 timestamped transcript का analysis करेगा।
 10. Suggestion cards देखें; हर topic के exact timestamps दिखाई देंगे। जिन topics को चाहिए, उन पर **Add this topic to Shorts queue** tick करें।
 11. हर topic के लिए अलग MP4 बनाने हेतु **Export N queued topics as separate Shorts** दबाएं; सभी को एक timeline में edit करने के लिए **Open Studio Editor · N topic(s) as one timeline** दबाएं।
@@ -1121,7 +1119,7 @@ Models download होने के बाद local transcription और transcr
 1. Source video चुनें।
 2. Timestamped transcript को **TRANSCRIPT** में paste करें या **Import subtitles / transcript (SRT, VTT, TXT)** दबाएं।
 3. Settings में Groq, OpenAI या Claude चुनकर संबंधित API key save करें।
-4. Editor में वापस आकर **Analyze pasted transcript** दबाएं।
+4. Timestamp वाले SRT/VTT/TXT import के बाद topic mapping अपने-आप शुरू होती है। Manually paste किए transcript के लिए **Analyze all topics in transcript** दबाएं।
 5. Ranked suggestions देखें, एक चुनें, selected range preview करें और export करें।
 
 ### Option D — YouTube preview + authorized video source
@@ -1224,7 +1222,7 @@ Private या confidential recordings cloud API को भेजने से �
 
 ## 11. मौजूदा सीमाएँ — क्या शामिल नहीं है
 
-निम्न सुविधाएँ **वर्तमान Version 1.13.0 में उपलब्ध नहीं हैं**:
+निम्न सुविधाएँ **वर्तमान Version 1.14.0 में उपलब्ध नहीं हैं**:
 - ShortsForge के अंदर native YouTube stream extraction/downloading करके editable MP4/audio source बनाना उपलब्ध नहीं है। Version 1.12.0 link को अलग से install किए गए YTDLnis app को भेज सकता है; download वहाँ पूरा करें, फिर saved file को ShortsForge में Share करें या Downloads से चुनें। URL अकेला editable source file नहीं है।
 - Public YouTube caption tracks या transcripts का automatic download।
 - Google Drive/Dropbox share-page URLs का import। Importer को direct HTTPS video-file response चाहिए।
@@ -1389,6 +1387,8 @@ This history is reconstructed from the repository's versioned source commits and
 | 1.11.0 | Added Android file-share handoff and Downloads picker for videos already downloaded by YTDLnis or another app; preserved the existing feature set. |
 | 1.12.0 | Added YouTube URL hand-off to separately installed YTDLnis; import completed download through Android Share or Downloads. |
 | 1.13.0 | Fixed JSON/timestamp parsing, aligned chunk-relative times, retained long topics, and auto-started analysis after source/transcript import. |
+| 1.13.1 | Preserved fast compatible M4A extraction and added MediaCodec-decoded WAV fallback when Android MediaMuxer rejects a source audio track. |
+| 1.14.0 | Added Switch / remove current video: clear the active source workspace, transcript, topic map, selected range, queue, URL markers and overlay; reset old state automatically after a replacement source imports successfully. |
 
 ### Version history — తెలుగు
 
@@ -1410,6 +1410,8 @@ This history is reconstructed from the repository's versioned source commits and
 | 1.11.0 | YTDLnis లేదా ఇతర appలో ముందే download అయిన videoను Android Share ద్వారా import చేయడం, Downloads picker; పాత features అన్నీ కొనసాగింపు. |
 | 1.12.0 | YouTube URLను వేరుగా install చేసిన YTDLnisకి పంపడం; download పూర్తయ్యాక వీడియోను Share/Downloads ద్వారా import చేయడం. |
 | 1.13.0 | JSON/timestamp parsing మెరుగుదల, chunk-relative timestamps సరిచేయడం, long topicsను mapలో ఉంచడం, source/transcript import తర్వాత auto-analysis. |
+| 1.13.1 | MediaMuxer source audio trackను reject చేసినప్పుడు MediaCodec WAV fallback; సాధారణ M4A కోసం వేగవంతమైన పాత మార్గం కొనసాగింపు. |
+| 1.14.0 | Switch / remove current video: ప్రస్తుత source, transcript, topic map, selected range, queue, URL markers, overlay clear చేయడం; కొత్త source విజయవంతంగా import అయినప్పుడు పాత video stateను ఆటోమేటిక్‌గా reset చేయడం. |
 
 ### संस्करण इतिहास — हिन्दी
 
@@ -1431,6 +1433,8 @@ This history is reconstructed from the repository's versioned source commits and
 | 1.11.0 | YTDLnis या दूसरे app में पहले से डाउनलोड की गई video को Android Share और Downloads picker से import करना; पुराने features सुरक्षित रखे. |
 | 1.12.0 | YouTube URL को अलग से install किए गए YTDLnis app में भेजना; download के बाद वीडियो को Share/Downloads से import करना. |
 | 1.13.0 | JSON/timestamp parsing सुधार, chunk-relative timestamp alignment, लंबे topics को map में रखना और source/transcript import के बाद auto-analysis. |
+| 1.13.1 | MediaMuxer द्वारा source audio track reject होने पर MediaCodec WAV fallback; compatible M4A के लिए तेज पुराना path बरकरार. |
+| 1.14.0 | Switch / remove current video: active source, transcript, topic map, selected range, queue, URL markers और overlay साफ करना; नया source सफलतापूर्वक import होने पर पुराने video state को auto-reset करना. |
 
 ---
 
@@ -1778,3 +1782,51 @@ This is an Android source/build fix. Build success confirms compilation and APK 
 Version 1.13.1లో MP4 muxer అంగీకరించే audio tracksకు వేగవంతమైన పాత M4A మార్గం కొనసాగుతుంది. Muxer audio trackను reject చేస్తే (మీ screenshotలోని `addTrack` failure లాంటిది), ShortsForge ఆటోమేటిక్‌గా Android MediaCodec decode fallback ఉపయోగిస్తుంది: audioను monoగా మార్చి, 16 kHzకు resample చేసి WAVగా తయారు చేస్తుంది. తర్వాత file extensionకు సరిపోయే `audio/mp4` లేదా `audio/wav` MIME typeతో Groq/OpenAIకు పంపుతుంది. Source video మారదు. 24 MB upload safety limit అలాగే ఉంది.
 
 ఇది Android source/build fix. Build success అనేది compile/APK packaging విజయాన్ని మాత్రమే నిర్ధారిస్తుంది; మీ అసలు videoతో physical device test చేసినట్లు కాదు. Device MediaCodec decode చేయలేని audio codec ఉన్న వీడియోలకు compatible source file లేదా timestamped transcript అవసరం కావచ్చు.
+
+
+---
+
+# Version 1.14.0 — switch or clear the active video workspace (English)
+
+The source card includes one **Switch / remove current video** control with two actions:
+
+1. **Choose a different video** — opens Android's video picker. The existing project remains intact until a replacement file is actually selected. After selection, ShortsForge clears the previous video-specific workspace and loads the new file.
+2. **Remove current video and clear its related content** — asks for confirmation, then clears the selected source, video preview, transcript text, detected topic cards, selected topic and Start/End values, Shorts queue and custom queued ranges, YouTube preview markers, source URL fields, and video-specific text overlay.
+
+The same reset is applied automatically after a new video is successfully imported from Android Share/YTDLnis or an authorized direct video-file URL. If an import fails, the currently loaded project is kept.
+
+**What is preserved:** the original video in Android storage, already-exported MP4 Shorts, API keys, provider settings, output aspect-ratio preference, and downloaded Qwen3/Whisper models. ShortsForge deletes only its own imported copies inside its private `shared-video-imports` or `imported-videos` folders, plus temporary audio extraction files.
+
+**Busy-state safety:** switching/clearing is blocked while transcription, topic analysis or export is running. Wait for the current operation to finish, then switch the source.
+
+**YTDLnis packaging status:** YTDLnis remains a separately installed app and its documented Android Share/intent hand-off remains available. Its source has not been embedded into this APK. YTDLnis is GPL-3.0 and its project README has a separate restriction on using the YTDLnis name for derivative downloader builds. A private/personal APK and an open-source downloader do not by themselves grant permission to download or alter YouTube content. YouTube's Terms restrict downloading or altering content unless the Service expressly authorizes it or the required written permissions exist. ShortsForge therefore continues to accept local files and authorized direct media files as editable sources.
+
+# Version 1.14.0 — తెలుగు
+
+Source cardలో ఒకే **Switch / remove current video** control ఉంటుంది. దానిలో రెండు actions ఉంటాయి:
+
+1. **Choose a different video** — Android video picker తెరుస్తుంది. మీరు కొత్త file నిజంగా select చేసే వరకు పాత project అలాగే ఉంటుంది. కొత్త file select చేసిన తర్వాత పాత video-specific workspace clear చేసి కొత్త file load అవుతుంది.
+2. **Remove current video and clear its related content** — confirmation అడిగిన తర్వాత selected source, video preview, transcript, topic cards, selected topic, Start/End values, Shorts queue, custom queue ranges, YouTube preview markers, source URL fields, video-specific text overlayను clear చేస్తుంది.
+
+Android Share/YTDLnis నుంచి లేదా permission ఉన్న direct video-file URL నుంచి కొత్త వీడియో విజయవంతంగా import అయినప్పుడు కూడా పాత video state ఆటోమేటిక్‌గా reset అవుతుంది. Import విఫలమైతే ప్రస్తుతం ఉన్న project అలాగే ఉంటుంది.
+
+**ఏవి అలాగే ఉంటాయి:** Android storageలోని original video, ఇప్పటికే export చేసిన MP4 Shorts, API keys, provider settings, output aspect-ratio preference, download చేసిన Qwen3/Whisper models. ShortsForge తన private `shared-video-imports` లేదా `imported-videos` foldersలో తానే సృష్టించిన imported copiesను మాత్రమే delete చేస్తుంది; temporary audio extraction files కూడా తొలగిస్తుంది.
+
+**Operation జరుగుతున్నప్పుడు:** transcription, topic analysis లేదా export నడుస్తున్నప్పుడు switch/clear చేయడం నిరోధించబడుతుంది. ప్రస్తుత operation పూర్తయ్యాక source మార్చండి.
+
+**YTDLnis integration స్థితి:** YTDLnis వేరే appగానే ఉంటుంది. దాని documented Android Share/intent hand-off కొనసాగుతుంది; దాని source codeను ఈ APKలో embed చేయలేదు. YTDLnis GPL-3.0 project; derivative downloader buildsలో YTDLnis పేరును ఉపయోగించడంపై దాని READMEలో అదనపు పరిమితి ఉంది. Private/personal APKగా ఉండటం లేదా downloader open source కావడం వల్ల YouTube content download/alter చేయడానికి permission స్వయంగా రాదు. YouTube Terms ప్రకారం Service అనుమతి లేదా అవసరమైన written permissions లేకుండా content download/alter చేయడం పరిమితం. అందువల్ల ShortsForge editable sourceగా local files మరియు అనుమతి ఉన్న direct media filesనే అంగీకరిస్తుంది.
+
+# Version 1.14.0 — वीडियो बदलें या मौजूदा workspace साफ करें (हिन्दी)
+
+Source card में एक **Switch / remove current video** control है। इसमें दो actions मिलते हैं:
+
+1. **Choose a different video** — Android video picker खोलता है। नया file वास्तव में select होने तक पुराना project सुरक्षित रहता है। नया file चुनने के बाद ShortsForge पुराने video-specific workspace को साफ करके नई file लोड करता है।
+2. **Remove current video and clear its related content** — confirmation के बाद selected source, video preview, transcript, topic cards, selected topic, Start/End values, Shorts queue, custom queue ranges, YouTube preview markers, source URL fields और video-specific text overlay साफ करता है।
+
+Android Share/YTDLnis या अधिकृत direct video-file URL से नया video सफलतापूर्वक import होने पर भी पुराना video state अपने-आप reset होता है। Import असफल होने पर मौजूदा project सुरक्षित रहता है।
+
+**क्या सुरक्षित रहता है:** Android storage में original video, पहले से export किए गए MP4 Shorts, API keys, provider settings, output aspect-ratio preference और downloaded Qwen3/Whisper models। ShortsForge केवल अपनी private `shared-video-imports` या `imported-videos` folders में बनाई गई imported copies हटाता है; temporary audio extraction files भी हटाता है।
+
+**जब कोई operation चल रहा हो:** transcription, topic analysis या export के दौरान switch/clear रोक दिया जाता है। मौजूदा operation पूरा होने के बाद source बदलें।
+
+**YTDLnis integration की स्थिति:** YTDLnis अलग से install किया गया app बना रहता है और उसका documented Android Share/intent hand-off उपलब्ध है। उसका source इस APK में embed नहीं किया गया है। YTDLnis GPL-3.0 project है और उसके README में derivative downloader builds में YTDLnis नाम के उपयोग पर अतिरिक्त रोक है। निजी/personal APK या open-source downloader होना YouTube content download/alter करने की अनुमति अपने-आप नहीं देता। YouTube Terms के अनुसार Service की स्पष्ट अनुमति या आवश्यक लिखित permissions के बिना content डाउनलोड या बदलना सीमित है। इसलिए ShortsForge editable source के रूप में local files और अधिकृत direct media files स्वीकार करता है।

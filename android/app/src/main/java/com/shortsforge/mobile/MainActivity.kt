@@ -196,7 +196,8 @@ class MainActivity : ComponentActivity() {
                 endEdit.setText(endText)
                 refreshFooter()
             }
-            setStatus("Video ready. Review the preview or find highlights.")
+            setStatus("Video ready. Starting full-video analysis when the selected AI provider is configured.")
+            autoStartAnalysisForSelectedSource()
         }
     }
 
@@ -370,7 +371,8 @@ class MainActivity : ComponentActivity() {
                     }
                     busy = false
                     refreshFooter()
-                    setStatus("Downloaded video imported successfully. It is now the ShortsForge source for transcription, full-topic mapping, clip selection and Studio editing.")
+                    setStatus("Downloaded video imported successfully. Starting full-video topic discovery…")
+                    autoStartAnalysisForSelectedSource()
                 }
             } catch (e: Exception) {
                 destination?.delete()
@@ -380,6 +382,28 @@ class MainActivity : ComponentActivity() {
                     setStatus("Could not import the shared video: " + (e.message ?: "unknown error") + ". You can also select it from Downloads.")
                 }
             }
+        }
+    }
+
+    private fun autoStartAnalysisForSelectedSource() {
+        when (provider) {
+            0, 1 -> {
+                if (readKey(provider).isNotBlank()) {
+                    setStatus("Source ready. Automatically transcribing the full video and mapping every topic…")
+                    transcribeAndAnalyze()
+                } else {
+                    setStatus("Source ready. Add your Groq or OpenAI API key in Settings, then tap Analyze entire video.")
+                }
+            }
+            3 -> {
+                if (offlineModelsAvailable()) {
+                    setStatus("Source ready. Starting on-device Whisper transcription and Qwen3 topic mapping…")
+                    transcribeAndAnalyze()
+                } else {
+                    setStatus("Source ready. Download both Whisper and Qwen3 models in Settings, then run full-video analysis.")
+                }
+            }
+            else -> setStatus("Source ready. Claude can map topics from a timestamped transcript. Import or paste subtitles, then tap Analyze all topics.")
         }
     }
 
@@ -443,8 +467,8 @@ class MainActivity : ComponentActivity() {
         }
 
         val ai = card(body, "02  •  DISCOVER EVERY VIDEO TOPIC", "Map the whole transcript into chronological, timestamped topics — not just the top few highlights.")
-        ai.addView(button("Auto-transcribe + find clips", true) { transcribeAndAnalyze() }, full())
-        ai.addView(button("Analyze pasted transcript", false) { analyzeTranscript() }, full(dp(8)))
+        ai.addView(button("Analyze entire video · transcribe + map every topic", true) { transcribeAndAnalyze() }, full())
+        ai.addView(button("Analyze all topics in transcript", false) { analyzeTranscript() }, full(dp(8)))
         ai.addView(button("Import subtitles / transcript (SRT, VTT, TXT)", false) {
             pickTranscript.launch(arrayOf("text/*", "application/x-subrip", "application/octet-stream"))
         }, full(dp(8)))
@@ -831,15 +855,18 @@ class MainActivity : ComponentActivity() {
                 ?: throw IOException("Could not read the selected transcript file.")
             if (raw.isBlank()) throw IOException("The transcript file is empty.")
             val parsed = parseSubtitleText(raw)
+            val timedLines = timestampedTranscriptLineCount(parsed)
+            if (timedLines == 0) throw IOException("No timestamped transcript lines were found. Import SRT/VTT or TXT lines such as [00:00.00 - 00:04.20] spoken words.")
             transcript = parsed
             transcriptEdit.setText(parsed)
-            setStatus("Transcript imported. Choose 60s or 90s, then analyse the important moments.")
+            setStatus("Transcript imported (" + timedLines + " timestamped lines). Automatically mapping all topics…")
+            analyzeTranscript(true)
         } catch (e: Exception) {
             setStatus("Transcript import failed: " + (e.message ?: "unknown file error"))
         }
     }
 
-    private fun parseSubtitleText(raw: String): String {
+        private fun parseSubtitleText(raw: String): String {
         val normalized = raw.replace("\r", "")
         val blocks = normalized.split(Regex("\n\\s*\n"))
         val output = StringBuilder()
@@ -928,7 +955,7 @@ class MainActivity : ComponentActivity() {
                 runOnUiThread {
                     transcript = result
                     transcriptEdit.setText(result)
-                    setStatus("Transcript ready. Analysing the best moments…")
+                    setStatus("Transcript ready. Mapping every topic across the full video…")
                     analyzeTranscript(true)
                 }
             } catch (e: Exception) {
@@ -1165,7 +1192,7 @@ Rules:
 - Put topics in chronological order. Do not rank/reorder them by importance.
 - Use exact start and end boundaries supported by the transcript timestamps. Convert mm:ss.cc to seconds from the beginning of the original video.
 - Each topic must describe a coherent continuous section, not one isolated sentence.
-- A topic may be shorter than 20 seconds when it contains a complete, meaningful point. Prefer natural content boundaries over fixed durations. Keep each exportable topic at or below 180 seconds; split longer discussions only at real subject or context boundaries.
+- Prefer natural subject boundaries, not fixed-duration windows. A coherent topic may exceed 180 seconds; keep the complete topic in the map instead of dropping it or cutting it arbitrarily. The creator can choose a shorter export range later. Split only when a genuinely different subject or subtopic begins.
 - Include the question with its answer when needed for context. Preserve complete thoughts.
 - Do not invent timestamps, events, names, facts or topics. Do not duplicate a topic from another segment.
 - Give each title a clear subject, not generic text such as "Important point".
@@ -1182,7 +1209,7 @@ $chunkText
                             maxTokens = 1400
                         )
                     }
-                    candidates.addAll(parseHighlights(answer.text))
+                    candidates.addAll(alignTopicTimesToChunk(parseHighlights(answer.text), chunkText))
                     val progress = ((index + 1) * 100 / chunkTotal).coerceIn(1, 100)
                     setStatus("Offline Qwen3 is mapping video topics… chunk " + (index + 1) + "/" + chunkTotal + " · " + progress + "%")
                 }
@@ -1471,6 +1498,11 @@ $chunkText
     private fun analyzeTranscript(auto: Boolean = false) {
         val data = if (::transcriptEdit.isInitialized) transcriptEdit.text.toString().trim() else transcript.trim()
         if (data.isBlank()) { setStatus("Paste a timestamped transcript or auto-transcribe the video first."); return }
+        val timestampedLines = timestampedTranscriptLineCount(data)
+        if (timestampedLines == 0) {
+            setStatus("No timestamped transcript lines found. Import SRT/VTT or lines like [00:00.00 - 00:04.20] spoken words before topic mapping.")
+            return
+        }
         if (provider == 3) {
             analyzeWithLocalModel(data, auto)
             return
@@ -1510,7 +1542,7 @@ Topic segmentation rules:
 1. List topics in chronological order. Never sort the list by importance.
 2. Use exact numeric start_seconds and end_seconds from transcript timing boundaries. They are seconds from the beginning of the ORIGINAL video.
 3. A topic covers the continuous section where that subject is discussed, with its real beginning and ending. Do not use a generic 60/90-second window as the topic timestamp.
-4. A topic may be shorter than 20 seconds when it contains a complete, meaningful point. Prefer natural content boundaries over fixed durations. Keep a single topic at or below 180 seconds; split longer discussions into coherent subtopics only at real subject or context boundaries.
+4. Prefer natural subject boundaries, not fixed-duration windows. A coherent topic may exceed 180 seconds; keep the complete topic in the map instead of dropping it or cutting it arbitrarily. The creator can choose a shorter export range later. Split only when a genuinely different subject or subtopic begins.
 5. Include every meaningful distinct topic; do not limit results to only eight for the whole video. This response covers only one overlapping transcript chunk. Other chunks will be analysed and merged.
 6. Include the complete question with its answer when needed for context. Do not start halfway through an answer or end mid-sentence.
 7. Do not invent or guess timestamps, speakers, topics, statements or facts. Use only content supported by this transcript segment.
@@ -1522,7 +1554,7 @@ Transcript chunk $index of $chunkTotal:
 $chunkText
 """.trimIndent()
                     val raw = chat(prompt, key, provider)
-                    candidates.addAll(parseHighlights(raw))
+                    candidates.addAll(alignTopicTimesToChunk(parseHighlights(raw), chunkText))
                     val progress = ((index + 1) * 100 / chunkTotal).coerceIn(1, 100)
                     runOnUiThread {
                         setStatus("Mapping video topics… section " + (index + 1) + "/" + chunkTotal + " · " + progress + "%")
@@ -1530,7 +1562,7 @@ $chunkText
                 }
                 val topics = normalizeTopicMap(candidates)
                 if (topics.isEmpty()) {
-                    throw IOException("The AI did not return reliable timestamped topics. Check that the transcript includes timestamps.")
+                    throw IOException("The AI response contained no usable timestamped topic cards across " + chunkTotal + " transcript section(s). Check the provider response, transcript timestamps, or try another AI model.")
                 }
                 runOnUiThread {
                     showHighlights(topics)
@@ -1594,38 +1626,170 @@ $chunkText
         }
     }
 
-    private fun parseHighlights(raw: String): List<Highlight> {
-        val first = raw.indexOf('[')
-        val last = raw.lastIndexOf(']')
-        if (first < 0 || last <= first) return emptyList()
-        val arr = JSONArray(raw.substring(first, last + 1))
+    private fun timestampedTranscriptLineCount(data: String): Int {
+        val pattern = Regex("""\[\s*\d{1,3}:\d{2}\.\d{1,3}\s*[-–]\s*\d{1,3}:\d{2}\.\d{1,3}\s*\]""")
+        return data.lineSequence().count { pattern.containsMatchIn(it) }
+    }
+
+    private fun parseTimeValue(value: Any?): Double? {
+        if (value == null || value == JSONObject.NULL) return null
+        if (value is Number) return value.toDouble().takeIf { it.isFinite() && it >= 0.0 }
+        val raw = value.toString().trim().trim('"', '\'').replace(',', '.')
+        if (raw.isBlank()) return null
+        raw.toDoubleOrNull()?.let { return it.takeIf { number -> number.isFinite() && number >= 0.0 } }
+        val pieces = raw.split(":")
+        val parsed = pieces.map { it.toDoubleOrNull() ?: return null }
+        val seconds = when (parsed.size) {
+            2 -> parsed[0] * 60.0 + parsed[1]
+            3 -> parsed[0] * 3600.0 + parsed[1] * 60.0 + parsed[2]
+            else -> return null
+        }
+        return seconds.takeIf { it.isFinite() && it >= 0.0 }
+    }
+
+    private fun firstJsonValue(item: JSONObject, keys: List<String>): Any? {
+        for (key in keys) {
+            if (item.has(key) && !item.isNull(key)) return item.opt(key)
+        }
+        return null
+    }
+
+    private fun firstJsonText(item: JSONObject, keys: List<String>, fallback: String): String {
+        val value = firstJsonValue(item, keys) ?: return fallback
+        return value.toString().trim().ifBlank { fallback }
+    }
+
+    private fun parseTopicArray(array: JSONArray): List<Highlight> {
         val out = mutableListOf<Highlight>()
-        for (i in 0 until arr.length()) {
-            val item = arr.optJSONObject(i) ?: continue
-            val a = item.optDouble("start_seconds", Double.NaN)
-            val b = item.optDouble("end_seconds", Double.NaN)
-            val start = a.takeIf { it.isFinite() && it >= 0 }
-            val end = b.takeIf { it.isFinite() && it > (start ?: -1.0) }
-            if (start != null && end != null && durationMs > 0 && end > durationMs / 1000.0 + 1.0) continue
-            out.add(
-                Highlight(
-                    start, end,
-                    item.optString("hook", "Suggested moment"),
-                    item.optString("reason", ""),
-                    item.optString("category", "Key insight"),
-                    item.optInt("importance_score", 0).coerceIn(0, 10)
-                )
-            )
+        for (i in 0 until array.length()) {
+            val item = array.optJSONObject(i) ?: continue
+            val start = parseTimeValue(firstJsonValue(item, listOf(
+                "start_seconds", "start", "start_time", "start_timestamp", "from_seconds", "begin_seconds"
+            )))
+            val end = parseTimeValue(firstJsonValue(item, listOf(
+                "end_seconds", "end", "end_time", "end_timestamp", "to_seconds", "finish_seconds"
+            )))
+            if (start == null || end == null || end <= start) continue
+            if (durationMs > 0L && end * 1000.0 > durationMs + 5000.0) continue
+            val hook = firstJsonText(item, listOf("hook", "title", "topic_title", "topic", "name"), "Suggested topic")
+            val reason = firstJsonText(item, listOf("reason", "description", "explanation", "summary"), "")
+            val category = firstJsonText(item, listOf("category", "topic_type", "type"), "Topic")
+            val scoreValue = firstJsonValue(item, listOf("importance_score", "importance", "score"))
+            val score = when (scoreValue) {
+                is Number -> scoreValue.toInt()
+                else -> scoreValue?.toString()?.toDoubleOrNull()?.toInt() ?: 0
+            }.coerceIn(0, 10)
+            out.add(Highlight(start, end, hook, reason, category, score))
         }
         return out
     }
 
+    private fun parseHighlights(raw: String): List<Highlight> {
+        // Model responses sometimes wrap JSON in prose/Markdown, or return { "topics": [...] }.
+        // Scan balanced JSON containers while respecting quoted strings, then accept the first
+        // container that yields usable timestamped topic objects.
+        for (startIndex in raw.indices) {
+            val opening = raw[startIndex]
+            if (opening != '[' && opening != '{') continue
+            val stack = mutableListOf<Char>()
+            var inString = false
+            var escaped = false
+            var endIndex = -1
+            var malformed = false
+            for (index in startIndex until raw.length) {
+                val ch = raw[index]
+                if (inString) {
+                    if (escaped) escaped = false
+                    else if (ch == '\\') escaped = true
+                    else if (ch == '"') inString = false
+                    continue
+                }
+                when (ch) {
+                    '"' -> inString = true
+                    '{', '[' -> stack.add(ch)
+                    '}', ']' -> {
+                        if (stack.isEmpty()) {
+                            malformed = true
+                            break
+                        }
+                        val top = stack.removeAt(stack.lastIndex)
+                        if ((top == '{' && ch != '}') || (top == '[' && ch != ']')) {
+                            malformed = true
+                            break
+                        }
+                        if (stack.isEmpty()) {
+                            endIndex = index
+                            break
+                        }
+                    }
+                }
+            }
+            if (malformed || endIndex <= startIndex) continue
+            val payload = raw.substring(startIndex, endIndex + 1)
+            try {
+                val parsed = if (opening == '[') {
+                    parseTopicArray(JSONArray(payload))
+                } else {
+                    val rootObject = JSONObject(payload)
+                    var nested: JSONArray? = null
+                    for (key in listOf("topics", "topic_map", "topic_segments", "segments", "highlights", "clips", "results", "data")) {
+                        nested = rootObject.optJSONArray(key)
+                        if (nested != null) break
+                    }
+                    if (nested != null) parseTopicArray(nested)
+                    else if (firstJsonValue(rootObject, listOf("start_seconds", "start", "start_time")) != null) {
+                        parseTopicArray(JSONArray().put(rootObject))
+                    } else emptyList()
+                }
+                if (parsed.isNotEmpty()) return parsed
+            } catch (_: Exception) {
+                // Try the next balanced JSON container in the response.
+            }
+        }
+        return emptyList()
+    }
+
+    private fun transcriptTimeRange(text: String): Pair<Double, Double>? {
+        val pattern = Regex("""\[\s*(\d{1,3}:\d{2}\.\d{1,3})\s*[-–]\s*(\d{1,3}:\d{2}\.\d{1,3})\s*\]""")
+        val matches = pattern.findAll(text).toList()
+        if (matches.isEmpty()) return null
+        val first = matches.first()
+        val last = matches.last()
+        val start = parseTimeValue(first.groupValues[1]) ?: return null
+        val end = parseTimeValue(last.groupValues[2]) ?: return null
+        return if (end > start) Pair(start, end) else null
+    }
+
+    private fun alignTopicTimesToChunk(topics: List<Highlight>, chunkText: String): List<Highlight> {
+        if (topics.isEmpty()) return topics
+        val range = transcriptTimeRange(chunkText) ?: return topics
+        val chunkStart = range.first
+        val chunkEnd = range.second
+        if (chunkStart <= 2.0) return topics
+        val minimumStart = topics.mapNotNull { it.start }.minOrNull() ?: return topics
+        val maximumEnd = topics.mapNotNull { it.end }.maxOrNull() ?: return topics
+        val chunkSpan = chunkEnd - chunkStart
+        // Some models return seconds relative to the current chunk despite the prompt asking
+        // for source-video absolute seconds. Detect that case and offset those values.
+        val looksChunkRelative = minimumStart < chunkStart - 2.0 && maximumEnd <= chunkSpan + 20.0
+        return if (looksChunkRelative) {
+            topics.map { item ->
+                item.copy(
+                    start = item.start?.plus(chunkStart),
+                    end = item.end?.plus(chunkStart)
+                )
+            }
+        } else topics
+    }
+
     private fun normalizeTopicMap(candidates: List<Highlight>): List<Highlight> {
+        // Topic Map is the complete topic index, not a Shorts-only clip list. Do not discard a
+        // coherent topic merely because it lasts longer than the 180-second single-export limit.
         val chronological = candidates.filter { item ->
             val a = item.start
             val b = item.end
-            a != null && b != null && a >= 0.0 && b > a && b - a <= 180.0 &&
-                (durationMs <= 0L || b * 1000.0 <= durationMs + 1000.0)
+            a != null && b != null && a >= 0.0 && b > a &&
+                (durationMs <= 0L || b * 1000.0 <= durationMs + 5000.0)
         }.sortedBy { it.start }
         val merged = mutableListOf<Highlight>()
         for (candidate in chronological) {
@@ -1647,7 +1811,7 @@ $chunkText
         return merged.sortedBy { it.start }
     }
 
-    private fun suggestionSelectedStatus(index: Int): String =
+        private fun suggestionSelectedStatus(index: Int): String =
         "Topic " + (index + 1) + " selected. Exact timestamps loaded into Start / End."
 
     private fun showHighlights(items: List<Highlight>) {
@@ -1667,7 +1831,7 @@ $chunkText
         }
         highlightsView.removeAllViews()
         if (items.isEmpty()) {
-            highlightsView.addView(text("No timestamped topics to show. Check the transcript and run topic mapping again.", 12f, muted).apply { setPadding(0, dp(8), 0, 0) })
+            highlightsView.addView(text("No usable topic cards were returned. Check that the transcript has timestamps, try another AI provider, or run Analyze all topics again.", 12f, muted).apply { setPadding(0, dp(8), 0, 0) })
             refreshQueueControls()
             return
         }
@@ -1704,7 +1868,10 @@ $chunkText
             if (item.start != null && item.end != null) {
                 row.addView(text(clock(item.start) + "  →  " + clock(item.end), 12f, accent, true)
                     .apply { setPadding(0, dp(5), 0, 0) })
-                row.addView(text("Duration  " + clock(item.end - item.start), 11f, muted, true)
+                val topicDuration = item.end - item.start
+                val durationText = "Duration  " + clock(topicDuration) +
+                    if (topicDuration > 180.0) "  ·  Long topic — trim to 3 minutes or less for Shorts export" else ""
+                row.addView(text(durationText, 11f, muted, true)
                     .apply { setPadding(0, dp(3), 0, 0) })
             } else {
                 row.addView(text("Timestamp unavailable", 12f, accent, true)
@@ -2010,7 +2177,8 @@ $chunkText
                     val markersMessage = if (pendingYoutubeStartSeconds != null && pendingYoutubeEndSeconds != null) {
                         " The saved YouTube preview markers were applied where they fit this source file."
                     } else ""
-                    setStatus("Authorized video file imported. It is now the editable source." + markersMessage)
+                    setStatus("Authorized video file imported. Starting full-video topic discovery…" + markersMessage)
+                    autoStartAnalysisForSelectedSource()
                 }
                 partial?.delete()
             } catch (e: Exception) {

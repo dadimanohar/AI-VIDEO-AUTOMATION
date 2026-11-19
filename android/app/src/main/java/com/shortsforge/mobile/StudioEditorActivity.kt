@@ -861,6 +861,181 @@ class StudioEditorActivity : ComponentActivity() {
         return processor
     }
 
+    private fun generateAiEditIdeas() {
+        if (aiEditBusy || busy) {
+            setStatus("Wait for the current edit or export to finish.")
+            return
+        }
+        if (aiProvider !in 0..2) {
+            setStatus("AI text ideas need a saved Groq, OpenAI or Claude key. Choose a cloud provider in the main Settings screen first.")
+            return
+        }
+        val key = readStudioApiKey(aiProvider)
+        if (key.isBlank()) {
+            setStatus("No saved API key found for this cloud provider. Go back to ShortsForge Settings, save your provider key, and reopen Studio.")
+            return
+        }
+        val clipTranscript = transcriptForSelectedSegment()
+        if (clipTranscript.isBlank() && topicContext.isBlank()) {
+            setStatus("No topic transcript was passed to Studio. Return to the Video Topic Map, select a topic card, then open Studio again.")
+            return
+        }
+
+        val prompt = """
+You are an ethical short-form video editor. Create three different on-screen hook/title overlays for the selected video clip.
+Rules:
+- Use only the supplied topic and transcript. Never invent statistics, quotes, names, or claims.
+- Make each idea clear, natural, and easy to read on a phone.
+- Each overlay must be 4 to 10 words and no more than 72 characters.
+- Do not use hashtags, quotation marks, numbering, or emojis.
+- Make the three ideas meaningfully different: curiosity hook, clear topic headline, and viewer-benefit hook.
+- Return JSON only in this exact shape: {"ideas":[{"text":"...","purpose":"..."},{"text":"...","purpose":"..."},{"text":"...","purpose":"..."}]}.
+
+Selected topic(s): ${topicContext.ifBlank { "Use the transcript below." }}
+
+Transcript for the selected clip:
+${clipTranscript.take(14000)}
+""".trimIndent()
+
+        aiEditBusy = true
+        setStatus("AI is reading the selected topic and writing three short hook ideas…")
+        Thread {
+            try {
+                val raw = studioChat(prompt, key, aiProvider)
+                val ideas = parseStudioIdeas(raw)
+                if (ideas.isEmpty()) throw IOException("The AI response did not contain three usable text ideas. Try again.")
+                runOnUiThread {
+                    aiEditBusy = false
+                    val labels = ideas.mapIndexed { index, idea -> (index + 1).toString() + ". " + idea }
+                    android.app.AlertDialog.Builder(this)
+                        .setTitle("Choose an AI hook")
+                        .setItems(labels.toTypedArray()) { _, which ->
+                            overlayText = ideas[which].take(140)
+                            overlayField.setText(overlayText)
+                            styleSpinner.setSelection(1)
+                            positionSpinner.setSelection(2)
+                            setStatus("AI hook added as editable text. Change its wording, style or position before export.")
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                    setStatus("Three AI hook ideas are ready. Choose one to add it to your text overlay.")
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    aiEditBusy = false
+                    setStatus("AI edit assistant failed: " + (e.message ?: "unknown AI error"))
+                }
+            }
+        }.start()
+    }
+
+    private fun transcriptForSelectedSegment(): String {
+        val data = transcriptContext.trim()
+        if (data.isBlank()) return ""
+        val seg = selectedSegment() ?: return data.take(14000)
+        val stamp = Regex("""\[\s*(\d{1,3}:\d{2}(?:\.\d{1,3})?)\s*[-–]\s*(\d{1,3}:\d{2}(?:\.\d{1,3})?)\s*\]""")
+        val selectedLines = data.lines().filter { line ->
+            val match = stamp.find(line) ?: return@filter false
+            val start = parseStudioTime(match.groupValues[1]) ?: return@filter false
+            val end = parseStudioTime(match.groupValues[2]) ?: return@filter false
+            start <= seg.endMs / 1000.0 && end >= seg.startMs / 1000.0
+        }
+        return (if (selectedLines.isNotEmpty()) selectedLines.joinToString("\n") else data).take(14000)
+    }
+
+    private fun parseStudioTime(value: String): Double? {
+        val pieces = value.split(":")
+        if (pieces.size != 2) return null
+        val minutes = pieces[0].toDoubleOrNull() ?: return null
+        val seconds = pieces[1].toDoubleOrNull() ?: return null
+        return (minutes * 60.0 + seconds).takeIf { it.isFinite() && it >= 0.0 }
+    }
+
+    private fun readStudioApiKey(providerId: Int): String {
+        return try {
+            val prefs = getSharedPreferences("shortsforge_secure_settings", MODE_PRIVATE)
+            val encoded = prefs.getString("key_" + providerId, null) ?: return ""
+            val packed = Base64.decode(encoded, Base64.NO_WRAP)
+            if (packed.size <= 12) return ""
+            val store = java.security.KeyStore.getInstance("AndroidKeyStore")
+            store.load(null)
+            val secret = store.getKey("ShortsForgeApiKeyEncryption", null) as? javax.crypto.SecretKey ?: return ""
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.DECRYPT_MODE, secret, GCMParameterSpec(128, packed.copyOfRange(0, 12)))
+            String(cipher.doFinal(packed.copyOfRange(12, packed.size)), Charsets.UTF_8)
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    private fun studioChat(prompt: String, key: String, providerId: Int): String {
+        val request = if (providerId == 0 || providerId == 1) {
+            val url = if (providerId == 0) {
+                "https://api.groq.com/openai/v1/chat/completions"
+            } else {
+                "https://api.openai.com/v1/chat/completions"
+            }
+            val model = if (providerId == 0) "openai/gpt-oss-120b" else "gpt-4o-mini"
+            val body = JSONObject()
+                .put("model", model)
+                .put("temperature", 0.45)
+                .put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", prompt)))
+            Request.Builder().url(url)
+                .header("Authorization", "Bearer " + key)
+                .post(body.toString().toRequestBody("application/json".toMediaType()))
+                .build()
+        } else {
+            val body = JSONObject()
+                .put("model", "claude-haiku-4-5-20251001")
+                .put("max_tokens", 900)
+                .put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", prompt)))
+            Request.Builder().url("https://api.anthropic.com/v1/messages")
+                .header("x-api-key", key)
+                .header("anthropic-version", "2023-06-01")
+                .post(body.toString().toRequestBody("application/json".toMediaType()))
+                .build()
+        }
+        studioHttp.newCall(request).execute().use { response ->
+            val raw = response.body?.string().orEmpty()
+            if (!response.isSuccessful) {
+                val reason = try {
+                    JSONObject(raw).optJSONObject("error")?.optString("message")?.takeIf { it.isNotBlank() }
+                        ?: raw.take(200)
+                } catch (_: Exception) { raw.take(200) }
+                throw IOException("AI API HTTP " + response.code + ": " + reason)
+            }
+            val json = JSONObject(raw)
+            return if (providerId == 2) {
+                json.optJSONArray("content")?.optJSONObject(0)?.optString("text").orEmpty()
+            } else {
+                json.optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("message")?.optString("content").orEmpty()
+            }
+        }
+    }
+
+    private fun parseStudioIdeas(raw: String): List<String> {
+        val cleaned = raw.trim()
+        val start = cleaned.indexOf('{')
+        val end = cleaned.lastIndexOf('}')
+        if (start >= 0 && end > start) {
+            val obj = runCatching { JSONObject(cleaned.substring(start, end + 1)) }.getOrNull()
+            val array = obj?.optJSONArray("ideas") ?: obj?.optJSONArray("options")
+            if (array != null) {
+                val parsed = (0 until array.length()).mapNotNull { index ->
+                    val item = array.opt(index)
+                    val text = if (item is JSONObject) {
+                        item.optString("text").ifBlank { item.optString("title") }
+                    } else item?.toString().orEmpty()
+                    text.trim().takeIf { it.isNotBlank() }
+                }.distinct().take(3)
+                if (parsed.isNotEmpty()) return parsed
+            }
+        }
+        return cleaned.lines().map { line ->
+            line.trim().replace(Regex("""^[-*•\d.)\s]+"""), "")
+        }.filter { it.isNotBlank() && it.length <= 100 }.distinct().take(3)
+    }
+
     private fun buildOverlayEffect(): OverlayEffect? {
         val caption = overlayText.trim().take(140)
         if (caption.isBlank()) return null

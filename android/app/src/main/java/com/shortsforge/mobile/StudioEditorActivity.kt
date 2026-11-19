@@ -44,6 +44,7 @@ import androidx.media3.effect.Brightness
 import androidx.media3.effect.Contrast
 import androidx.media3.effect.RgbFilter
 import androidx.media3.effect.ScaleAndRotateTransformation
+import androidx.media3.effect.TimestampWrapper
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
@@ -116,6 +117,7 @@ class StudioEditorActivity : ComponentActivity() {
     private var topicContext = ""
     private var aiProvider = 0
     private var aiEditBusy = false
+    private var burnTimedCaptions = false
 
     private lateinit var root: LinearLayout
     private lateinit var playerView: PlayerView
@@ -141,6 +143,7 @@ class StudioEditorActivity : ComponentActivity() {
     private lateinit var originalVolumeView: TextView
     private lateinit var musicVolumeValueView: TextView
     private lateinit var overlayField: EditText
+    private lateinit var autoCaptionCheck: CheckBox
     private lateinit var positionSpinner: Spinner
     private lateinit var styleSpinner: Spinner
     private lateinit var colorSpinner: Spinner
@@ -464,7 +467,19 @@ class StudioEditorActivity : ComponentActivity() {
             overlayField.setText("")
             setStatus("Text overlay cleared.")
         }, full(dp(5)))
-        panel.addView(labelText("AI ideas use the selected topic transcript and your saved cloud AI key. Choose an idea to add it as an editable text overlay.").apply { setPadding(0, dp(5), 0, dp(4) })
+        autoCaptionCheck = CheckBox(this).apply {
+            text = "Burn timed transcript captions into the video"
+            setTextColor(Color.WHITE)
+            textSize = 13f
+            buttonTintList = android.content.res.ColorStateList.valueOf(accent)
+            setOnCheckedChangeListener { _, checked ->
+                burnTimedCaptions = checked
+                setStatus(if (checked) "Timed captions will be burned from transcript lines that overlap each clip." else "Timed captions are off. Your title overlay remains available.")
+            }
+        }
+        panel.addView(autoCaptionCheck, full(dp(7)))
+        panel.addView(labelText("Captions use the selected topic's timestamped transcript. They appear only during each matching spoken segment.").apply { setPadding(0, dp(2), 0, dp(4)) })
+        panel.addView(labelText("AI ideas use the selected topic transcript and your saved cloud AI key. Choose an idea to add it as an editable text overlay.").apply { setPadding(0, dp(5), 0, dp(4)) })
         panel.addView(labelText("POSITION").apply { setPadding(0, dp(10), 0, dp(5)) })
         positionSpinner = darkSpinner(listOf("Top", "Centre", "Bottom"))
         positionSpinner.setSelection(2)
@@ -806,6 +821,13 @@ class StudioEditorActivity : ComponentActivity() {
                 ))
                 if (speed != 1f) effects.add(SpeedChangeEffect(speedProvider))
                 buildOverlayEffect()?.let { overlay -> effects.add(overlay) }
+                if (burnTimedCaptions) {
+                    val timedCaptions = buildTimedCaptionEffects(seg)
+                    if (timedCaptions.isEmpty()) {
+                        throw IOException("Timed captions were enabled, but no timestamped transcript lines overlap this clip. Turn captions off or return to the main editor and import a timestamped transcript.")
+                    }
+                    effects.addAll(timedCaptions)
+                }
                 val audioProcessors = mutableListOf<androidx.media3.common.audio.AudioProcessor>()
                 if (speed != 1f) audioProcessors.add(SpeedChangingAudioProcessor(speedProvider))
                 if (!muteOriginalAudio && originalVolume < 0.999f) audioProcessors.add(createVolumeProcessor(originalVolume))
@@ -848,6 +870,38 @@ class StudioEditorActivity : ComponentActivity() {
         } catch (e: Exception) {
             finishExport()
             setStatus("Could not start export: " + (e.message ?: "unknown editor error"))
+        }
+    }
+
+    private data class TimedCaption(val startMs: Long, val endMs: Long, val text: String)
+
+    private fun buildTimedCaptionEffects(segment: ClipSegment): List<androidx.media3.common.Effect> {
+        val stamp = Regex("""^\\s*\\[\\s*(\\d{1,3}:\\d{2}(?:\\.\\d{1,3})?)\\s*[-–]\\s*(\\d{1,3}:\\d{2}(?:\\.\\d{1,3})?)\\s*\\]\\s*(.*)$""")
+        val segmentStart = segment.startMs
+        val segmentEnd = segment.endMs
+        val captions = transcriptContext.lineSequence().mapNotNull { line ->
+            val match = stamp.matchEntire(line.trim()) ?: return@mapNotNull null
+            val sourceStart = parseStudioTime(match.groupValues[1])?.let { (it * 1000).toLong() } ?: return@mapNotNull null
+            val sourceEnd = parseStudioTime(match.groupValues[2])?.let { (it * 1000).toLong() } ?: return@mapNotNull null
+            val text = match.groupValues[3].trim().take(150)
+            if (text.isBlank() || sourceEnd <= sourceStart) return@mapNotNull null
+            val clippedStart = maxOf(sourceStart, segmentStart)
+            val clippedEnd = minOf(sourceEnd, segmentEnd)
+            if (clippedEnd - clippedStart < 100L) return@mapNotNull null
+            TimedCaption(clippedStart - segmentStart, clippedEnd - segmentStart, text)
+        }.toList().take(500)
+
+        return captions.map { caption ->
+            val span = SpannableString(caption.text)
+            span.setSpan(ForegroundColorSpan(Color.WHITE), 0, span.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            span.setSpan(BackgroundColorSpan(Color.argb(210, 5, 7, 12)), 0, span.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            span.setSpan(StyleSpan(Typeface.BOLD), 0, span.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            val settings = OverlaySettings.Builder()
+                .setOverlayFrameAnchor(0f, -0.82f)
+                .setBackgroundFrameAnchor(0f, -0.82f)
+                .build()
+            val overlay = OverlayEffect(listOf(TextOverlay.createStaticTextOverlay(span, settings)))
+            TimestampWrapper(overlay, caption.startMs * 1000L, caption.endMs * 1000L)
         }
     }
 

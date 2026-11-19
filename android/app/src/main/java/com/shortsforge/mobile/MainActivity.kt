@@ -206,6 +206,13 @@ class MainActivity : ComponentActivity() {
         root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(page) }
         setContentView(root)
         showEditor()
+        handleIncomingIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncomingIntent(intent)
     }
 
     override fun onPause() {
@@ -220,6 +227,161 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
+    @Suppress("DEPRECATION")
+    private fun firstSharedStream(incoming: Intent): android.net.Uri? {
+        return if (Build.VERSION.SDK_INT >= 33) {
+            if (incoming.action == Intent.ACTION_SEND_MULTIPLE) {
+                incoming.getParcelableArrayListExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)?.firstOrNull()
+            } else {
+                incoming.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
+            }
+        } else {
+            if (incoming.action == Intent.ACTION_SEND_MULTIPLE) {
+                incoming.getParcelableArrayListExtra<android.net.Uri>(Intent.EXTRA_STREAM)?.firstOrNull()
+            } else {
+                incoming.getParcelableExtra(Intent.EXTRA_STREAM) as? android.net.Uri
+            }
+        }
+    }
+
+    private fun handleIncomingIntent(incoming: Intent?) {
+        if (incoming == null) return
+        val action = incoming.action.orEmpty()
+        val sharedUri = when (action) {
+            Intent.ACTION_VIEW -> incoming.data ?: incoming.clipData?.getItemAt(0)?.uri
+            Intent.ACTION_SEND, Intent.ACTION_SEND_MULTIPLE ->
+                firstSharedStream(incoming) ?: incoming.clipData?.getItemAt(0)?.uri
+            else -> incoming.clipData?.getItemAt(0)?.uri
+        }
+        if (sharedUri != null && (sharedUri.scheme == "content" || sharedUri.scheme == "file")) {
+            confirmAndImportSharedVideo(sharedUri)
+            return
+        }
+
+        val sharedText = (incoming.getStringExtra(Intent.EXTRA_TEXT) ?: incoming.data?.toString()).orEmpty().trim()
+        if (sharedText.isNotBlank()) {
+            val candidate = Regex("https?://[^\\s]+", RegexOption.IGNORE_CASE)
+                .find(sharedText)?.value?.trimEnd('.', ',', ')', ']', '>')
+            if (!candidate.isNullOrBlank()) {
+                val uri = android.net.Uri.parse(candidate)
+                if (isYouTubeHost(uri.host.orEmpty().lowercase(Locale.ROOT))) {
+                    youtubeUrlText = candidate
+                    if (::youtubeUrlEdit.isInitialized) youtubeUrlEdit.setText(candidate)
+                    setStatus("YouTube link received. It can be previewed and used for timestamp markers, but it is not an editable video file. Share or select a video file you are authorised to edit.")
+                } else if (uri.scheme == "https") {
+                    directVideoUrlText = candidate
+                    if (::directVideoUrlEdit.isInitialized) directVideoUrlEdit.setText(candidate)
+                    setStatus("Video link received. Review it and use the authorised direct-file import control if it points directly to a video file you are allowed to use.")
+                } else {
+                    setStatus("Shared text received. Choose the downloaded video file to use it as a source.")
+                }
+            } else {
+                setStatus("Shared text received. Choose the downloaded video file to use it as a source.")
+            }
+        }
+    }
+
+    private fun confirmAndImportSharedVideo(uri: android.net.Uri) {
+        val check = CheckBox(this).apply {
+            text = "I own this video or have permission from the rights holder to edit it."
+            setTextColor(ink)
+            textSize = 13f
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Import shared video")
+            .setMessage("ShortsForge will copy the shared video file into its private storage so it remains available for topic analysis and editing. This imports a file shared from YTDLnis or another Android app; it does not download YouTube streams.")
+            .setView(check)
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Import video") { _, _ ->
+                if (!check.isChecked) {
+                    setStatus("Confirm that you have permission to edit this video before importing it.")
+                } else {
+                    importSharedVideo(uri)
+                }
+            }
+            .show()
+    }
+
+    private fun importSharedVideo(uri: android.net.Uri) {
+        if (busy) {
+            setStatus("Another operation is running. Wait for it to finish before importing a shared video.")
+            return
+        }
+        val sourceName = try { displayName(uri) } catch (_: Exception) { "shared-video.mp4" }
+        val mime = try { contentResolver.getType(uri).orEmpty() } catch (_: Exception) { "" }
+        val sourceExtension = sourceName.substringAfterLast('.', "").lowercase(Locale.ROOT)
+        if (!mime.startsWith("video/") && sourceExtension !in videoExtensions) {
+            setStatus("The shared item is not recognised as a video. Share a video file, not a YouTube page or text link.")
+            return
+        }
+
+        busy = true
+        refreshFooter()
+        setStatus("Importing " + sourceName + " from the shared app…")
+        executor.execute {
+            var destination: File? = null
+            try {
+                val importDir = File(filesDir, "shared-video-imports")
+                if (!importDir.exists() && !importDir.mkdirs()) throw IOException("Could not create the import folder.")
+                val outputExtension = sourceExtension.takeIf { it in videoExtensions } ?: when (mime.lowercase(Locale.ROOT)) {
+                    "video/webm" -> "webm"
+                    "video/quicktime" -> "mov"
+                    "video/x-matroska" -> "mkv"
+                    "video/3gpp" -> "3gp"
+                    else -> "mp4"
+                }
+                val safeBase = sourceName.substringBeforeLast('.', sourceName)
+                    .replace(Regex("[^A-Za-z0-9._-]"), "_").take(70).ifBlank { "shared-video" }
+                destination = File(importDir, System.currentTimeMillis().toString() + "_" + safeBase + "." + outputExtension)
+                val input = contentResolver.openInputStream(uri) ?: throw IOException("Android could not open the shared video.")
+                var totalBytes = 0L
+                input.use { source ->
+                    FileOutputStream(destination).use { output ->
+                        val buffer = ByteArray(128 * 1024)
+                        while (true) {
+                            val count = source.read(buffer)
+                            if (count < 0) break
+                            totalBytes += count.toLong()
+                            if (totalBytes > 2L * 1024L * 1024L * 1024L) throw IOException("Shared video exceeds the 2 GB import safety limit.")
+                            output.write(buffer, 0, count)
+                        }
+                        output.flush()
+                    }
+                }
+                if (destination.length() <= 0L) throw IOException("The shared video file is empty.")
+                val localUri = android.net.Uri.fromFile(destination)
+                val importedDuration = readDuration(localUri)
+                runOnUiThread {
+                    selectedVideo = localUri
+                    videoName = destination.name
+                    durationMs = importedDuration
+                    applyPendingMarkersOrDefault()
+                    if (::videoNameView.isInitialized) {
+                        videoNameView.text = videoName
+                        videoDurationView.text = if (durationMs > 0) "Duration  " + clock(durationMs / 1000.0) else "Imported video · Android-supported format"
+                        playerView.visibility = View.VISIBLE
+                        player?.setMediaItem(MediaItem.fromUri(localUri))
+                        player?.prepare()
+                        player?.playWhenReady = false
+                        startEdit.setText(startText)
+                        endEdit.setText(endText)
+                    }
+                    busy = false
+                    refreshFooter()
+                    setStatus("Downloaded video imported successfully. It is now the ShortsForge source for transcription, full-topic mapping, clip selection and Studio editing.")
+                }
+            } catch (e: Exception) {
+                destination?.delete()
+                runOnUiThread {
+                    busy = false
+                    refreshFooter()
+                    setStatus("Could not import the shared video: " + (e.message ?: "unknown error") + ". You can also select it from Downloads.")
+                }
+            }
+        }
+    }
+
     private fun showEditor() {
         root.removeAllViews()
         root.addView(toolbar("ShortsForge", "MOBILE SHORTS STUDIO", "Settings") { showSettings() })
@@ -232,6 +394,11 @@ class MainActivity : ComponentActivity() {
 
         val source = card(body, "01  •  SOURCE VIDEO", "Choose a local file, preview a YouTube link, or import a creator-authorized direct video file URL.")
         source.addView(button("Choose video", true) { pickVideo.launch(arrayOf("video/*")) }, full())
+        source.addView(button("Choose downloaded video · YTDLnis / Downloads", false) {
+            pickVideo.launch(arrayOf("video/*"))
+        }, full(dp(7)))
+        source.addView(text("You can also open YTDLnis → Share → ShortsForge to send a video file directly into this app. ShortsForge imports the shared file; it does not include YTDLnis or download YouTube streams.", 11f, muted)
+            .apply { setPadding(0, dp(6), 0, dp(7)) })
 
         source.addView(label("YOUTUBE VIDEO URL"))
         youtubeUrlEdit = input("Paste a YouTube watch, Shorts, or youtu.be link", youtubeUrlText, false)
@@ -566,7 +733,8 @@ class MainActivity : ComponentActivity() {
     private fun readDuration(uri: android.net.Uri): Long {
         val retriever = MediaMetadataRetriever()
         return try {
-            retriever.setDataSource(this, uri)
+            if (uri.scheme == "file") retriever.setDataSource(uri.path ?: throw IOException("Missing video path"))
+            else retriever.setDataSource(this, uri)
             retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
         } catch (_: Exception) { 0L } finally { try { retriever.release() } catch (_: Exception) { } }
     }

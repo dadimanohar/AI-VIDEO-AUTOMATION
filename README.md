@@ -8,8 +8,8 @@ Turn a long interview, podcast, lecture, or other video file into short clips by
 | App detail | Value |
 |---|---|
 | App name | ShortsForge Mobile |
-| Current release | 1.13.0 |
-| Version code | 17 |
+| Current release | 1.13.1 |
+| Version code | 18 |
 | Android package | `com.shortsforge.mobile` |
 | Minimum Android version | Android 8.0 (API 26) |
 | APK size | About 14 MB |
@@ -1759,3 +1759,22 @@ This update addresses the supplied screen recording where timestamped transcript
 - पुराना card design बना रहेगा: title, start/end, duration, category, importance, explanation, selected status, topic playback और queue controls।
 - 180 सेकंड से लंबे topic के लिए card चुनें, Start/End को 180 सेकंड या उससे कम करें और queue में जोड़ें। यह custom range batch MP4 export और Studio में सुरक्षित रहेगा; मूल full-topic timestamps card में नहीं बदलेंगे।
 - YTDLnis अलग app रहेगा। ShortsForge link को YTDLnis भेजता है और download की गई file Android Share या Downloads से import करता है; native YouTube stream downloader शामिल नहीं है।
+
+
+---
+
+# Version 1.13.1 update — audio extraction compatibility
+
+The screenshot supplied for this update showed that some videos played in ShortsForge but cloud transcription failed with `Failed to add the track to the muxer`. The former cloud transcription path copied the source audio codec directly into an MP4/M4A container using Android MediaMuxer. Some source audio codecs/containers are not accepted by that muxer.
+
+Version 1.13.1 keeps the fast M4A remux path for source audio tracks the MP4 muxer accepts. If the muxer rejects the audio track (including the reported `addTrack` failure), ShortsForge automatically falls back to Android MediaCodec decoding, downmixes the decoded audio to mono, resamples it to 16 kHz, and writes a WAV file. The selected file is then sent to Groq/OpenAI with the matching `audio/mp4` or `audio/wav` MIME type. The source video is not modified. The 24 MB transcription upload safety limit remains.
+
+This is an Android source/build fix. Build success confirms compilation and APK packaging, not a real-device test against the exact uploaded video. Videos whose audio codec cannot be decoded by the device's MediaCodec may still need a compatible source file or an imported timestamped transcript.
+
+# Version 1.13.1 — తెలుగు
+
+మీ screenshotలో వీడియో preview అవుతున్నా Groq/OpenAI transcription సమయంలో `Failed to add the track to the muxer` error వచ్చింది. పాత cloud path అసలు audio codecను MediaMuxer ద్వారా MP4/M4Aలో నేరుగా copy చేయడానికి ప్రయత్నించేది. కొన్ని source codecsను ఆ muxer అంగీకరించదు.
+
+Version 1.13.1లో MP4 muxer అంగీకరించే audio tracksకు వేగవంతమైన పాత M4A మార్గం కొనసాగుతుంది. Muxer audio trackను reject చేస్తే (మీ screenshotలోని `addTrack` failure లాంటిది), ShortsForge ఆటోమేటిక్‌గా Android MediaCodec decode fallback ఉపయోగిస్తుంది: audioను monoగా మార్చి, 16 kHzకు resample చేసి WAVగా తయారు చేస్తుంది. తర్వాత file extensionకు సరిపోయే `audio/mp4` లేదా `audio/wav` MIME typeతో Groq/OpenAIకు పంపుతుంది. Source video మారదు. 24 MB upload safety limit అలాగే ఉంది.
+
+ఇది Android source/build fix. Build success అనేది compile/APK packaging విజయాన్ని మాత్రమే నిర్ధారిస్తుంది; మీ అసలు videoతో physical device test చేసినట్లు కాదు. Device MediaCodec decode చేయలేని audio codec ఉన్న వీడియోలకు compatible source file లేదా timestamped transcript అవసరం కావచ్చు.

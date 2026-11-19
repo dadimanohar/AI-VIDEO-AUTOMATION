@@ -1405,7 +1405,7 @@ This history is reconstructed from the repository's versioned source commits and
 | 1.10.0 | Fixed global 60-topic పరిమితి తొలగింపు, chunk-wise topic extraction పెంపు, ప్రతి cardలో duration. |
 | 1.11.0 | YTDLnis లేదా ఇతర appలో ముందే download అయిన videoను Android Share ద్వారా import చేయడం, Downloads picker; పాత features అన్నీ కొనసాగింపు. |
 
-### Versionen-Verlauf — हिन्दी
+### संस्करण इतिहास — हिन्दी
 
 यह इतिहास repository के version commits और README रिकॉर्ड से तैयार किया गया है। GitHub का `mobile-latest` एक rolling download tag है; इसलिए सभी पुराने APK binaries अलग-अलग downloadable releases के रूप में सुरक्षित नहीं हैं। मौजूदा cumulative feature set नीचे और Version 1.11.0 विवरण में दिया गया है।
 

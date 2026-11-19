@@ -2444,11 +2444,17 @@ $chunkText
             setStatus("Your combined topics exceed the 180-second Studio export limit. Shorten or remove a topic.")
             return
         }
+        val studioTopics = if (chosen.isNotEmpty()) chosen.map { it.hook } else {
+            highlightItems.getOrNull(selectedHighlightIndex)?.hook?.let { listOf(it) } ?: emptyList()
+        }
         val intent = Intent(this, StudioEditorActivity::class.java)
             .putExtra(StudioEditorActivity.EXTRA_SOURCE_URI, uri.toString())
             .putExtra(StudioEditorActivity.EXTRA_SOURCE_DURATION, durationMs)
             .putExtra(StudioEditorActivity.EXTRA_CLIP_RANGES_MS, ranges)
             .putStringArrayListExtra(StudioEditorActivity.EXTRA_CLIP_TITLES, ArrayList(chosen.map { it.hook }))
+            .putExtra(StudioEditorActivity.EXTRA_TRANSCRIPT, transcript.take(24000))
+            .putExtra(StudioEditorActivity.EXTRA_TOPIC_CONTEXT, studioTopics.joinToString(" | ").take(2000))
+            .putExtra(StudioEditorActivity.EXTRA_AI_PROVIDER, provider)
             .putExtra(StudioEditorActivity.EXTRA_START_MS, ranges[0])
             .putExtra(StudioEditorActivity.EXTRA_END_MS, ranges[1])
         startActivity(intent)

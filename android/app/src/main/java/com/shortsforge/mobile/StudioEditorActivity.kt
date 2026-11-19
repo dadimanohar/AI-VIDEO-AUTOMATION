@@ -13,6 +13,7 @@ import android.os.Looper
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.text.InputType
+import android.util.Base64
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
@@ -31,12 +32,19 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.audio.SpeedProvider
 import androidx.media3.common.audio.SpeedChangingAudioProcessor
+import androidx.media3.common.audio.ChannelMixingAudioProcessor
+import androidx.media3.common.audio.ChannelMixingMatrix
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.OverlayEffect
 import androidx.media3.effect.OverlaySettings
 import androidx.media3.effect.Presentation
 import androidx.media3.effect.SpeedChangeEffect
 import androidx.media3.effect.TextOverlay
+import androidx.media3.effect.Brightness
+import androidx.media3.effect.Contrast
+import androidx.media3.effect.RgbFilter
+import androidx.media3.effect.ScaleAndRotateTransformation
+import androidx.media3.effect.TimestampWrapper
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
@@ -51,6 +59,15 @@ import androidx.media3.ui.PlayerView
 import java.io.File
 import java.io.IOException
 import java.util.Locale
+import java.util.concurrent.TimeUnit
+import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
+import org.json.JSONObject
 
 @UnstableApi
 class StudioEditorActivity : ComponentActivity() {
@@ -61,6 +78,11 @@ class StudioEditorActivity : ComponentActivity() {
     private val border = Color.rgb(55, 60, 76)
     private val handler = Handler(Looper.getMainLooper())
     private val progressHolder = ProgressHolder()
+    private val studioHttp = OkHttpClient.Builder()
+        .connectTimeout(25, TimeUnit.SECONDS)
+        .readTimeout(90, TimeUnit.SECONDS)
+        .callTimeout(110, TimeUnit.SECONDS)
+        .build()
 
     private data class ClipSegment(val id: Int, var startMs: Long, var endMs: Long, val title: String = "")
 
@@ -84,6 +106,18 @@ class StudioEditorActivity : ComponentActivity() {
     private var overlayPosition = 0
     private var overlayStyle = 0
     private var overlayColor = 0
+    private var filterPreset = 0
+    private var brightnessValue = 0f
+    private var contrastValue = 0f
+    private var rotationDegrees = 0f
+    private var cropToFill = true
+    private var originalVolume = 1f
+    private var musicVolume = 0.25f
+    private var transcriptContext = ""
+    private var topicContext = ""
+    private var aiProvider = 0
+    private var aiEditBusy = false
+    private var burnTimedCaptions = false
 
     private lateinit var root: LinearLayout
     private lateinit var playerView: PlayerView
@@ -97,7 +131,19 @@ class StudioEditorActivity : ComponentActivity() {
     private lateinit var endField: EditText
     private lateinit var speedSpinner: Spinner
     private lateinit var ratioSpinner: Spinner
+    private lateinit var framingSpinner: Spinner
+    private lateinit var rotationSpinner: Spinner
+    private lateinit var filterSpinner: Spinner
+    private lateinit var brightnessSeek: SeekBar
+    private lateinit var contrastSeek: SeekBar
+    private lateinit var brightnessValueView: TextView
+    private lateinit var contrastValueView: TextView
+    private lateinit var originalVolumeSeek: SeekBar
+    private lateinit var musicVolumeSeek: SeekBar
+    private lateinit var originalVolumeView: TextView
+    private lateinit var musicVolumeValueView: TextView
     private lateinit var overlayField: EditText
+    private lateinit var autoCaptionCheck: CheckBox
     private lateinit var positionSpinner: Spinner
     private lateinit var styleSpinner: Spinner
     private lateinit var colorSpinner: Spinner
@@ -113,8 +159,8 @@ class StudioEditorActivity : ComponentActivity() {
             musicUri = uri
             try { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch (_: Exception) { }
             musicName = displayName(uri)
-            if (::musicView.isInitialized) musicView.text = "Music track: " + musicName + " (replaces source audio)"
-            setStatus("Background music added to the timeline. It will loop to the length of your edit.")
+            if (::musicView.isInitialized) musicView.text = "Music track: " + musicName + " (mixed under original audio)"
+            setStatus("Background music added. It will loop under the original sound; adjust both volume sliders below.")
         }
     }
 
@@ -124,6 +170,9 @@ class StudioEditorActivity : ComponentActivity() {
         if (raw.isNullOrBlank()) { finish(); return }
         sourceUri = Uri.parse(raw)
         sourceDurationMs = intent.getLongExtra(EXTRA_SOURCE_DURATION, 0L)
+        transcriptContext = intent.getStringExtra(EXTRA_TRANSCRIPT).orEmpty().take(24000)
+        topicContext = intent.getStringExtra(EXTRA_TOPIC_CONTEXT).orEmpty().take(2000)
+        aiProvider = intent.getIntExtra(EXTRA_AI_PROVIDER, 0).coerceIn(0, 3)
         val rawRanges = intent.getLongArrayExtra(EXTRA_CLIP_RANGES_MS)
         val clipTitles = intent.getStringArrayListExtra(EXTRA_CLIP_TITLES) ?: arrayListOf()
         if (rawRanges != null && rawRanges.size >= 2 && rawRanges.size % 2 == 0) {
@@ -232,6 +281,7 @@ class StudioEditorActivity : ComponentActivity() {
         body.addView(sectionLabel("EDIT TOOLS"))
         body.addView(buildTrimCard(), full(dp(7)))
         body.addView(buildSpeedCanvasCard(), full(dp(8)))
+        body.addView(buildVideoLookCard(), full(dp(8)))
         body.addView(buildTextCard(), full(dp(8)))
         body.addView(buildAudioCard(), full(dp(8)))
 
@@ -297,8 +347,9 @@ class StudioEditorActivity : ComponentActivity() {
         panel.addView(labelText("Arrange your clips. Split at the playhead, remove a segment, undo, or add another range."))
         val row1 = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         row1.addView(actionButton("✂ Split", true) { splitAtPlayhead() }, weight())
-        row1.addView(actionButton("＋ Add clip", false) { addClipDialog() }, weight(dp(6)))
-        row1.addView(actionButton("Delete", false) { deleteSelectedSegment() }, weight(dp(6)))
+        row1.addView(actionButton("＋ Add clip", false) { addClipDialog() }, weight(dp(5)))
+        row1.addView(actionButton("Duplicate", false) { duplicateSelectedSegment() }, weight(dp(5)))
+        row1.addView(actionButton("Delete", false) { deleteSelectedSegment() }, weight(dp(5)))
         panel.addView(row1, full(dp(7)))
         val row2 = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         undoButton = actionButton("↶ Undo", false) { undo() }
@@ -337,6 +388,67 @@ class StudioEditorActivity : ComponentActivity() {
         panel.addView(labelText("CANVAS / ASPECT RATIO").apply { setPadding(0, dp(12), 0, dp(5)) })
         ratioSpinner = darkSpinner(listOf("Vertical 9:16 · Shorts", "Square 1:1", "Landscape 16:9"))
         panel.addView(ratioSpinner, full())
+        panel.addView(labelText("FRAME").apply { setPadding(0, dp(11), 0, dp(5)) })
+        framingSpinner = darkSpinner(listOf("Fill frame · crop edges", "Fit whole video · keep edges"))
+        framingSpinner.setSelection(0)
+        framingSpinner.onItemSelectedListener = simpleSelection { cropToFill = it == 0 }
+        panel.addView(framingSpinner, full())
+        panel.addView(labelText("ROTATE VIDEO").apply { setPadding(0, dp(11), 0, dp(5)) })
+        rotationSpinner = darkSpinner(listOf("0° · Original", "90° clockwise", "180°", "270° clockwise"))
+        rotationSpinner.onItemSelectedListener = simpleSelection { rotationDegrees = listOf(0f, 90f, 180f, 270f)[it] }
+        panel.addView(rotationSpinner, full())
+        panel.addView(labelText("Changes are rendered when you export. Use Preview to check the source framing before export.").apply { setPadding(0, dp(7), 0, 0) })
+        return panel
+    }
+
+    private fun buildVideoLookCard(): View {
+        val panel = panel()
+        panel.addView(labelText("VIDEO LOOK"))
+        filterSpinner = darkSpinner(listOf("Natural · no filter", "Black & white", "Negative", "Bright", "Cinematic contrast"))
+        filterSpinner.onItemSelectedListener = simpleSelection { filterPreset = it }
+        panel.addView(filterSpinner, full(dp(5)))
+        brightnessValueView = labelText("Brightness  ·  0")
+        panel.addView(brightnessValueView, full(dp(7)))
+        brightnessSeek = SeekBar(this).apply {
+            max = 200
+            progress = 100
+            progressTintList = android.content.res.ColorStateList.valueOf(accent)
+            thumbTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
+            setOnSeekBarChangeListener(simpleSeek { value ->
+                brightnessValue = ((value - 100) / 200f).coerceIn(-0.5f, 0.5f)
+                brightnessValueView.text = "Brightness  ·  " + String.format(Locale.US, "%.2f", brightnessValue)
+            })
+        }
+        panel.addView(brightnessSeek, full())
+        contrastValueView = labelText("Contrast  ·  0")
+        panel.addView(contrastValueView, full(dp(7)))
+        contrastSeek = SeekBar(this).apply {
+            max = 200
+            progress = 100
+            progressTintList = android.content.res.ColorStateList.valueOf(accent)
+            thumbTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
+            setOnSeekBarChangeListener(simpleSeek { value ->
+                contrastValue = ((value - 100) / 200f).coerceIn(-0.5f, 0.5f)
+                contrastValueView.text = "Contrast  ·  " + String.format(Locale.US, "%.2f", contrastValue)
+            })
+        }
+        panel.addView(contrastSeek, full())
+        panel.addView(actionButton("Reset video look", false) {
+            filterPreset = 0
+            brightnessValue = 0f
+            contrastValue = 0f
+            rotationDegrees = 0f
+            cropToFill = true
+            filterSpinner.setSelection(0)
+            brightnessSeek.progress = 100
+            contrastSeek.progress = 100
+            rotationSpinner.setSelection(0)
+            framingSpinner.setSelection(0)
+            brightnessValueView.text = "Brightness  ·  0"
+            contrastValueView.text = "Contrast  ·  0"
+            setStatus("Video look reset to the original picture.")
+        }, full(dp(8)))
+        panel.addView(labelText("Filters and picture adjustments are applied to the exported video.").apply { setPadding(0, dp(6), 0, 0) })
         return panel
     }
 
@@ -349,6 +461,26 @@ class StudioEditorActivity : ComponentActivity() {
         overlayField.minLines = 2
         overlayField.addTextChangedListener(simpleWatcher { overlayText = it.take(140) })
         panel.addView(overlayField, full(dp(5)))
+        panel.addView(actionButton("AI · Generate 3 hook / title ideas", true) { generateAiEditIdeas() }, full(dp(6)))
+        panel.addView(actionButton("Clear text overlay", false) {
+            overlayText = ""
+            overlayField.setText("")
+            setStatus("Text overlay cleared.")
+        }, full(dp(5)))
+        autoCaptionCheck = CheckBox(this).apply {
+            text = "Burn timed transcript captions into the video"
+            setTextColor(Color.WHITE)
+            textSize = 13f
+            buttonTintList = android.content.res.ColorStateList.valueOf(accent)
+            setOnCheckedChangeListener { _, checked ->
+                burnTimedCaptions = checked
+                setStatus(if (checked) "Timed captions will be burned from transcript lines that overlap each clip." else "Timed captions are off. Your title overlay remains available.")
+            }
+        }
+        panel.addView(autoCaptionCheck, full(dp(7)))
+        panel.addView(actionButton("Edit timed caption words / timestamps", false) { editTimedTranscriptDialog() }, full(dp(5)))
+        panel.addView(labelText("Captions use the selected topic's timestamped transcript. They appear only during each matching spoken segment. Edit the words or timestamps above before exporting.").apply { setPadding(0, dp(2), 0, dp(4)) })
+        panel.addView(labelText("AI ideas use the selected topic transcript and your saved cloud AI key. Choose an idea to add it as an editable text overlay.").apply { setPadding(0, dp(5), 0, dp(4)) })
         panel.addView(labelText("POSITION").apply { setPadding(0, dp(10), 0, dp(5)) })
         positionSpinner = darkSpinner(listOf("Top", "Centre", "Bottom"))
         positionSpinner.setSelection(2)
@@ -374,22 +506,57 @@ class StudioEditorActivity : ComponentActivity() {
             buttonTintList = android.content.res.ColorStateList.valueOf(accent)
             setOnCheckedChangeListener { _, checked ->
                 muteOriginalAudio = checked
-                setStatus(if (checked) "Original video audio will be removed on export." else "Original video audio will be kept unless a music track replaces it.")
+                setStatus(if (checked) "Original video audio will be removed on export." else "Original video sound will remain and can mix with background music.")
             }
         }
         panel.addView(muteCheck, full())
         musicView = labelText("No background music selected.")
         panel.addView(musicView, full(dp(4)))
+        originalVolumeView = labelText("Original video sound  ·  100%")
+        panel.addView(originalVolumeView, full(dp(6)))
+        originalVolumeSeek = SeekBar(this).apply {
+            max = 100
+            progress = 100
+            progressTintList = android.content.res.ColorStateList.valueOf(accent)
+            thumbTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
+            setOnSeekBarChangeListener(simpleSeek { value ->
+                originalVolume = value / 100f
+                originalVolumeView.text = "Original video sound  ·  " + value + "%"
+                if (value == 0) {
+                    muteOriginalAudio = true
+                    if (::muteCheck.isInitialized) muteCheck.isChecked = true
+                } else if (muteOriginalAudio) {
+                    muteOriginalAudio = false
+                    if (::muteCheck.isInitialized) muteCheck.isChecked = false
+                }
+            })
+        }
+        panel.addView(originalVolumeSeek, full())
+        musicVolumeValueView = labelText("Background music  ·  25%")
+        panel.addView(musicVolumeValueView, full(dp(6)))
+        musicVolumeSeek = SeekBar(this).apply {
+            max = 100
+            progress = 25
+            progressTintList = android.content.res.ColorStateList.valueOf(accent)
+            thumbTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
+            setOnSeekBarChangeListener(simpleSeek { value ->
+                musicVolume = value / 100f
+                musicVolumeValueView.text = "Background music  ·  " + value + "%"
+            })
+        }
+        panel.addView(musicVolumeSeek, full())
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         row.addView(actionButton("＋ Add music", true) { pickMusic.launch(arrayOf("audio/*")) }, weight())
         row.addView(actionButton("Remove music", false) {
             musicUri = null
             musicName = ""
+            musicVolume = 0.25f
+            if (::musicVolumeSeek.isInitialized) musicVolumeSeek.progress = 25
             musicView.text = "No background music selected."
             setStatus("Background music removed.")
         }, weight(dp(7)))
         panel.addView(row, full(dp(7)))
-        panel.addView(labelText("When a music file is added, it becomes the soundtrack and replaces the source video's audio in this editor version."))
+        panel.addView(labelText("Background music is mixed underneath the original video sound. Lower music volume to keep speech clear, or mute the original sound to use music only."))
         return panel
     }
 
@@ -490,6 +657,24 @@ class StudioEditorActivity : ComponentActivity() {
                     setStatus("A new clip segment was added to the timeline.")
                 }
             }.show()
+    }
+
+    private fun duplicateSelectedSegment() {
+        val source = selectedSegment() ?: return
+        saveUndo()
+        val copy = ClipSegment(
+            nextSegmentId++,
+            source.startMs,
+            source.endMs,
+            (source.title.ifBlank { "Clip" }) + " · copy"
+        )
+        segments.add(selectedSegmentIndex + 1, copy)
+        selectedSegmentIndex += 1
+        player?.pause()
+        player?.seekTo(copy.startMs)
+        renderTimeline()
+        refreshFields()
+        setStatus("Clip duplicated. The copy can be trimmed, moved or deleted independently.")
     }
 
     private fun deleteSelectedSegment() {
@@ -619,26 +804,48 @@ class StudioEditorActivity : ComponentActivity() {
                         .build()
                 ).build()
                 val effects = mutableListOf<androidx.media3.common.Effect>()
+                if (rotationDegrees != 0f) {
+                    effects.add(ScaleAndRotateTransformation.Builder().setRotationDegrees(rotationDegrees).build())
+                }
+                when (filterPreset) {
+                    1 -> effects.add(RgbFilter.createGrayscaleFilter())
+                    2 -> effects.add(RgbFilter.createInvertedFilter())
+                    3 -> effects.add(Brightness(0.12f))
+                    4 -> effects.add(Contrast(0.22f))
+                }
+                if (brightnessValue != 0f) effects.add(Brightness(brightnessValue))
+                if (contrastValue != 0f) effects.add(Contrast(contrastValue))
                 effects.add(Presentation.createForWidthAndHeight(
-                    size.first, size.second, Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP
+                    size.first,
+                    size.second,
+                    if (cropToFill) Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP else Presentation.LAYOUT_SCALE_TO_FIT
                 ))
                 if (speed != 1f) effects.add(SpeedChangeEffect(speedProvider))
                 buildOverlayEffect()?.let { overlay -> effects.add(overlay) }
-                val audioProcessors = if (speed != 1f && musicUri == null && !muteOriginalAudio) {
-                    listOf(SpeedChangingAudioProcessor(speedProvider))
-                } else {
-                    emptyList()
+                if (burnTimedCaptions) {
+                    val timedCaptions = buildTimedCaptionEffects(seg)
+                    if (timedCaptions.isEmpty()) {
+                        throw IOException("Timed captions were enabled, but no timestamped transcript lines overlap this clip. Turn captions off or return to the main editor and import a timestamped transcript.")
+                    }
+                    effects.addAll(timedCaptions)
+                }
+                val audioProcessors = mutableListOf<androidx.media3.common.audio.AudioProcessor>()
+                if (speed != 1f) audioProcessors.add(SpeedChangingAudioProcessor(speedProvider))
+                if (!muteOriginalAudio && (originalVolume < 0.999f || (musicUri != null && musicVolume > 0.001f))) {
+                    // When mixing sequences, process both the source and music tracks to compatible PCM layouts.
+                    audioProcessors.add(createVolumeProcessor(originalVolume))
                 }
                 EditedMediaItem.Builder(clipped)
                     .setEffects(Effects(audioProcessors, effects))
-                    .setRemoveAudio(muteOriginalAudio || musicUri != null)
+                    .setRemoveAudio(muteOriginalAudio || originalVolume <= 0.001f)
                     .setFrameRate(30)
                     .build()
             }
             val videoSequence = EditedMediaItemSequence.Builder(editedItems).build()
-            val composition = if (musicUri != null) {
+            val composition = if (musicUri != null && musicVolume > 0.001f) {
                 val music = EditedMediaItem.Builder(MediaItem.fromUri(musicUri!!))
                     .setRemoveVideo(true)
+                    .setEffects(Effects(listOf(createVolumeProcessor(musicVolume)), emptyList()))
                     .build()
                 val musicSequence = EditedMediaItemSequence.Builder(listOf(music))
                     .setIsLooping(true)
@@ -662,12 +869,276 @@ class StudioEditorActivity : ComponentActivity() {
                     }
                 }).build()
             transformer?.start(composition, file.absolutePath)
-            setStatus("Rendering clips, effects, text and audio…")
+            setStatus("Rendering your clips, picture adjustments, editable text and mixed audio…")
             handler.postDelayed(progressTask, 500)
         } catch (e: Exception) {
             finishExport()
             setStatus("Could not start export: " + (e.message ?: "unknown editor error"))
         }
+    }
+
+    private data class TimedCaption(val startMs: Long, val endMs: Long, val text: String)
+
+    private fun editTimedTranscriptDialog() {
+        if (transcriptContext.isBlank()) {
+            setStatus("No timestamped transcript was passed to Studio. Import or transcribe the video in the main editor first.")
+            return
+        }
+        val editor = EditText(this).apply {
+            setText(transcriptContext)
+            setTextColor(Color.WHITE)
+            setHintTextColor(muted)
+            textSize = 13f
+            minLines = 10
+            maxLines = 18
+            setSingleLine(false)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            background = rounded(Color.rgb(35, 39, 52), 10, border)
+        }
+        val container = ScrollView(this).apply {
+            addView(editor)
+            setPadding(dp(14), dp(8), dp(14), dp(5))
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Edit timed captions")
+            .setMessage("Edit the words inside each timestamp line. Keep the [start - end] time at the beginning so captions stay synced.")
+            .setView(container)
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Save caption text") { _, _ ->
+                val updated = editor.text.toString().trim()
+                if (updated.isBlank()) {
+                    setStatus("Caption text was left unchanged because the transcript cannot be empty.")
+                } else {
+                    transcriptContext = updated.take(24000)
+                    setStatus("Timed caption transcript updated. Burn captions on export to use your corrections.")
+                }
+            }
+            .show()
+    }
+
+    private fun buildTimedCaptionEffects(segment: ClipSegment): List<androidx.media3.common.Effect> {
+        val stamp = Regex("""^\s*\[\s*(\d{1,3}:\d{2}(?:\.\d{1,3})?)\s*[-–]\s*(\d{1,3}:\d{2}(?:\.\d{1,3})?)\s*\]\s*(.*)$""")
+        val segmentStart = segment.startMs
+        val segmentEnd = segment.endMs
+        val captions = transcriptContext.lineSequence().mapNotNull { line ->
+            val match = stamp.matchEntire(line.trim()) ?: return@mapNotNull null
+            val sourceStart = parseStudioTime(match.groupValues[1])?.let { (it * 1000).toLong() } ?: return@mapNotNull null
+            val sourceEnd = parseStudioTime(match.groupValues[2])?.let { (it * 1000).toLong() } ?: return@mapNotNull null
+            val text = match.groupValues[3].trim().take(150)
+            if (text.isBlank() || sourceEnd <= sourceStart) return@mapNotNull null
+            val clippedStart = maxOf(sourceStart, segmentStart)
+            val clippedEnd = minOf(sourceEnd, segmentEnd)
+            if (clippedEnd - clippedStart < 100L) return@mapNotNull null
+            TimedCaption(clippedStart - segmentStart, clippedEnd - segmentStart, text)
+        }.toList().take(200)
+
+        return captions.map { caption ->
+            val span = SpannableString(caption.text)
+            span.setSpan(ForegroundColorSpan(Color.WHITE), 0, span.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            span.setSpan(BackgroundColorSpan(Color.argb(210, 5, 7, 12)), 0, span.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            span.setSpan(StyleSpan(Typeface.BOLD), 0, span.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            val settings = OverlaySettings.Builder()
+                .setOverlayFrameAnchor(0f, -0.82f)
+                .setBackgroundFrameAnchor(0f, -0.82f)
+                .build()
+            val overlay = OverlayEffect(listOf(TextOverlay.createStaticTextOverlay(span, settings)))
+            TimestampWrapper(overlay, caption.startMs * 1000L, caption.endMs * 1000L)
+        }
+    }
+
+    private fun createVolumeProcessor(gain: Float): ChannelMixingAudioProcessor {
+        val processor = ChannelMixingAudioProcessor()
+        for (channels in 1..6) {
+            // Media3 1.5.1 has ChannelMixingMatrix's public constructor, but not newer
+            // createForConstantPower helpers. Convert each supported layout to stereo explicitly.
+            val coefficients = when (channels) {
+                1 -> floatArrayOf(1f, 1f) // mono -> left + right
+                2 -> floatArrayOf(1f, 0f, 0f, 1f) // stereo passthrough
+                3 -> floatArrayOf(1f, 0f, 0f, 1f, 0.707f, 0.707f)
+                4 -> floatArrayOf(1f, 0f, 0f, 1f, 0.707f, 0f, 0f, 0.707f)
+                5 -> floatArrayOf(1f, 0f, 0f, 1f, 0.5f, 0.5f, 0.707f, 0f, 0f, 0.707f)
+                else -> floatArrayOf(1f, 0f, 0f, 1f, 0.5f, 0.5f, 0.25f, 0.25f, 0.707f, 0f, 0f, 0.707f)
+            }
+            val matrix = ChannelMixingMatrix(channels, 2, coefficients).scaleBy(gain.coerceIn(0f, 1f))
+            processor.putChannelMixingMatrix(matrix)
+        }
+        return processor
+    }
+
+    private fun generateAiEditIdeas() {
+        if (aiEditBusy || busy) {
+            setStatus("Wait for the current edit or export to finish.")
+            return
+        }
+        if (aiProvider !in 0..2) {
+            setStatus("AI text ideas need a saved Groq, OpenAI or Claude key. Choose a cloud provider in the main Settings screen first.")
+            return
+        }
+        val key = readStudioApiKey(aiProvider)
+        if (key.isBlank()) {
+            setStatus("No saved API key found for this cloud provider. Go back to ShortsForge Settings, save your provider key, and reopen Studio.")
+            return
+        }
+        val clipTranscript = transcriptForSelectedSegment()
+        if (clipTranscript.isBlank() && topicContext.isBlank()) {
+            setStatus("No topic transcript was passed to Studio. Return to the Video Topic Map, select a topic card, then open Studio again.")
+            return
+        }
+
+        val prompt = """
+You are an ethical short-form video editor. Create three different on-screen hook/title overlays for the selected video clip.
+Rules:
+- Use only the supplied topic and transcript. Never invent statistics, quotes, names, or claims.
+- Make each idea clear, natural, and easy to read on a phone.
+- Each overlay must be 4 to 10 words and no more than 72 characters.
+- Do not use hashtags, quotation marks, numbering, or emojis.
+- Make the three ideas meaningfully different: curiosity hook, clear topic headline, and viewer-benefit hook.
+- Return JSON only in this exact shape: {"ideas":[{"text":"...","purpose":"..."},{"text":"...","purpose":"..."},{"text":"...","purpose":"..."}]}.
+
+Selected topic(s): ${topicContext.ifBlank { "Use the transcript below." }}
+
+Transcript for the selected clip:
+${clipTranscript.take(14000)}
+""".trimIndent()
+
+        aiEditBusy = true
+        setStatus("AI is reading the selected topic and writing three short hook ideas…")
+        Thread {
+            try {
+                val raw = studioChat(prompt, key, aiProvider)
+                val ideas = parseStudioIdeas(raw)
+                if (ideas.isEmpty()) throw IOException("The AI response did not contain three usable text ideas. Try again.")
+                runOnUiThread {
+                    aiEditBusy = false
+                    val labels = ideas.mapIndexed { index, idea -> (index + 1).toString() + ". " + idea }
+                    android.app.AlertDialog.Builder(this)
+                        .setTitle("Choose an AI hook")
+                        .setItems(labels.toTypedArray()) { _, which ->
+                            overlayText = ideas[which].take(140)
+                            overlayField.setText(overlayText)
+                            styleSpinner.setSelection(1)
+                            positionSpinner.setSelection(2)
+                            setStatus("AI hook added as editable text. Change its wording, style or position before export.")
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                    setStatus("Three AI hook ideas are ready. Choose one to add it to your text overlay.")
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    aiEditBusy = false
+                    setStatus("AI edit assistant failed: " + (e.message ?: "unknown AI error"))
+                }
+            }
+        }.start()
+    }
+
+    private fun transcriptForSelectedSegment(): String {
+        val data = transcriptContext.trim()
+        if (data.isBlank()) return ""
+        val seg = selectedSegment() ?: return data.take(14000)
+        val stamp = Regex("""\[\s*(\d{1,3}:\d{2}(?:\.\d{1,3})?)\s*[-–]\s*(\d{1,3}:\d{2}(?:\.\d{1,3})?)\s*\]""")
+        val selectedLines = data.lines().filter { line ->
+            val match = stamp.find(line) ?: return@filter false
+            val start = parseStudioTime(match.groupValues[1]) ?: return@filter false
+            val end = parseStudioTime(match.groupValues[2]) ?: return@filter false
+            start <= seg.endMs / 1000.0 && end >= seg.startMs / 1000.0
+        }
+        return (if (selectedLines.isNotEmpty()) selectedLines.joinToString("\n") else data).take(14000)
+    }
+
+    private fun parseStudioTime(value: String): Double? {
+        val pieces = value.split(":")
+        if (pieces.size != 2) return null
+        val minutes = pieces[0].toDoubleOrNull() ?: return null
+        val seconds = pieces[1].toDoubleOrNull() ?: return null
+        return (minutes * 60.0 + seconds).takeIf { it.isFinite() && it >= 0.0 }
+    }
+
+    private fun readStudioApiKey(providerId: Int): String {
+        return try {
+            val prefs = getSharedPreferences("shortsforge_secure_settings", MODE_PRIVATE)
+            val encoded = prefs.getString("key_" + providerId, null) ?: return ""
+            val packed = Base64.decode(encoded, Base64.NO_WRAP)
+            if (packed.size <= 12) return ""
+            val store = java.security.KeyStore.getInstance("AndroidKeyStore")
+            store.load(null)
+            val secret = store.getKey("ShortsForgeApiKeyEncryption", null) as? javax.crypto.SecretKey ?: return ""
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.DECRYPT_MODE, secret, GCMParameterSpec(128, packed.copyOfRange(0, 12)))
+            String(cipher.doFinal(packed.copyOfRange(12, packed.size)), Charsets.UTF_8)
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    private fun studioChat(prompt: String, key: String, providerId: Int): String {
+        val request = if (providerId == 0 || providerId == 1) {
+            val url = if (providerId == 0) {
+                "https://api.groq.com/openai/v1/chat/completions"
+            } else {
+                "https://api.openai.com/v1/chat/completions"
+            }
+            val model = if (providerId == 0) "openai/gpt-oss-120b" else "gpt-4o-mini"
+            val body = JSONObject()
+                .put("model", model)
+                .put("temperature", 0.45)
+                .put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", prompt)))
+            Request.Builder().url(url)
+                .header("Authorization", "Bearer " + key)
+                .post(body.toString().toRequestBody("application/json".toMediaType()))
+                .build()
+        } else {
+            val body = JSONObject()
+                .put("model", "claude-haiku-4-5-20251001")
+                .put("max_tokens", 900)
+                .put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", prompt)))
+            Request.Builder().url("https://api.anthropic.com/v1/messages")
+                .header("x-api-key", key)
+                .header("anthropic-version", "2023-06-01")
+                .post(body.toString().toRequestBody("application/json".toMediaType()))
+                .build()
+        }
+        studioHttp.newCall(request).execute().use { response ->
+            val raw = response.body?.string().orEmpty()
+            if (!response.isSuccessful) {
+                val reason = try {
+                    JSONObject(raw).optJSONObject("error")?.optString("message")?.takeIf { it.isNotBlank() }
+                        ?: raw.take(200)
+                } catch (_: Exception) { raw.take(200) }
+                throw IOException("AI API HTTP " + response.code + ": " + reason)
+            }
+            val json = JSONObject(raw)
+            return if (providerId == 2) {
+                json.optJSONArray("content")?.optJSONObject(0)?.optString("text").orEmpty()
+            } else {
+                json.optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("message")?.optString("content").orEmpty()
+            }
+        }
+    }
+
+    private fun parseStudioIdeas(raw: String): List<String> {
+        val cleaned = raw.trim()
+        val start = cleaned.indexOf('{')
+        val end = cleaned.lastIndexOf('}')
+        if (start >= 0 && end > start) {
+            val obj = runCatching { JSONObject(cleaned.substring(start, end + 1)) }.getOrNull()
+            val array = obj?.optJSONArray("ideas") ?: obj?.optJSONArray("options")
+            if (array != null) {
+                val parsed = (0 until array.length()).mapNotNull { index ->
+                    val item = array.opt(index)
+                    val text = if (item is JSONObject) {
+                        item.optString("text").ifBlank { item.optString("title") }
+                    } else item?.toString().orEmpty()
+                    text.trim().takeIf { it.isNotBlank() }
+                }.distinct().take(3)
+                if (parsed.isNotEmpty()) return parsed
+            }
+        }
+        return cleaned.lines().map { line ->
+            line.trim().replace(Regex("""^[-*•\d.)\s]+"""), "")
+        }.filter { it.isNotBlank() && it.length <= 100 }.distinct().take(3)
     }
 
     private fun buildOverlayEffect(): OverlayEffect? {
@@ -860,6 +1331,14 @@ class StudioEditorActivity : ComponentActivity() {
         return String.format(Locale.US, "%02d:%02d", seconds / 60, seconds % 60)
     }
 
+    private fun simpleSeek(onChanged: (Int) -> Unit) = object : SeekBar.OnSeekBarChangeListener {
+        override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+            if (fromUser) onChanged(progress)
+        }
+        override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+        override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+    }
+
     private fun simpleSelection(onSelected: (Int) -> Unit) = object : android.widget.AdapterView.OnItemSelectedListener {
         override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
         override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) { onSelected(position) }
@@ -878,5 +1357,8 @@ class StudioEditorActivity : ComponentActivity() {
         const val EXTRA_END_MS = "shortsforge.endMs"
         const val EXTRA_CLIP_RANGES_MS = "shortsforge.clipRangesMs"
         const val EXTRA_CLIP_TITLES = "shortsforge.clipTitles"
+        const val EXTRA_TRANSCRIPT = "shortsforge.transcriptContext"
+        const val EXTRA_TOPIC_CONTEXT = "shortsforge.topicContext"
+        const val EXTRA_AI_PROVIDER = "shortsforge.aiProvider"
     }
 }

@@ -8,6 +8,7 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.media.AudioFormat
 import android.media.MediaCodec
+import android.media.MediaMuxer
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
@@ -948,13 +949,13 @@ class MainActivity : ComponentActivity() {
         if (busy) return
         busy = true
         refreshFooter()
-        setStatus("Decoding source audio to a speech-ready 16 kHz mono WAV…")
+        setStatus("Preparing source audio for cloud transcription…")
         executor.execute {
             var audio: File? = null
             try {
-                // Decode to PCM/WAV instead of copying the source codec into an MP4 container.
-                // MediaMuxer rejects some audio MIME formats (for example, Opus in MP4).
-                audio = extractWav16kMono(uri)
+                // Keep the fast original-codec path for compatible AAC/M4A audio.
+                // If MediaMuxer rejects the source codec/container, fall back to decoded PCM/WAV.
+                audio = extractAudioForTranscription(uri)
                 if (audio.length() > 24L * 1024L * 1024L) {
                     throw IOException("Decoded WAV exceeds the 24 MB transcription upload limit. Use a shorter source video or import a timestamped transcript.")
                 }
@@ -1429,6 +1430,78 @@ $chunkText
         }
     }
 
+    /**
+     * Prefer a fast, no-reencode M4A extraction for audio formats accepted by the MP4 muxer.
+     * Some source tracks (for example Opus in WebM) cannot be added to an MP4 muxer. When that
+     * happens, decode the audio with MediaCodec and produce a provider-compatible 16 kHz WAV.
+     */
+    private fun extractAudioForTranscription(uri: android.net.Uri): File {
+        return try {
+            extractAudio(uri)
+        } catch (remuxError: Exception) {
+            try {
+                extractWav16kMono(uri)
+            } catch (decodeError: Exception) {
+                throw IOException(
+                    "Audio remux failed (" + (remuxError.message ?: "unsupported source codec") +
+                        ") and decoded WAV fallback also failed (" +
+                        (decodeError.message ?: "audio decoder error") + ").",
+                    decodeError
+                )
+            }
+        }
+    }
+
+    private fun extractAudio(uri: android.net.Uri): File {
+        val extractor = MediaExtractor()
+        var muxer: MediaMuxer? = null
+        var started = false
+        val file = File(cacheDir, "sf-audio-" + System.currentTimeMillis() + ".m4a")
+        try {
+            extractor.setDataSource(this, uri, null)
+            var track = -1
+            var format: MediaFormat? = null
+            for (i in 0 until extractor.trackCount) {
+                val candidate = extractor.getTrackFormat(i)
+                if ((candidate.getString(MediaFormat.KEY_MIME) ?: "").startsWith("audio/")) {
+                    track = i
+                    format = candidate
+                    break
+                }
+            }
+            if (track < 0 || format == null) throw IOException("The selected video has no audio track.")
+            extractor.selectTrack(track)
+            muxer = MediaMuxer(file.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+            val destinationTrack = muxer.addTrack(format)
+            muxer.start()
+            started = true
+
+            val declaredBufferSize = try { format.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE) } catch (_: Exception) { 0 }
+            val buffer = java.nio.ByteBuffer.allocateDirect(maxOf(1_048_576, declaredBufferSize))
+            val info = MediaCodec.BufferInfo()
+            while (true) {
+                buffer.clear()
+                val size = extractor.readSampleData(buffer, 0)
+                if (size < 0) break
+                info.offset = 0
+                info.size = size
+                info.presentationTimeUs = extractor.sampleTime
+                info.flags = extractor.sampleFlags
+                muxer.writeSampleData(destinationTrack, buffer, info)
+                if (!extractor.advance()) break
+            }
+        } catch (e: Exception) {
+            file.delete()
+            throw IOException("Could not remux the source audio track: " + (e.message ?: "unsupported audio format"), e)
+        } finally {
+            try { if (started) muxer?.stop() } catch (_: Exception) { }
+            try { muxer?.release() } catch (_: Exception) { }
+            try { extractor.release() } catch (_: Exception) { }
+        }
+        if (!file.exists() || file.length() == 0L) throw IOException("No audio samples were extracted by the M4A path.")
+        return file
+    }
+
     private fun transcribe(file: File, key: String, providerId: Int): String {
         val url = if (providerId == 0) "https://api.groq.com/openai/v1/audio/transcriptions" else "https://api.openai.com/v1/audio/transcriptions"
         val model = if (providerId == 0) "whisper-large-v3-turbo" else "whisper-1"
@@ -1436,7 +1509,13 @@ $chunkText
             .addFormDataPart("model", model)
             .addFormDataPart("response_format", "verbose_json")
             .addFormDataPart("timestamp_granularities[]", "segment")
-            .addFormDataPart("file", file.name, file.asRequestBody("audio/wav".toMediaType()))
+            .addFormDataPart(
+                "file",
+                file.name,
+                file.asRequestBody(
+                    (if (file.extension.equals("wav", ignoreCase = true)) "audio/wav" else "audio/mp4").toMediaType()
+                )
+            )
             .build()
         val req = Request.Builder().url(url).header("Authorization", "Bearer " + key).post(body).build()
         http.newCall(req).execute().use { response ->

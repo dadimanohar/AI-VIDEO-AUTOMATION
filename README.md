@@ -1367,6 +1367,65 @@ APK build GitHub Actions में सफलतापूर्वक verify ह�
 
 ---
 
+## Version history — how the current app accumulated its features
+
+This history is reconstructed from the repository's versioned source commits and README records. The GitHub `mobile-latest` release is a rolling download, so previous APK binaries are not all retained as separate downloadable releases. The current cumulative app feature set is documented below and in the 1.11.0 section.
+
+| Version milestone | Feature work carried forward |
+|---|---|
+| 1.1.0 | Rebuilt Android editor workflow, local video selection and preview, media/audio handling, MP4 export and Android file sharing. |
+| 1.2.0 | Timestamped key-moment selection, importance ranking, 60s/90s clip options, subtitle/transcript support and authorised direct-file source handling. |
+| 1.3.0–1.3.1 | Offline Qwen3 + Whisper engines, local transcription/topic ranking, offline model manager, cloud-to-local fallback and processing-state fixes. |
+| 1.4.0–1.4.1 | In-app YouTube preview/source handling was explored; unsupported URL-as-video-source behavior was removed rather than presented as working. |
+| 1.5.0 | Automatic initial highlight selection, persisted selection state and exact selected-clip preview. |
+| 1.5.1 | Restored screenshot-style suggestion cards with selected-state UI. |
+| 1.6.0 | Studio timeline editor: split, trim, reorder, undo, speed, text and audio controls. |
+| 1.7.0 | Embedded YouTube preview with IN/OUT timestamp markers and authorised direct video-file URL import. |
+| 1.8.0 | Multi-topic queue, queue-based separate MP4 exports and multi-topic Studio timeline entry. |
+| 1.9.0 | Full chronological Video Topic Map, overlapping transcript analysis, duplicate-topic merging, topic playback and queue-all controls. |
+| 1.10.0 | Removed the fixed global 60-topic cutoff, expanded per-window topic extraction and added duration to each topic card. |
+| 1.11.0 | Added Android file-share handoff and Downloads picker for videos already downloaded by YTDLnis or another app; preserved the existing feature set. |
+
+### Version history — తెలుగు
+
+ఈ చరిత్ర repositoryలోని version commits మరియు README ఆధారంగా తయారైంది. GitHubలో `mobile-latest` ఒక rolling download tag; అందువల్ల పాత APK binaries అన్నీ వేర్వేరు downloadable releasesగా నిల్వ ఉండవు. ప్రస్తుత cumulative feature set కింద మరియు 1.11.0 వివరాల్లో ఉంది.
+
+| Version | ఈ versionలో వచ్చిన ప్రధాన పనులు |
+|---|---|
+| 1.1.0 | Android editor workflow పునర్నిర్మాణం, local video selection/preview, audio handling, MP4 export, Android sharing. |
+| 1.2.0 | Timestamp key-moment selection, importance ranking, 60s/90s options, subtitles/transcripts, అనుమతితో ఉన్న direct-file import. |
+| 1.3.0–1.3.1 | Offline Qwen3 + Whisper, local transcription/analysis, model manager, cloud నుంచి local fallback, processing fixes. |
+| 1.4.0–1.4.1 | YouTube in-app preview/source handling ప్రయత్నం; పనిచేయని URL-to-video-source ప్రవర్తనను తీసివేసి, పని చేస్తుందని తప్పుగా చూపించలేదు. |
+| 1.5.0 | మొదటి highlight ఆటోమేటిక్ select, selection state నిల్వ, ఎంచుకున్న clip exact preview. |
+| 1.5.1 | Screenshot తరహా suggestion cards మరియు SELECTED UI తిరిగి చేర్చడం. |
+| 1.6.0 | Studio timeline editor: split, trim, reorder, undo, speed, text, audio controls. |
+| 1.7.0 | YouTube embedded preview, IN/OUT timestamp markers, permission ఉన్న direct video-file URL import. |
+| 1.8.0 | అనేక topics queue, ప్రతి topicకు వేర్వేరు MP4 export, multi-topic Studio timeline. |
+| 1.9.0 | పూర్తి chronological Video Topic Map, overlapping transcript analysis, duplicate merge, topic playback, queue-all. |
+| 1.10.0 | Fixed global 60-topic పరిమితి తొలగింపు, chunk-wise topic extraction పెంపు, ప్రతి cardలో duration. |
+| 1.11.0 | YTDLnis లేదా ఇతర appలో ముందే download అయిన videoను Android Share ద్వారా import చేయడం, Downloads picker; పాత features అన్నీ కొనసాగింపు. |
+
+### Versionen-Verlauf — हिन्दी
+
+यह इतिहास repository के version commits और README रिकॉर्ड से तैयार किया गया है। GitHub का `mobile-latest` एक rolling download tag है; इसलिए सभी पुराने APK binaries अलग-अलग downloadable releases के रूप में सुरक्षित नहीं हैं। मौजूदा cumulative feature set नीचे और Version 1.11.0 विवरण में दिया गया है।
+
+| Version milestone | जोड़ी गई मुख्य सुविधाएँ |
+|---|---|
+| 1.1.0 | Android editor workflow का पुनर्निर्माण, local video चयन/preview, audio handling, MP4 export और Android sharing. |
+| 1.2.0 | Timestamp key-moment selection, importance ranking, 60s/90s विकल्प, subtitle/transcript support और अधिकृत direct-file import. |
+| 1.3.0–1.3.1 | Offline Qwen3 + Whisper, local transcription/analysis, model manager, cloud-to-local fallback और processing fixes. |
+| 1.4.0–1.4.1 | YouTube in-app preview/source handling पर काम; unsupported URL-to-video-source व्यवहार हटाया गया ताकि उसे working feature बताकर भ्रम न हो. |
+| 1.5.0 | पहला highlight अपने-आप select, selection state सुरक्षित रखना और exact clip preview. |
+| 1.5.1 | Screenshot-जैसे suggestion cards और SELECTED status UI वापस जोड़ा गया. |
+| 1.6.0 | Studio timeline editor: split, trim, reorder, undo, speed, text और audio controls. |
+| 1.7.0 | YouTube embedded preview, IN/OUT timestamp markers और अधिकृत direct video-file URL import. |
+| 1.8.0 | Multi-topic queue, हर topic का अलग MP4 export और multi-topic Studio timeline. |
+| 1.9.0 | पूर्ण chronological Video Topic Map, overlapping transcript analysis, duplicate merge, topic playback और queue-all. |
+| 1.10.0 | Fixed global 60-topic सीमा हटाई, per-window topic extraction बढ़ाया और हर topic card में duration जोड़ा. |
+| 1.11.0 | YTDLnis या दूसरे app में पहले से डाउनलोड की गई video को Android Share और Downloads picker से import करना; पुराने features सुरक्षित रखे. |
+
+---
+
 # Version 1.11.0 update — English
 
 ## Import a video already downloaded by YTDLnis or another Android app
